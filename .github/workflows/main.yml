@@ -26,9 +26,9 @@ jobs:
 
       - name: Create project files
         run: |
-          mkdir -p src/com/rophim/tv res/layout res/values res/drawable
+          mkdir -p src/com/rophim/tv res/layout res/values
 
-          cat > AndroidManifest.xml << 'EOF'
+          cat > AndroidManifest.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.rophim.tv">
@@ -38,8 +38,6 @@ jobs:
               <uses-feature android:name="android.software.leanback" android:required="true" />
               <application
                   android:label="RoPhim TV"
-                  android:icon="@drawable/ic_launcher"
-                  android:banner="@drawable/banner"
                   android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
                   android:usesCleartextTraffic="false">
                   <activity
@@ -54,9 +52,9 @@ jobs:
                   </activity>
               </application>
           </manifest>
-          EOF
+          ENDOFFILE
 
-          cat > res/layout/main.xml << 'EOF'
+          cat > res/layout/main.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -73,26 +71,16 @@ jobs:
                   android:max="100"
                   android:visibility="gone" />
           </RelativeLayout>
-          EOF
+          ENDOFFILE
 
-          cat > res/values/strings.xml << 'EOF'
+          cat > res/values/strings.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <string name="app_name">RoPhim TV</string>
           </resources>
-          EOF
+          ENDOFFILE
 
-          convert -size 96x96 xc:'#E50914' \
-            -fill white -draw "rectangle 42,20 54,76" \
-            -fill white -draw "rectangle 20,42 76,54" \
-            res/drawable/ic_launcher.png
-          convert -size 320x180 xc:'#0d0d1a' \
-            -fill '#E50914' -draw "rectangle 0,0 6,180" \
-            -fill '#E50914' -font DejaVu-Sans-Bold -pointsize 28 \
-            -annotate +60+105 "RoPhim TV" \
-            res/drawable/banner.png
-
-          cat > src/com/rophim/tv/MainActivity.java << 'EOF'
+          cat > src/com/rophim/tv/MainActivity.java << 'ENDOFFILE'
           package com.rophim.tv;
           import android.app.Activity;
           import android.graphics.Bitmap;
@@ -145,7 +133,7 @@ jobs:
               @Override protected void onResume() { super.onResume(); webView.onResume(); }
               @Override protected void onDestroy() { webView.destroy(); super.onDestroy(); }
           }
-          EOF
+          ENDOFFILE
 
       - name: Build APK
         run: |
