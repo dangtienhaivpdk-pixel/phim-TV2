@@ -1,0 +1,57 @@
+name: Build RoPhim TV APK
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Install Android SDK Build Tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          unzip -q cmdtools.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          export ANDROID_HOME=$HOME/android-sdk
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/build-tools/34.0.0" >> $GITHUB_PATH
+      - name: Compile Java sources
+        run: |
+          mkdir -p build/classes build/gen/com/rophim/tv
+          $ANDROID_HOME/build-tools/34.0.0/aapt package -f -m \
+            -I $ANDROID_HOME/platforms/android-34/android.jar \
+            -M AndroidManifest.xml \
+            -S res \
+            -J build/gen \
+            -F build/resources.ap_
+          javac -source 8 -target 8 \
+            -classpath $ANDROID_HOME/platforms/android-34/android.jar \
+            -d build/classes \
+            build/gen/com/rophim/tv/R.java \
+            src/com/rophim/tv/MainActivity.java
+      - name: Build APK
+        run: |
+          $ANDROID_HOME/build-tools/34.0.0/d8 \
+            --output build/ \
+            $(find build/classes -name "*.class")
+          cp build/resources.ap_ build/rophim.apk
+          cd build && zip -u rophim.apk classes.dex && cd ..
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -f 4 build/rophim.apk build/rophim-aligned.apk
+          keytool -genkey -v -keystore debug.keystore -alias key -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=RoPhim,O=RoPhim,C=VN"
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out RoPhimTV.apk build/rophim-aligned.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RoPhimTV
+          path: RoPhimTV.apk
+          retention-days: 30
