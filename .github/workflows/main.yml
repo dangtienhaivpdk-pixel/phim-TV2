@@ -26,14 +26,9 @@ jobs:
 
       - name: Create project files
         run: |
-          # Tạo cấu trúc thư mục
-          mkdir -p src/com/rophim/tv
-          mkdir -p res/layout
-          mkdir -p res/values
-          mkdir -p res/drawable-xhdpi
+          mkdir -p src/com/rophim/tv res/layout res/values res/drawable
 
-          # AndroidManifest.xml
-          cat > AndroidManifest.xml << 'MANIFEST'
+          cat > AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.rophim.tv">
@@ -59,10 +54,9 @@ jobs:
                   </activity>
               </application>
           </manifest>
-          MANIFEST
+          EOF
 
-          # Layout
-          cat > res/layout/main.xml << 'LAYOUT'
+          cat > res/layout/main.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -79,35 +73,26 @@ jobs:
                   android:max="100"
                   android:visibility="gone" />
           </RelativeLayout>
-          LAYOUT
+          EOF
 
-          # Strings
-          cat > res/values/strings.xml << 'STRINGS'
+          cat > res/values/strings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <string name="app_name">RoPhim TV</string>
           </resources>
-          STRINGS
+          EOF
 
-          # Tạo icon bằng Python
-          python3 << 'PYEOF'
-          from PIL import Image, ImageDraw
-          img = Image.new('RGB', (96, 96), '#0d0d1a')
-          d = ImageDraw.Draw(img)
-          d.ellipse([4,4,92,92], fill='#E50914')
-          d.rectangle([42,20,54,76], fill='white')
-          d.rectangle([20,42,76,54], fill='white')
-          img.save('res/drawable-xhdpi/ic_launcher.png')
-          b = Image.new('RGB', (320,180), '#0d0d1a')
-          d2 = ImageDraw.Draw(b)
-          d2.rectangle([0,0,6,180], fill='#E50914')
-          d2.text((160,90), "RoPhim TV", fill='#E50914')
-          b.save('res/drawable-xhdpi/banner.png')
-          print("Icons done")
-          PYEOF
+          convert -size 96x96 xc:'#E50914' \
+            -fill white -draw "rectangle 42,20 54,76" \
+            -fill white -draw "rectangle 20,42 76,54" \
+            res/drawable/ic_launcher.png
+          convert -size 320x180 xc:'#0d0d1a' \
+            -fill '#E50914' -draw "rectangle 0,0 6,180" \
+            -fill '#E50914' -font DejaVu-Sans-Bold -pointsize 28 \
+            -annotate +60+105 "RoPhim TV" \
+            res/drawable/banner.png
 
-          # MainActivity.java
-          cat > src/com/rophim/tv/MainActivity.java << 'JAVA'
+          cat > src/com/rophim/tv/MainActivity.java << 'EOF'
           package com.rophim.tv;
           import android.app.Activity;
           import android.graphics.Bitmap;
@@ -160,7 +145,7 @@ jobs:
               @Override protected void onResume() { super.onResume(); webView.onResume(); }
               @Override protected void onDestroy() { webView.destroy(); super.onDestroy(); }
           }
-          JAVA
+          EOF
 
       - name: Build APK
         run: |
