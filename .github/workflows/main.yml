@@ -35,7 +35,7 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-              <uses-feature android:name="android.software.leanback" android:required="true" />
+              <uses-feature android:name="android.software.leanback" android:required="false" />
               <application
                   android:label="RoPhim TV"
                   android:usesCleartextTraffic="true">
