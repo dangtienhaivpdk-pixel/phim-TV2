@@ -103,6 +103,7 @@ jobs:
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
               <uses-feature android:name="android.software.leanback" android:required="false" />
               <application
@@ -155,8 +156,47 @@ jobs:
                   android:layout_width="24dp"
                   android:layout_height="24dp"
                   android:background="#ccE50914"
-                  android:elevation="10dp"
-                  android:visibility="visible" />
+                  android:elevation="10dp" />
+              <RelativeLayout android:id="@+id/voiceOverlay"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:background="#cc000000"
+                  android:visibility="gone">
+                  <LinearLayout
+                      android:layout_width="600dp"
+                      android:layout_height="wrap_content"
+                      android:layout_centerInParent="true"
+                      android:orientation="vertical"
+                      android:background="#1a1a2e"
+                      android:padding="40dp"
+                      xmlns:android="http://schemas.android.com/apk/res/android">
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_gravity="center"
+                          android:text="🎤 Dang nghe..."
+                          android:textSize="28sp"
+                          android:textColor="#ffffff"
+                          android:layout_marginBottom="16dp"/>
+                      <TextView android:id="@+id/voiceHint"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_gravity="center"
+                          android:text="Noi ten phim hoac lenh:\nphat / dung / tua toi / tua lui"
+                          android:textSize="16sp"
+                          android:textColor="#aaaaaa"
+                          android:gravity="center"
+                          android:layout_marginBottom="20dp"/>
+                      <TextView android:id="@+id/voiceResult"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_gravity="center"
+                          android:text=""
+                          android:textSize="22sp"
+                          android:textColor="#E50914"
+                          android:gravity="center"/>
+                  </LinearLayout>
+              </RelativeLayout>
           </RelativeLayout>
           ENDOFFILE
 
@@ -358,6 +398,9 @@ jobs:
           import android.graphics.Bitmap;
           import android.os.Bundle;
           import android.os.Handler;
+          import android.speech.RecognitionListener;
+          import android.speech.RecognizerIntent;
+          import android.speech.SpeechRecognizer;
           import android.view.KeyEvent;
           import android.view.MotionEvent;
           import android.view.View;
@@ -371,24 +414,24 @@ jobs:
           import android.widget.TextView;
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
+          import java.util.ArrayList;
+          import java.util.Locale;
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
               private View cursor;
+              private RelativeLayout voiceOverlay;
+              private TextView voiceResult;
+              private SpeechRecognizer speechRecognizer;
               private static final String PREF_NAME = "haitv_prefs";
               private static final String KEY_URL = "custom_url";
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private String currentUrl;
-              // Con trỏ ảo
               private float cursorX = 640, cursorY = 360;
               private float STEP = 40f;
-              private boolean cursorVisible = true;
               private Handler handler = new Handler();
               private Runnable hideCursorRunnable = new Runnable() {
-                  @Override public void run() {
-                      cursor.setVisibility(View.INVISIBLE);
-                      cursorVisible = false;
-                  }
+                  @Override public void run() { cursor.setVisibility(View.INVISIBLE); }
               };
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -402,22 +445,21 @@ jobs:
                   webView = (WebView) findViewById(R.id.webview);
                   progressBar = (ProgressBar) findViewById(R.id.progress);
                   cursor = (View) findViewById(R.id.cursor);
-                  TextView btnSettings = (TextView) findViewById(R.id.btnSettings);
-                  btnSettings.setOnClickListener(new View.OnClickListener() {
+                  voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
+                  voiceResult = (TextView) findViewById(R.id.voiceResult);
+                  ((TextView) findViewById(R.id.btnSettings)).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) {
                           startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                       }
                   });
-                  // Đặt con trỏ vào giữa màn hình ban đầu
                   cursor.post(new Runnable() {
                       @Override public void run() {
-                          int w = webView.getWidth();
-                          int h = webView.getHeight();
-                          cursorX = w / 2f;
-                          cursorY = h / 2f;
+                          cursorX = webView.getWidth() / 2f;
+                          cursorY = webView.getHeight() / 2f;
                           moveCursor(0, 0);
                       }
                   });
+                  setupSpeech();
                   WebSettings s = webView.getSettings();
                   s.setJavaScriptEnabled(true);
                   s.setDomStorageEnabled(true);
@@ -449,6 +491,83 @@ jobs:
                   webView.loadUrl(currentUrl);
               }
 
+              private void setupSpeech() {
+                  speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+                  speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                      @Override public void onReadyForSpeech(Bundle p) {
+                          voiceResult.setText("Dang nghe...");
+                      }
+                      @Override public void onResults(Bundle results) {
+                          ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                          if (matches != null && !matches.isEmpty()) {
+                              String text = matches.get(0).toLowerCase();
+                              voiceResult.setText(matches.get(0));
+                              handler.postDelayed(new Runnable() {
+                                  @Override public void run() { hideVoiceOverlay(); }
+                              }, 800);
+                              handleVoiceCommand(text);
+                          } else {
+                              hideVoiceOverlay();
+                          }
+                      }
+                      @Override public void onError(int error) {
+                          voiceResult.setText("Khong nghe duoc, thu lai!");
+                          handler.postDelayed(new Runnable() {
+                              @Override public void run() { hideVoiceOverlay(); }
+                          }, 1500);
+                      }
+                      @Override public void onBeginningOfSpeech() {}
+                      @Override public void onRmsChanged(float v) {}
+                      @Override public void onBufferReceived(byte[] b) {}
+                      @Override public void onEndOfSpeech() {}
+                      @Override public void onPartialResults(Bundle b) {}
+                      @Override public void onEvent(int t, Bundle b) {}
+                  });
+              }
+
+              private void handleVoiceCommand(String text) {
+                  // Lệnh điều khiển video
+                  if (text.contains("phat") || text.contains("play") || text.contains("xem")) {
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();", null);
+                  } else if (text.contains("dung") || text.contains("pause") || text.contains("tam dung")) {
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();", null);
+                  } else if (text.contains("tua toi") || text.contains("forward") || text.contains("skip")) {
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
+                  } else if (text.contains("tua lui") || text.contains("rewind") || text.contains("quay lai")) {
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
+                  } else if (text.contains("trang chu") || text.contains("home")) {
+                      webView.loadUrl(currentUrl);
+                  } else if (text.contains("cai dat") || text.contains("settings")) {
+                      startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                  } else {
+                      // Tìm kiếm tên phim trên trang web
+                      String encoded = text.replace(" ", "+");
+                      String searchUrl = currentUrl + "/search?q=" + encoded + "&s=" + encoded;
+                      webView.evaluateJavascript(
+                          "var inp=document.querySelector('input[type=search],input[name=keyword],input[name=q],input[placeholder*=tim],input[placeholder*=search]');" +
+                          "if(inp){inp.value='" + text + "';inp.dispatchEvent(new Event('input'));inp.form&&inp.form.submit();}" +
+                          "else{window.location='" + searchUrl + "';}",
+                          null);
+                  }
+              }
+
+              private void showVoiceOverlay() {
+                  voiceOverlay.setVisibility(View.VISIBLE);
+                  voiceResult.setText("");
+                  Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN");
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "vi-VN");
+                  intent.putExtra(RecognizerIntent.EXTRA_ALSO_RECOGNIZE_SPEECH_WHEN_POSSIBLE, true);
+                  intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+                  speechRecognizer.startListening(intent);
+              }
+
+              private void hideVoiceOverlay() {
+                  speechRecognizer.stopListening();
+                  voiceOverlay.setVisibility(View.GONE);
+              }
+
               private void moveCursor(float dx, float dy) {
                   int w = webView.getWidth();
                   int h = webView.getHeight();
@@ -459,59 +578,47 @@ jobs:
                   p.topMargin = (int) cursorY;
                   cursor.setLayoutParams(p);
                   cursor.setVisibility(View.VISIBLE);
-                  cursorVisible = true;
-                  // Tự ẩn con trỏ sau 3 giây không dùng
                   handler.removeCallbacks(hideCursorRunnable);
                   handler.postDelayed(hideCursorRunnable, 3000);
               }
 
               private void doClick() {
-                  // Gửi touch event vào vị trí con trỏ
                   long now = android.os.SystemClock.uptimeMillis();
                   MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, cursorX, cursorY, 0);
-                  MotionEvent up = MotionEvent.obtain(now, now + 100, MotionEvent.ACTION_UP, cursorX, cursorY, 0);
+                  MotionEvent up = MotionEvent.obtain(now, now+100, MotionEvent.ACTION_UP, cursorX, cursorY, 0);
                   webView.dispatchTouchEvent(down);
                   webView.dispatchTouchEvent(up);
-                  down.recycle();
-                  up.recycle();
+                  down.recycle(); up.recycle();
               }
 
               @Override
               public boolean onKeyDown(int keyCode, KeyEvent event) {
-                  // Di chuyển con trỏ bằng D-pad
+                  if (voiceOverlay.getVisibility() == View.VISIBLE) {
+                      if (keyCode == KeyEvent.KEYCODE_BACK) { hideVoiceOverlay(); return true; }
+                      return true;
+                  }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { moveCursor(0, -STEP); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, STEP); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-STEP, 0); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(STEP, 0); return true; }
-                  // OK/Enter = click tại vị trí con trỏ
                   if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
                       doClick(); return true;
                   }
-                  // Play/Pause
                   if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
-                      webView.evaluateJavascript(
-                          "var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}", null);
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}", null);
                       return true;
                   }
-                  // Tua tới 10 giây
-                  if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD || keyCode == KeyEvent.KEYCODE_BUTTON_R1) {
-                      webView.evaluateJavascript(
-                          "var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
+                  if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
                       return true;
                   }
-                  // Tua lùi 10 giây
-                  if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND || keyCode == KeyEvent.KEYCODE_BUTTON_L1) {
-                      webView.evaluateJavascript(
-                          "var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
+                  if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND) {
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
                       return true;
                   }
-                  // Back
                   if (keyCode == KeyEvent.KEYCODE_BACK) {
                       if (webView.canGoBack()) { webView.goBack(); return true; }
                   }
-                  // Home = về trang chủ
-                  if (keyCode == KeyEvent.KEYCODE_HOME) { webView.loadUrl(currentUrl); return true; }
-                  // Menu = mở Settings
                   if (keyCode == KeyEvent.KEYCODE_MENU) {
                       startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                       return true;
@@ -519,8 +626,12 @@ jobs:
                   return super.onKeyDown(keyCode, event);
               }
 
-              @Override public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-                  // Giữ D-pad = tăng tốc độ di chuyển con trỏ
+              @Override
+              public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+                  // Giữ OK 2 giây = bật giọng nói
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+                      showVoiceOverlay(); return true;
+                  }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { moveCursor(0, -STEP*3); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, STEP*3); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-STEP*3, 0); return true; }
@@ -528,10 +639,15 @@ jobs:
                   return super.onKeyLongPress(keyCode, event);
               }
 
-              @Override protected void onPause() { super.onPause(); webView.onPause(); }
+              @Override protected void onPause() {
+                  super.onPause();
+                  webView.onPause();
+                  if (voiceOverlay.getVisibility() == View.VISIBLE) hideVoiceOverlay();
+              }
               @Override protected void onResume() { super.onResume(); webView.onResume(); }
               @Override protected void onDestroy() {
                   handler.removeCallbacksAndMessages(null);
+                  speechRecognizer.destroy();
                   webView.destroy();
                   super.onDestroy();
               }
