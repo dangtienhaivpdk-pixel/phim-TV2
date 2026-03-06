@@ -1,4 +1,4 @@
-name: Build RoPhim TV APK
+name: Build HAI TV APK
 on:
   push:
     branches: [ main ]
@@ -26,10 +26,10 @@ jobs:
 
       - name: Create project files
         run: |
-          mkdir -p src/com/rophimtv/app res/layout res/values res/drawable
+          mkdir -p src/com/haitv/app res/layout res/values res/drawable
 
           python3 -c "
-          import struct, zlib
+          import struct, zlib, math
           def make_png(w, h, get_pixel):
               def chunk(name, data):
                   c = zlib.crc32(name + data) & 0xffffffff
@@ -39,28 +39,81 @@ jobs:
                   raw += b'\x00'
                   for x in range(w):
                       raw += bytes(get_pixel(x, y))
-              compressed = zlib.compress(raw, 9)
               png = b'\x89PNG\r\n\x1a\n'
               ihdr = struct.pack('>II', w, h) + bytes([8, 6, 0, 0, 0])
               png += chunk(b'IHDR', ihdr)
-              png += chunk(b'IDAT', compressed)
+              png += chunk(b'IDAT', zlib.compress(raw, 9))
               png += chunk(b'IEND', b'')
               return png
+
           def icon_pixel(x, y):
-              cx, cy, r = 48, 48, 46
-              dx, dy = x-cx, y-cy
-              if dx*dx + dy*dy <= r*r:
-                  if x >= 33 and x <= 64 and abs(dy) <= (x-30)*0.55:
-                      return [255, 255, 255, 255]
-                  t = (dx*dx + dy*dy) / (r*r)
-                  return [int(229 - t*30), 9, 20, 255]
-              return [0, 0, 0, 0]
+              cx, cy = 48, 48
+              dx, dy = x - cx, y - cy
+              dist = math.sqrt(dx*dx + dy*dy)
+              # Nền gradient tím -> xanh đậm
+              if dist > 46:
+                  return [0, 0, 0, 0]
+              # Viền sáng
+              if dist > 42:
+                  t = (dist - 42) / 4
+                  r = int(100 + t * 80)
+                  g = int(20 + t * 20)
+                  b = int(200 + t * 55)
+                  return [r, g, b, 255]
+              # Nền gradient
+              t = dist / 42
+              bg_r = int(20 + t * 40)
+              bg_g = int(10 + t * 10)
+              bg_b = int(80 + t * 60)
+              # Chữ H
+              lx, ly = x - 18, y - 28
+              if 0 <= lx <= 6 and 0 <= ly <= 40: return [255, 255, 255, 255]
+              if 0 <= lx <= 20 and 17 <= ly <= 23: return [255, 255, 255, 255]
+              if 14 <= lx <= 20 and 0 <= ly <= 40: return [255, 255, 255, 255]
+              # Chữ i nhỏ bên phải chữ H -> thực ra vẽ TV
+              # Chữ T
+              lx2, ly2 = x - 42, y - 28
+              if 0 <= lx2 <= 14 and 0 <= ly2 <= 4: return [229, 9, 20, 255]
+              if 5 <= lx2 <= 9 and 0 <= ly2 <= 20: return [229, 9, 20, 255]
+              return [bg_r, bg_g, bg_b, 255]
+
           with open('res/drawable/ic_launcher.png','wb') as f:
               f.write(make_png(96, 96, icon_pixel))
+
           def banner_pixel(x, y):
-              if x < 8:
-                  return [229, 9, 20, 255]
-              return [int(13+(x/320)*10), int(13+(y/180)*5), int(26+(x/320)*15), 255]
+              # Gradient background
+              r = int(10 + (x/320)*20)
+              g = int(5 + (y/180)*10)
+              b = int(40 + (x/320)*40)
+              if x < 6: return [229, 9, 20, 255]
+              # Chữ HAI TV dạng pixel
+              lx, ly = x - 40, y - 65
+              # H
+              if 0<=lx<=8 and 0<=ly<=50: return [255,255,255,255]
+              if 0<=lx<=30 and 22<=ly<=28: return [255,255,255,255]
+              if 22<=lx<=30 and 0<=ly<=50: return [255,255,255,255]
+              # A
+              lx2 = lx - 40
+              if 0<=lx2<=4 and 10<=ly<=50: return [255,255,255,255]
+              if 26<=lx2<=30 and 10<=ly<=50: return [255,255,255,255]
+              if 0<=lx2<=30 and 8<=ly<=14: return [255,255,255,255]
+              if 0<=lx2<=30 and 28<=ly<=34: return [255,255,255,255]
+              if 0<=lx2<=30 and 6<=ly<=10: return [255,255,255,255]
+              # I
+              lx3 = lx - 80
+              if 0<=lx3<=20 and 0<=ly<=6: return [255,255,255,255]
+              if 8<=lx3<=12 and 0<=ly<=50: return [255,255,255,255]
+              if 0<=lx3<=20 and 44<=ly<=50: return [255,255,255,255]
+              # TV (đỏ)
+              lx4, ly4 = x - 180, y - 65
+              if 0<=lx4<=30 and 0<=ly4<=6: return [229,9,20,255]
+              if 12<=lx4<=18 and 0<=ly4<=50: return [229,9,20,255]
+              lx5 = lx4 - 40
+              if 0<=lx5<=4 and 0<=ly4<=50: return [229,9,20,255]
+              if 0<=lx5<=30 and 22<=ly4<=28: return [229,9,20,255]
+              if 26<=lx5<=30 and 0<=ly4<=50: return [229,9,20,255]
+              return [r, g, b, 255]
+
           with open('res/drawable/banner.png','wb') as f:
               f.write(make_png(320, 180, banner_pixel))
           print('Icons OK')
@@ -69,7 +122,7 @@ jobs:
           cat > AndroidManifest.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.rophimtv.app"
+              package="com.haitv.app"
               android:versionCode="1"
               android:versionName="1.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
@@ -78,7 +131,7 @@ jobs:
               <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
               <uses-feature android:name="android.software.leanback" android:required="false" />
               <application
-                  android:label="RoPhim TV"
+                  android:label="HAI TV"
                   android:icon="@drawable/ic_launcher"
                   android:banner="@drawable/banner"
                   android:usesCleartextTraffic="true"
@@ -93,6 +146,10 @@ jobs:
                           <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                       </intent-filter>
                   </activity>
+                  <activity
+                      android:name=".SettingsActivity"
+                      android:exported="false"
+                      android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
           ENDOFFILE
@@ -109,24 +166,161 @@ jobs:
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
                   android:layout_width="match_parent"
-                  android:layout_height="6dp"
+                  android:layout_height="5dp"
                   android:layout_alignParentTop="true"
                   android:max="100"
                   android:progressTint="#E50914"
                   android:visibility="gone" />
+              <TextView
+                  android:id="@+id/btnSettings"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_alignParentTop="true"
+                  android:layout_alignParentRight="true"
+                  android:text="⚙"
+                  android:textSize="28sp"
+                  android:textColor="#88ffffff"
+                  android:padding="12dp" />
           </RelativeLayout>
+          ENDOFFILE
+
+          cat > res/layout/settings.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center"
+              android:background="#0d0d1a"
+              android:padding="80dp">
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="HAI TV"
+                  android:textSize="42sp"
+                  android:textColor="#ffffff"
+                  android:textStyle="bold"
+                  android:layout_marginBottom="4dp"/>
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="Cai dat duong dan web"
+                  android:textSize="18sp"
+                  android:textColor="#aaaaaa"
+                  android:layout_marginBottom="40dp"/>
+              <TextView
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Duong dan hien tai:"
+                  android:textSize="16sp"
+                  android:textColor="#888888"
+                  android:layout_marginBottom="8dp"/>
+              <TextView
+                  android:id="@+id/txtCurrentUrl"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text=""
+                  android:textSize="16sp"
+                  android:textColor="#E50914"
+                  android:layout_marginBottom="30dp"/>
+              <EditText
+                  android:id="@+id/editUrl"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:hint="https://example.com"
+                  android:textSize="20sp"
+                  android:textColor="#ffffff"
+                  android:textColorHint="#555555"
+                  android:background="#1a1a2e"
+                  android:padding="18dp"
+                  android:inputType="textUri"
+                  android:layout_marginBottom="20dp"/>
+              <Button
+                  android:id="@+id/btnSave"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="LUU VA MO"
+                  android:textSize="20sp"
+                  android:textColor="#ffffff"
+                  android:background="#E50914"
+                  android:padding="16dp"
+                  android:layout_marginBottom="16dp"/>
+              <Button
+                  android:id="@+id/btnReset"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="RESET VE MAC DINH"
+                  android:textSize="16sp"
+                  android:textColor="#aaaaaa"
+                  android:background="#1a1a2e"
+                  android:padding="14dp"/>
+          </LinearLayout>
           ENDOFFILE
 
           cat > res/values/strings.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <string name="app_name">RoPhim TV</string>
+              <string name="app_name">HAI TV</string>
           </resources>
           ENDOFFILE
 
-          cat > src/com/rophimtv/app/MainActivity.java << 'ENDOFFILE'
-          package com.rophimtv.app;
+          cat > src/com/haitv/app/SettingsActivity.java << 'ENDOFFILE'
+          package com.haitv.app;
           import android.app.Activity;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.os.Bundle;
+          import android.view.View;
+          import android.widget.Button;
+          import android.widget.EditText;
+          import android.widget.TextView;
+          public class SettingsActivity extends Activity {
+              private static final String PREF_NAME = "haitv_prefs";
+              private static final String KEY_URL = "custom_url";
+              private static final String DEFAULT_URL = "https://pointnorth.io";
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.settings);
+                  final SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                  final String currentUrl = prefs.getString(KEY_URL, DEFAULT_URL);
+                  TextView txtCurrent = (TextView) findViewById(R.id.txtCurrentUrl);
+                  txtCurrent.setText(currentUrl);
+                  final EditText editUrl = (EditText) findViewById(R.id.editUrl);
+                  editUrl.setText(currentUrl);
+                  Button btnSave = (Button) findViewById(R.id.btnSave);
+                  btnSave.setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) {
+                          String newUrl = editUrl.getText().toString().trim();
+                          if (newUrl.isEmpty()) newUrl = DEFAULT_URL;
+                          if (!newUrl.startsWith("http")) newUrl = "https://" + newUrl;
+                          prefs.edit().putString(KEY_URL, newUrl).apply();
+                          Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
+                          intent.putExtra("url", newUrl);
+                          intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                          startActivity(intent);
+                          finish();
+                      }
+                  });
+                  Button btnReset = (Button) findViewById(R.id.btnReset);
+                  btnReset.setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) {
+                          prefs.edit().putString(KEY_URL, DEFAULT_URL).apply();
+                          editUrl.setText(DEFAULT_URL);
+                          txtCurrent.setText(DEFAULT_URL);
+                      }
+                  });
+              }
+          }
+          ENDOFFILE
+
+          cat > src/com/haitv/app/MainActivity.java << 'ENDOFFILE'
+          package com.haitv.app;
+          import android.app.Activity;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
           import android.graphics.Bitmap;
           import android.os.Bundle;
           import android.view.KeyEvent;
@@ -137,20 +331,35 @@ jobs:
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
           import android.widget.ProgressBar;
+          import android.widget.TextView;
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
-              private static final String HOME = "https://pointnorth.io";
+              private static final String PREF_NAME = "haitv_prefs";
+              private static final String KEY_URL = "custom_url";
+              private static final String DEFAULT_URL = "https://pointnorth.io";
+              private String currentUrl;
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                   setContentView(R.layout.main);
+                  SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                  currentUrl = prefs.getString(KEY_URL, DEFAULT_URL);
+                  if (getIntent().hasExtra("url")) {
+                      currentUrl = getIntent().getStringExtra("url");
+                  }
                   webView = (WebView) findViewById(R.id.webview);
                   progressBar = (ProgressBar) findViewById(R.id.progress);
+                  TextView btnSettings = (TextView) findViewById(R.id.btnSettings);
+                  btnSettings.setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) {
+                          startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                      }
+                  });
                   WebSettings s = webView.getSettings();
                   s.setJavaScriptEnabled(true);
                   s.setDomStorageEnabled(true);
@@ -158,11 +367,14 @@ jobs:
                   s.setUseWideViewPort(true);
                   s.setLoadWithOverviewMode(true);
                   s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                  s.setBuiltInZoomControls(false);
+                  s.setDisplayZoomControls(false);
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setWebViewClient(new WebViewClient() {
                       @Override public void onPageStarted(WebView v, String url, Bitmap f) { progressBar.setVisibility(View.VISIBLE); }
                       @Override public void onPageFinished(WebView v, String url) { progressBar.setVisibility(View.GONE); }
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) { h.proceed(); }
+                      @Override public boolean shouldOverrideUrlLoading(WebView v, String url) { v.loadUrl(url); return true; }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
                       @Override public void onProgressChanged(WebView v, int p) {
@@ -172,7 +384,11 @@ jobs:
                   });
                   webView.setFocusable(true);
                   webView.setFocusableInTouchMode(true);
-                  webView.loadUrl(HOME);
+                  webView.setLongClickable(false);
+                  webView.setOnLongClickListener(new View.OnLongClickListener() {
+                      @Override public boolean onLongClick(View v) { return true; }
+                  });
+                  webView.loadUrl(currentUrl);
               }
               @Override
               public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -183,7 +399,11 @@ jobs:
                   if (keyCode == KeyEvent.KEYCODE_BACK) {
                       if (webView.canGoBack()) { webView.goBack(); return true; }
                   }
-                  if (keyCode == KeyEvent.KEYCODE_HOME) { webView.loadUrl(HOME); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_HOME) { webView.loadUrl(currentUrl); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_MENU) {
+                      startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                      return true;
+                  }
                   return super.onKeyDown(keyCode, event);
               }
               @Override protected void onPause() { super.onPause(); webView.onPause(); }
@@ -204,24 +424,25 @@ jobs:
           javac -source 8 -target 8 \
             -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
-            build/gen/com/rophimtv/app/R.java \
-            src/com/rophimtv/app/MainActivity.java
+            build/gen/com/haitv/app/R.java \
+            src/com/haitv/app/SettingsActivity.java \
+            src/com/haitv/app/MainActivity.java
           $ANDROID_HOME/build-tools/28.0.3/dx \
             --dex --output=build/classes.dex \
             build/classes
-          cp build/resources.ap_ build/rophim.apk
-          cd build && zip -u rophim.apk classes.dex && cd ..
-          $ANDROID_HOME/build-tools/28.0.3/zipalign -f 4 build/rophim.apk build/aligned.apk
+          cp build/resources.ap_ build/haitv.apk
+          cd build && zip -u haitv.apk classes.dex && cd ..
+          $ANDROID_HOME/build-tools/28.0.3/zipalign -f 4 build/haitv.apk build/aligned.apk
           keytool -genkey -v -keystore key.jks -alias key -keyalg RSA \
             -keysize 2048 -validity 10000 -storepass android -keypass android \
-            -dname "CN=RoPhim,O=RoPhim,C=VN"
+            -dname "CN=HaiTV,O=HaiTV,C=VN"
           $ANDROID_HOME/build-tools/28.0.3/apksigner sign \
             --ks key.jks --ks-pass pass:android --key-pass pass:android \
-            --out RoPhimTV.apk build/aligned.apk
+            --out HAITV.apk build/aligned.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: RoPhimTV
-          path: RoPhimTV.apk
+          name: HAITV
+          path: HAITV.apk
           retention-days: 30
