@@ -38,8 +38,7 @@ jobs:
               <uses-feature android:name="android.software.leanback" android:required="true" />
               <application
                   android:label="RoPhim TV"
-                  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
-                  android:usesCleartextTraffic="false">
+                  android:usesCleartextTraffic="true">
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
@@ -47,6 +46,7 @@ jobs:
                       android:configChanges="orientation|screenSize|keyboardHidden">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
                           <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                       </intent-filter>
                   </activity>
@@ -93,6 +93,9 @@ jobs:
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
           import android.widget.ProgressBar;
+          import android.widget.Toast;
+          import android.net.http.SslError;
+          import android.webkit.SslErrorHandler;
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
@@ -111,17 +114,34 @@ jobs:
                   s.setMediaPlaybackRequiresUserGesture(false);
                   s.setUseWideViewPort(true);
                   s.setLoadWithOverviewMode(true);
+                  s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setWebViewClient(new WebViewClient() {
-                      public void onPageStarted(WebView v, String url, Bitmap f) { progressBar.setVisibility(View.VISIBLE); }
-                      public void onPageFinished(WebView v, String url) { progressBar.setVisibility(View.GONE); }
+                      @Override
+                      public void onPageStarted(WebView v, String url, Bitmap f) {
+                          progressBar.setVisibility(View.VISIBLE);
+                      }
+                      @Override
+                      public void onPageFinished(WebView v, String url) {
+                          progressBar.setVisibility(View.GONE);
+                      }
+                      @Override
+                      public void onReceivedError(WebView v, int errorCode, String desc, String url) {
+                          Toast.makeText(MainActivity.this, "Loi: " + desc, Toast.LENGTH_LONG).show();
+                      }
+                      @Override
+                      public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
+                          h.proceed();
+                      }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
+                      @Override
                       public void onProgressChanged(WebView v, int p) {
                           progressBar.setProgress(p);
                           progressBar.setVisibility(p < 100 ? View.VISIBLE : View.GONE);
                       }
                   });
+                  Toast.makeText(this, "Dang tai " + HOME, Toast.LENGTH_SHORT).show();
                   webView.loadUrl(HOME);
               }
               @Override
