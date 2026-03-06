@@ -20,9 +20,9 @@ jobs:
           unzip -q cmdtools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
           yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
-          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-28" "build-tools;28.0.3"
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/android-sdk/build-tools/34.0.0" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/build-tools/28.0.3" >> $GITHUB_PATH
 
       - name: Create project files
         run: |
@@ -31,18 +31,21 @@ jobs:
           cat > AndroidManifest.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.rophim.tv">
+              package="com.rophim.tv"
+              android:versionCode="1"
+              android:versionName="1.0">
+              <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
               <uses-feature android:name="android.software.leanback" android:required="false" />
               <application
                   android:label="RoPhim TV"
-                  android:usesCleartextTraffic="true">
+                  android:usesCleartextTraffic="true"
+                  android:hardwareAccelerated="true">
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
-                      android:hardwareAccelerated="true"
                       android:configChanges="orientation|screenSize|keyboardHidden">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -93,7 +96,6 @@ jobs:
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
           import android.widget.ProgressBar;
-          import android.widget.Toast;
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           public class MainActivity extends Activity {
@@ -117,31 +119,16 @@ jobs:
                   s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setWebViewClient(new WebViewClient() {
-                      @Override
-                      public void onPageStarted(WebView v, String url, Bitmap f) {
-                          progressBar.setVisibility(View.VISIBLE);
-                      }
-                      @Override
-                      public void onPageFinished(WebView v, String url) {
-                          progressBar.setVisibility(View.GONE);
-                      }
-                      @Override
-                      public void onReceivedError(WebView v, int errorCode, String desc, String url) {
-                          Toast.makeText(MainActivity.this, "Loi: " + desc, Toast.LENGTH_LONG).show();
-                      }
-                      @Override
-                      public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
-                          h.proceed();
-                      }
+                      @Override public void onPageStarted(WebView v, String url, Bitmap f) { progressBar.setVisibility(View.VISIBLE); }
+                      @Override public void onPageFinished(WebView v, String url) { progressBar.setVisibility(View.GONE); }
+                      @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) { h.proceed(); }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
-                      @Override
-                      public void onProgressChanged(WebView v, int p) {
+                      @Override public void onProgressChanged(WebView v, int p) {
                           progressBar.setProgress(p);
                           progressBar.setVisibility(p < 100 ? View.VISIBLE : View.GONE);
                       }
                   });
-                  Toast.makeText(this, "Dang tai " + HOME, Toast.LENGTH_SHORT).show();
                   webView.loadUrl(HOME);
               }
               @Override
@@ -158,27 +145,27 @@ jobs:
       - name: Build APK
         run: |
           mkdir -p build/classes build/gen
-          $ANDROID_HOME/build-tools/34.0.0/aapt package -f -m \
-            -I $ANDROID_HOME/platforms/android-34/android.jar \
+          $ANDROID_HOME/build-tools/28.0.3/aapt package -f -m \
+            -I $ANDROID_HOME/platforms/android-28/android.jar \
             -M AndroidManifest.xml \
             -S res \
             -J build/gen \
             -F build/resources.ap_
           javac -source 8 -target 8 \
-            -classpath $ANDROID_HOME/platforms/android-34/android.jar \
+            -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
             build/gen/com/rophim/tv/R.java \
             src/com/rophim/tv/MainActivity.java
-          $ANDROID_HOME/build-tools/34.0.0/d8 \
-            --output build/ \
-            $(find build/classes -name "*.class")
+          $ANDROID_HOME/build-tools/28.0.3/dx \
+            --dex --output=build/classes.dex \
+            build/classes
           cp build/resources.ap_ build/rophim.apk
           cd build && zip -u rophim.apk classes.dex && cd ..
-          $ANDROID_HOME/build-tools/34.0.0/zipalign -f 4 build/rophim.apk build/aligned.apk
+          $ANDROID_HOME/build-tools/28.0.3/zipalign -f 4 build/rophim.apk build/aligned.apk
           keytool -genkey -v -keystore key.jks -alias key -keyalg RSA \
             -keysize 2048 -validity 10000 -storepass android -keypass android \
             -dname "CN=RoPhim,O=RoPhim,C=VN"
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+          $ANDROID_HOME/build-tools/28.0.3/apksigner sign \
             --ks key.jks --ks-pass pass:android --key-pass pass:android \
             --out RoPhimTV.apk build/aligned.apk
 
