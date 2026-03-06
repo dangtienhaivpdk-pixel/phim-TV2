@@ -415,7 +415,6 @@ jobs:
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           import java.util.ArrayList;
-          import java.util.Locale;
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
@@ -490,25 +489,20 @@ jobs:
                   });
                   webView.loadUrl(currentUrl);
               }
-
               private void setupSpeech() {
                   speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
                   speechRecognizer.setRecognitionListener(new RecognitionListener() {
-                      @Override public void onReadyForSpeech(Bundle p) {
-                          voiceResult.setText("Dang nghe...");
-                      }
+                      @Override public void onReadyForSpeech(Bundle p) { voiceResult.setText("Dang nghe..."); }
                       @Override public void onResults(Bundle results) {
                           ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                           if (matches != null && !matches.isEmpty()) {
-                              String text = matches.get(0).toLowerCase();
+                              final String text = matches.get(0).toLowerCase();
                               voiceResult.setText(matches.get(0));
                               handler.postDelayed(new Runnable() {
                                   @Override public void run() { hideVoiceOverlay(); }
                               }, 800);
                               handleVoiceCommand(text);
-                          } else {
-                              hideVoiceOverlay();
-                          }
+                          } else { hideVoiceOverlay(); }
                       }
                       @Override public void onError(int error) {
                           voiceResult.setText("Khong nghe duoc, thu lai!");
@@ -524,14 +518,12 @@ jobs:
                       @Override public void onEvent(int t, Bundle b) {}
                   });
               }
-
               private void handleVoiceCommand(String text) {
-                  // Lệnh điều khiển video
                   if (text.contains("phat") || text.contains("play") || text.contains("xem")) {
                       webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();", null);
                   } else if (text.contains("dung") || text.contains("pause") || text.contains("tam dung")) {
                       webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();", null);
-                  } else if (text.contains("tua toi") || text.contains("forward") || text.contains("skip")) {
+                  } else if (text.contains("tua toi") || text.contains("forward")) {
                       webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
                   } else if (text.contains("tua lui") || text.contains("rewind") || text.contains("quay lai")) {
                       webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
@@ -540,7 +532,6 @@ jobs:
                   } else if (text.contains("cai dat") || text.contains("settings")) {
                       startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                   } else {
-                      // Tìm kiếm tên phim trên trang web
                       String encoded = text.replace(" ", "+");
                       String searchUrl = currentUrl + "/search?q=" + encoded + "&s=" + encoded;
                       webView.evaluateJavascript(
@@ -550,7 +541,6 @@ jobs:
                           null);
                   }
               }
-
               private void showVoiceOverlay() {
                   voiceOverlay.setVisibility(View.VISIBLE);
                   voiceResult.setText("");
@@ -558,16 +548,13 @@ jobs:
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN");
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "vi-VN");
-                  intent.putExtra(RecognizerIntent.EXTRA_ALSO_RECOGNIZE_SPEECH_WHEN_POSSIBLE, true);
                   intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
                   speechRecognizer.startListening(intent);
               }
-
               private void hideVoiceOverlay() {
                   speechRecognizer.stopListening();
                   voiceOverlay.setVisibility(View.GONE);
               }
-
               private void moveCursor(float dx, float dy) {
                   int w = webView.getWidth();
                   int h = webView.getHeight();
@@ -581,7 +568,6 @@ jobs:
                   handler.removeCallbacks(hideCursorRunnable);
                   handler.postDelayed(hideCursorRunnable, 3000);
               }
-
               private void doClick() {
                   long now = android.os.SystemClock.uptimeMillis();
                   MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, cursorX, cursorY, 0);
@@ -590,7 +576,6 @@ jobs:
                   webView.dispatchTouchEvent(up);
                   down.recycle(); up.recycle();
               }
-
               @Override
               public boolean onKeyDown(int keyCode, KeyEvent event) {
                   if (voiceOverlay.getVisibility() == View.VISIBLE) {
@@ -625,10 +610,8 @@ jobs:
                   }
                   return super.onKeyDown(keyCode, event);
               }
-
               @Override
               public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-                  // Giữ OK 2 giây = bật giọng nói
                   if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
                       showVoiceOverlay(); return true;
                   }
@@ -638,10 +621,8 @@ jobs:
                   if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(STEP*3, 0); return true; }
                   return super.onKeyLongPress(keyCode, event);
               }
-
               @Override protected void onPause() {
-                  super.onPause();
-                  webView.onPause();
+                  super.onPause(); webView.onPause();
                   if (voiceOverlay.getVisibility() == View.VISIBLE) hideVoiceOverlay();
               }
               @Override protected void onResume() { super.onResume(); webView.onResume(); }
