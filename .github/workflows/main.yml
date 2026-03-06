@@ -45,75 +45,50 @@ jobs:
               png += chunk(b'IDAT', zlib.compress(raw, 9))
               png += chunk(b'IEND', b'')
               return png
-
           def icon_pixel(x, y):
               cx, cy = 48, 48
-              dx, dy = x - cx, y - cy
+              dx, dy = x-cx, y-cy
               dist = math.sqrt(dx*dx + dy*dy)
-              # Nền gradient tím -> xanh đậm
-              if dist > 46:
-                  return [0, 0, 0, 0]
-              # Viền sáng
+              if dist > 46: return [0,0,0,0]
               if dist > 42:
-                  t = (dist - 42) / 4
-                  r = int(100 + t * 80)
-                  g = int(20 + t * 20)
-                  b = int(200 + t * 55)
-                  return [r, g, b, 255]
-              # Nền gradient
-              t = dist / 42
-              bg_r = int(20 + t * 40)
-              bg_g = int(10 + t * 10)
-              bg_b = int(80 + t * 60)
-              # Chữ H
-              lx, ly = x - 18, y - 28
-              if 0 <= lx <= 6 and 0 <= ly <= 40: return [255, 255, 255, 255]
-              if 0 <= lx <= 20 and 17 <= ly <= 23: return [255, 255, 255, 255]
-              if 14 <= lx <= 20 and 0 <= ly <= 40: return [255, 255, 255, 255]
-              # Chữ i nhỏ bên phải chữ H -> thực ra vẽ TV
-              # Chữ T
-              lx2, ly2 = x - 42, y - 28
-              if 0 <= lx2 <= 14 and 0 <= ly2 <= 4: return [229, 9, 20, 255]
-              if 5 <= lx2 <= 9 and 0 <= ly2 <= 20: return [229, 9, 20, 255]
+                  t = (dist-42)/4
+                  return [int(100+t*80), int(20+t*20), int(200+t*55), 255]
+              t = dist/42
+              bg_r = int(20+t*40); bg_g = int(10+t*10); bg_b = int(80+t*60)
+              lx, ly = x-18, y-28
+              if 0<=lx<=6 and 0<=ly<=40: return [255,255,255,255]
+              if 0<=lx<=20 and 17<=ly<=23: return [255,255,255,255]
+              if 14<=lx<=20 and 0<=ly<=40: return [255,255,255,255]
+              lx2, ly2 = x-42, y-28
+              if 0<=lx2<=14 and 0<=ly2<=4: return [229,9,20,255]
+              if 5<=lx2<=9 and 0<=ly2<=20: return [229,9,20,255]
               return [bg_r, bg_g, bg_b, 255]
-
           with open('res/drawable/ic_launcher.png','wb') as f:
               f.write(make_png(96, 96, icon_pixel))
-
           def banner_pixel(x, y):
-              # Gradient background
-              r = int(10 + (x/320)*20)
-              g = int(5 + (y/180)*10)
-              b = int(40 + (x/320)*40)
-              if x < 6: return [229, 9, 20, 255]
-              # Chữ HAI TV dạng pixel
-              lx, ly = x - 40, y - 65
-              # H
+              r=int(10+(x/320)*20); g=int(5+(y/180)*10); b=int(40+(x/320)*40)
+              if x < 6: return [229,9,20,255]
+              lx,ly=x-40,y-65
               if 0<=lx<=8 and 0<=ly<=50: return [255,255,255,255]
               if 0<=lx<=30 and 22<=ly<=28: return [255,255,255,255]
               if 22<=lx<=30 and 0<=ly<=50: return [255,255,255,255]
-              # A
-              lx2 = lx - 40
+              lx2=lx-40
               if 0<=lx2<=4 and 10<=ly<=50: return [255,255,255,255]
               if 26<=lx2<=30 and 10<=ly<=50: return [255,255,255,255]
-              if 0<=lx2<=30 and 8<=ly<=14: return [255,255,255,255]
+              if 0<=lx2<=30 and 6<=ly<=12: return [255,255,255,255]
               if 0<=lx2<=30 and 28<=ly<=34: return [255,255,255,255]
-              if 0<=lx2<=30 and 6<=ly<=10: return [255,255,255,255]
-              # I
-              lx3 = lx - 80
+              lx3=lx-80
               if 0<=lx3<=20 and 0<=ly<=6: return [255,255,255,255]
               if 8<=lx3<=12 and 0<=ly<=50: return [255,255,255,255]
               if 0<=lx3<=20 and 44<=ly<=50: return [255,255,255,255]
-              # TV (đỏ)
-              lx4, ly4 = x - 180, y - 65
+              lx4,ly4=x-180,y-65
               if 0<=lx4<=30 and 0<=ly4<=6: return [229,9,20,255]
               if 12<=lx4<=18 and 0<=ly4<=50: return [229,9,20,255]
-              lx5 = lx4 - 40
+              lx5=lx4-40
               if 0<=lx5<=4 and 0<=ly4<=50: return [229,9,20,255]
               if 0<=lx5<=30 and 22<=ly4<=28: return [229,9,20,255]
               if 26<=lx5<=30 and 0<=ly4<=50: return [229,9,20,255]
-              return [r, g, b, 255]
-
+              return [r,g,b,255]
           with open('res/drawable/banner.png','wb') as f:
               f.write(make_png(320, 180, banner_pixel))
           print('Icons OK')
@@ -136,9 +111,7 @@ jobs:
                   android:banner="@drawable/banner"
                   android:usesCleartextTraffic="true"
                   android:hardwareAccelerated="true">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
+                  <activity android:name=".MainActivity" android:exported="true"
                       android:configChanges="orientation|screenSize|keyboardHidden">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -146,9 +119,7 @@ jobs:
                           <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                       </intent-filter>
                   </activity>
-                  <activity
-                      android:name=".SettingsActivity"
-                      android:exported="false"
+                  <activity android:name=".SettingsActivity" android:exported="false"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
@@ -171,8 +142,7 @@ jobs:
                   android:max="100"
                   android:progressTint="#E50914"
                   android:visibility="gone" />
-              <TextView
-                  android:id="@+id/btnSettings"
+              <TextView android:id="@+id/btnSettings"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
                   android:layout_alignParentTop="true"
@@ -181,6 +151,12 @@ jobs:
                   android:textSize="28sp"
                   android:textColor="#88ffffff"
                   android:padding="12dp" />
+              <View android:id="@+id/cursor"
+                  android:layout_width="24dp"
+                  android:layout_height="24dp"
+                  android:background="#ccE50914"
+                  android:elevation="10dp"
+                  android:visibility="visible" />
           </RelativeLayout>
           ENDOFFILE
 
@@ -190,70 +166,68 @@ jobs:
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:gravity="center"
               android:background="#0d0d1a"
-              android:padding="80dp">
+              android:padding="60dp">
               <TextView
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:text="HAI TV"
-                  android:textSize="42sp"
+                  android:text="HAI TV - Cai dat"
+                  android:textSize="36sp"
                   android:textColor="#ffffff"
                   android:textStyle="bold"
-                  android:layout_marginBottom="4dp"/>
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Cai dat duong dan web"
-                  android:textSize="18sp"
-                  android:textColor="#aaaaaa"
-                  android:layout_marginBottom="40dp"/>
-              <TextView
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:text="Duong dan hien tai:"
-                  android:textSize="16sp"
-                  android:textColor="#888888"
-                  android:layout_marginBottom="8dp"/>
-              <TextView
-                  android:id="@+id/txtCurrentUrl"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:text=""
-                  android:textSize="16sp"
-                  android:textColor="#E50914"
                   android:layout_marginBottom="30dp"/>
-              <EditText
-                  android:id="@+id/editUrl"
+              <EditText android:id="@+id/editUrl"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:hint="https://example.com"
+                  android:hint="Nhap duong dan web moi..."
                   android:textSize="20sp"
                   android:textColor="#ffffff"
                   android:textColorHint="#555555"
                   android:background="#1a1a2e"
                   android:padding="18dp"
                   android:inputType="textUri"
-                  android:layout_marginBottom="20dp"/>
-              <Button
-                  android:id="@+id/btnSave"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:text="LUU VA MO"
-                  android:textSize="20sp"
-                  android:textColor="#ffffff"
-                  android:background="#E50914"
-                  android:padding="16dp"
                   android:layout_marginBottom="16dp"/>
-              <Button
-                  android:id="@+id/btnReset"
+              <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:text="RESET VE MAC DINH"
+                  android:orientation="horizontal"
+                  android:layout_marginBottom="30dp">
+                  <Button android:id="@+id/btnSave"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="THEM VA MO"
+                      android:textSize="18sp"
+                      android:textColor="#ffffff"
+                      android:background="#E50914"
+                      android:padding="14dp"
+                      android:layout_marginRight="10dp"/>
+                  <Button android:id="@+id/btnReset"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="RESET MAC DINH"
+                      android:textSize="18sp"
+                      android:textColor="#aaaaaa"
+                      android:background="#1a1a2e"
+                      android:padding="14dp"/>
+              </LinearLayout>
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="Lich su duong dan (nhan de chon):"
                   android:textSize="16sp"
-                  android:textColor="#aaaaaa"
-                  android:background="#1a1a2e"
-                  android:padding="14dp"/>
+                  android:textColor="#888888"
+                  android:layout_marginBottom="12dp"/>
+              <ScrollView
+                  android:layout_width="match_parent"
+                  android:layout_height="0dp"
+                  android:layout_weight="1">
+                  <LinearLayout android:id="@+id/listUrls"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical"/>
+              </ScrollView>
           </LinearLayout>
           ENDOFFILE
 
@@ -270,47 +244,107 @@ jobs:
           import android.content.Context;
           import android.content.Intent;
           import android.content.SharedPreferences;
+          import android.graphics.Color;
           import android.os.Bundle;
           import android.view.View;
+          import android.view.ViewGroup;
           import android.widget.Button;
           import android.widget.EditText;
+          import android.widget.LinearLayout;
           import android.widget.TextView;
+          import java.util.ArrayList;
+          import java.util.Arrays;
+          import java.util.List;
           public class SettingsActivity extends Activity {
               private static final String PREF_NAME = "haitv_prefs";
               private static final String KEY_URL = "custom_url";
+              private static final String KEY_HISTORY = "url_history";
               private static final String DEFAULT_URL = "https://pointnorth.io";
+              private static final String SEP = "|||";
+              private EditText editUrl;
+              private LinearLayout listUrls;
+              private SharedPreferences prefs;
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.settings);
-                  final SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                  final String currentUrl = prefs.getString(KEY_URL, DEFAULT_URL);
-                  TextView txtCurrent = (TextView) findViewById(R.id.txtCurrentUrl);
-                  txtCurrent.setText(currentUrl);
-                  final EditText editUrl = (EditText) findViewById(R.id.editUrl);
-                  editUrl.setText(currentUrl);
-                  Button btnSave = (Button) findViewById(R.id.btnSave);
-                  btnSave.setOnClickListener(new View.OnClickListener() {
+                  prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                  editUrl = (EditText) findViewById(R.id.editUrl);
+                  listUrls = (LinearLayout) findViewById(R.id.listUrls);
+                  editUrl.setText(prefs.getString(KEY_URL, DEFAULT_URL));
+                  renderHistory();
+                  ((Button) findViewById(R.id.btnSave)).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) {
                           String newUrl = editUrl.getText().toString().trim();
-                          if (newUrl.isEmpty()) newUrl = DEFAULT_URL;
+                          if (newUrl.isEmpty()) return;
                           if (!newUrl.startsWith("http")) newUrl = "https://" + newUrl;
-                          prefs.edit().putString(KEY_URL, newUrl).apply();
-                          Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
-                          intent.putExtra("url", newUrl);
-                          intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                          startActivity(intent);
-                          finish();
+                          saveAndOpen(newUrl);
                       }
                   });
-                  Button btnReset = (Button) findViewById(R.id.btnReset);
-                  btnReset.setOnClickListener(new View.OnClickListener() {
-                      @Override public void onClick(View v) {
-                          prefs.edit().putString(KEY_URL, DEFAULT_URL).apply();
-                          editUrl.setText(DEFAULT_URL);
-                          txtCurrent.setText(DEFAULT_URL);
-                      }
+                  ((Button) findViewById(R.id.btnReset)).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { saveAndOpen(DEFAULT_URL); }
                   });
+              }
+              private List<String> getHistory() {
+                  String raw = prefs.getString(KEY_HISTORY, DEFAULT_URL);
+                  return new ArrayList<String>(Arrays.asList(raw.split("\\|\\|\\|")));
+              }
+              private void addToHistory(String url) {
+                  List<String> list = getHistory();
+                  list.remove(url);
+                  list.add(0, url);
+                  if (list.size() > 20) list = list.subList(0, 20);
+                  StringBuilder sb = new StringBuilder();
+                  for (int i = 0; i < list.size(); i++) { if (i > 0) sb.append(SEP); sb.append(list.get(i)); }
+                  prefs.edit().putString(KEY_HISTORY, sb.toString()).apply();
+              }
+              private void renderHistory() {
+                  listUrls.removeAllViews();
+                  List<String> history = getHistory();
+                  String activeUrl = prefs.getString(KEY_URL, DEFAULT_URL);
+                  for (final String url : history) {
+                      LinearLayout row = new LinearLayout(this);
+                      row.setOrientation(LinearLayout.HORIZONTAL);
+                      row.setPadding(16, 12, 16, 12);
+                      row.setBackgroundColor(url.equals(activeUrl) ? 0xff1a1a2e : 0xff111111);
+                      LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      rp.setMargins(0, 0, 0, 8); row.setLayoutParams(rp);
+                      TextView txtUrl = new TextView(this);
+                      txtUrl.setText((url.equals(activeUrl) ? "▶  " : "      ") + url);
+                      txtUrl.setTextColor(url.equals(activeUrl) ? 0xffE50914 : 0xffcccccc);
+                      txtUrl.setTextSize(16);
+                      txtUrl.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+                      row.addView(txtUrl);
+                      Button btnUse = new Button(this);
+                      btnUse.setText("Chon"); btnUse.setTextColor(Color.WHITE);
+                      btnUse.setBackgroundColor(0xff333355); btnUse.setTextSize(13); btnUse.setPadding(16,8,16,8);
+                      btnUse.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                      btnUse.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { saveAndOpen(url); } });
+                      Button btnDel = new Button(this);
+                      btnDel.setText("X"); btnDel.setTextColor(Color.WHITE);
+                      btnDel.setBackgroundColor(0xff660000); btnDel.setTextSize(13); btnDel.setPadding(16,8,16,8);
+                      LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      dp.setMargins(8,0,0,0); btnDel.setLayoutParams(dp);
+                      btnDel.setOnClickListener(new View.OnClickListener() {
+                          @Override public void onClick(View v) {
+                              List<String> list = getHistory(); list.remove(url);
+                              StringBuilder sb = new StringBuilder();
+                              for (int i = 0; i < list.size(); i++) { if (i > 0) sb.append(SEP); sb.append(list.get(i)); }
+                              prefs.edit().putString(KEY_HISTORY, sb.toString()).apply();
+                              renderHistory();
+                          }
+                      });
+                      row.addView(btnUse); row.addView(btnDel);
+                      listUrls.addView(row);
+                  }
+              }
+              private void saveAndOpen(String url) {
+                  prefs.edit().putString(KEY_URL, url).apply();
+                  addToHistory(url);
+                  Intent i = new Intent(this, MainActivity.class);
+                  i.putExtra("url", url);
+                  i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                  startActivity(i); finish();
               }
           }
           ENDOFFILE
@@ -323,7 +357,9 @@ jobs:
           import android.content.SharedPreferences;
           import android.graphics.Bitmap;
           import android.os.Bundle;
+          import android.os.Handler;
           import android.view.KeyEvent;
+          import android.view.MotionEvent;
           import android.view.View;
           import android.view.WindowManager;
           import android.webkit.WebChromeClient;
@@ -331,16 +367,29 @@ jobs:
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
           import android.widget.ProgressBar;
+          import android.widget.RelativeLayout;
           import android.widget.TextView;
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
+              private View cursor;
               private static final String PREF_NAME = "haitv_prefs";
               private static final String KEY_URL = "custom_url";
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private String currentUrl;
+              // Con trỏ ảo
+              private float cursorX = 640, cursorY = 360;
+              private float STEP = 40f;
+              private boolean cursorVisible = true;
+              private Handler handler = new Handler();
+              private Runnable hideCursorRunnable = new Runnable() {
+                  @Override public void run() {
+                      cursor.setVisibility(View.INVISIBLE);
+                      cursorVisible = false;
+                  }
+              };
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
@@ -349,15 +398,24 @@ jobs:
                   setContentView(R.layout.main);
                   SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                   currentUrl = prefs.getString(KEY_URL, DEFAULT_URL);
-                  if (getIntent().hasExtra("url")) {
-                      currentUrl = getIntent().getStringExtra("url");
-                  }
+                  if (getIntent().hasExtra("url")) currentUrl = getIntent().getStringExtra("url");
                   webView = (WebView) findViewById(R.id.webview);
                   progressBar = (ProgressBar) findViewById(R.id.progress);
+                  cursor = (View) findViewById(R.id.cursor);
                   TextView btnSettings = (TextView) findViewById(R.id.btnSettings);
                   btnSettings.setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) {
                           startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                      }
+                  });
+                  // Đặt con trỏ vào giữa màn hình ban đầu
+                  cursor.post(new Runnable() {
+                      @Override public void run() {
+                          int w = webView.getWidth();
+                          int h = webView.getHeight();
+                          cursorX = w / 2f;
+                          cursorY = h / 2f;
+                          moveCursor(0, 0);
                       }
                   });
                   WebSettings s = webView.getSettings();
@@ -390,25 +448,93 @@ jobs:
                   });
                   webView.loadUrl(currentUrl);
               }
+
+              private void moveCursor(float dx, float dy) {
+                  int w = webView.getWidth();
+                  int h = webView.getHeight();
+                  cursorX = Math.max(0, Math.min(w - 24, cursorX + dx));
+                  cursorY = Math.max(0, Math.min(h - 24, cursorY + dy));
+                  RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(48, 48);
+                  p.leftMargin = (int) cursorX;
+                  p.topMargin = (int) cursorY;
+                  cursor.setLayoutParams(p);
+                  cursor.setVisibility(View.VISIBLE);
+                  cursorVisible = true;
+                  // Tự ẩn con trỏ sau 3 giây không dùng
+                  handler.removeCallbacks(hideCursorRunnable);
+                  handler.postDelayed(hideCursorRunnable, 3000);
+              }
+
+              private void doClick() {
+                  // Gửi touch event vào vị trí con trỏ
+                  long now = android.os.SystemClock.uptimeMillis();
+                  MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, cursorX, cursorY, 0);
+                  MotionEvent up = MotionEvent.obtain(now, now + 100, MotionEvent.ACTION_UP, cursorX, cursorY, 0);
+                  webView.dispatchTouchEvent(down);
+                  webView.dispatchTouchEvent(up);
+                  down.recycle();
+                  up.recycle();
+              }
+
               @Override
               public boolean onKeyDown(int keyCode, KeyEvent event) {
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { webView.scrollBy(0, -200); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { webView.scrollBy(0, 200); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { webView.scrollBy(-200, 0); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { webView.scrollBy(200, 0); return true; }
+                  // Di chuyển con trỏ bằng D-pad
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { moveCursor(0, -STEP); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, STEP); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-STEP, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(STEP, 0); return true; }
+                  // OK/Enter = click tại vị trí con trỏ
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+                      doClick(); return true;
+                  }
+                  // Play/Pause
+                  if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                      webView.evaluateJavascript(
+                          "var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}", null);
+                      return true;
+                  }
+                  // Tua tới 10 giây
+                  if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD || keyCode == KeyEvent.KEYCODE_BUTTON_R1) {
+                      webView.evaluateJavascript(
+                          "var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
+                      return true;
+                  }
+                  // Tua lùi 10 giây
+                  if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND || keyCode == KeyEvent.KEYCODE_BUTTON_L1) {
+                      webView.evaluateJavascript(
+                          "var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
+                      return true;
+                  }
+                  // Back
                   if (keyCode == KeyEvent.KEYCODE_BACK) {
                       if (webView.canGoBack()) { webView.goBack(); return true; }
                   }
+                  // Home = về trang chủ
                   if (keyCode == KeyEvent.KEYCODE_HOME) { webView.loadUrl(currentUrl); return true; }
+                  // Menu = mở Settings
                   if (keyCode == KeyEvent.KEYCODE_MENU) {
                       startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                       return true;
                   }
                   return super.onKeyDown(keyCode, event);
               }
+
+              @Override public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+                  // Giữ D-pad = tăng tốc độ di chuyển con trỏ
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { moveCursor(0, -STEP*3); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, STEP*3); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-STEP*3, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(STEP*3, 0); return true; }
+                  return super.onKeyLongPress(keyCode, event);
+              }
+
               @Override protected void onPause() { super.onPause(); webView.onPause(); }
               @Override protected void onResume() { super.onResume(); webView.onResume(); }
-              @Override protected void onDestroy() { webView.destroy(); super.onDestroy(); }
+              @Override protected void onDestroy() {
+                  handler.removeCallbacksAndMessages(null);
+                  webView.destroy();
+                  super.onDestroy();
+              }
           }
           ENDOFFILE
 
