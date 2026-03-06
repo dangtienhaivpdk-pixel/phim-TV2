@@ -26,12 +26,50 @@ jobs:
 
       - name: Create project files
         run: |
-          mkdir -p src/com/rophim/tv res/layout res/values
+          mkdir -p src/com/rophimtv/app res/layout res/values res/drawable
+
+          python3 -c "
+          import struct, zlib
+          def make_png(w, h, get_pixel):
+              def chunk(name, data):
+                  c = zlib.crc32(name + data) & 0xffffffff
+                  return struct.pack('>I', len(data)) + name + data + struct.pack('>I', c)
+              raw = b''
+              for y in range(h):
+                  raw += b'\x00'
+                  for x in range(w):
+                      raw += bytes(get_pixel(x, y))
+              compressed = zlib.compress(raw, 9)
+              png = b'\x89PNG\r\n\x1a\n'
+              ihdr = struct.pack('>II', w, h) + bytes([8, 6, 0, 0, 0])
+              png += chunk(b'IHDR', ihdr)
+              png += chunk(b'IDAT', compressed)
+              png += chunk(b'IEND', b'')
+              return png
+          def icon_pixel(x, y):
+              cx, cy, r = 48, 48, 46
+              dx, dy = x-cx, y-cy
+              if dx*dx + dy*dy <= r*r:
+                  if x >= 33 and x <= 64 and abs(dy) <= (x-30)*0.55:
+                      return [255, 255, 255, 255]
+                  t = (dx*dx + dy*dy) / (r*r)
+                  return [int(229 - t*30), 9, 20, 255]
+              return [0, 0, 0, 0]
+          with open('res/drawable/ic_launcher.png','wb') as f:
+              f.write(make_png(96, 96, icon_pixel))
+          def banner_pixel(x, y):
+              if x < 8:
+                  return [229, 9, 20, 255]
+              return [int(13+(x/320)*10), int(13+(y/180)*5), int(26+(x/320)*15), 255]
+          with open('res/drawable/banner.png','wb') as f:
+              f.write(make_png(320, 180, banner_pixel))
+          print('Icons OK')
+          "
 
           cat > AndroidManifest.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.rophim.tv"
+              package="com.rophimtv.app"
               android:versionCode="1"
               android:versionName="1.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
@@ -41,6 +79,8 @@ jobs:
               <uses-feature android:name="android.software.leanback" android:required="false" />
               <application
                   android:label="RoPhim TV"
+                  android:icon="@drawable/ic_launcher"
+                  android:banner="@drawable/banner"
                   android:usesCleartextTraffic="true"
                   android:hardwareAccelerated="true">
                   <activity
@@ -72,6 +112,7 @@ jobs:
                   android:layout_height="6dp"
                   android:layout_alignParentTop="true"
                   android:max="100"
+                  android:progressTint="#E50914"
                   android:visibility="gone" />
           </RelativeLayout>
           ENDOFFILE
@@ -83,8 +124,8 @@ jobs:
           </resources>
           ENDOFFILE
 
-          cat > src/com/rophim/tv/MainActivity.java << 'ENDOFFILE'
-          package com.rophim.tv;
+          cat > src/com/rophimtv/app/MainActivity.java << 'ENDOFFILE'
+          package com.rophimtv.app;
           import android.app.Activity;
           import android.graphics.Bitmap;
           import android.os.Bundle;
@@ -101,7 +142,7 @@ jobs:
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
-              private static final String HOME = "https://vuila.xyz";
+              private static final String HOME = "https://pointnorth.io";
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
@@ -129,11 +170,20 @@ jobs:
                           progressBar.setVisibility(p < 100 ? View.VISIBLE : View.GONE);
                       }
                   });
+                  webView.setFocusable(true);
+                  webView.setFocusableInTouchMode(true);
                   webView.loadUrl(HOME);
               }
               @Override
               public boolean onKeyDown(int keyCode, KeyEvent event) {
-                  if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) { webView.goBack(); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { webView.scrollBy(0, -200); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { webView.scrollBy(0, 200); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { webView.scrollBy(-200, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { webView.scrollBy(200, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_BACK) {
+                      if (webView.canGoBack()) { webView.goBack(); return true; }
+                  }
+                  if (keyCode == KeyEvent.KEYCODE_HOME) { webView.loadUrl(HOME); return true; }
                   return super.onKeyDown(keyCode, event);
               }
               @Override protected void onPause() { super.onPause(); webView.onPause(); }
@@ -154,8 +204,8 @@ jobs:
           javac -source 8 -target 8 \
             -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
-            build/gen/com/rophim/tv/R.java \
-            src/com/rophim/tv/MainActivity.java
+            build/gen/com/rophimtv/app/R.java \
+            src/com/rophimtv/app/MainActivity.java
           $ANDROID_HOME/build-tools/28.0.3/dx \
             --dex --output=build/classes.dex \
             build/classes
