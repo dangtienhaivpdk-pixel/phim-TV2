@@ -95,8 +95,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.allinone.app"
-              android:versionCode="5"
-              android:versionName="5.0">
+              android:versionCode="6"
+              android:versionName="6.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -181,11 +181,9 @@ jobs:
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:background="#000000">
-
               <com.allinone.app.ScrollWebView android:id="@+id/webview"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
-
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
                   android:layout_width="match_parent"
@@ -194,13 +192,6 @@ jobs:
                   android:max="100"
                   android:progressTint="#E50914"
                   android:visibility="gone" />
-
-              <com.allinone.app.CursorView android:id="@+id/cursor"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:clickable="false"
-                  android:focusable="false"/>
-
               <LinearLayout android:id="@+id/topBar"
                   android:layout_width="match_parent"
                   android:layout_height="56dp"
@@ -245,7 +236,6 @@ jobs:
                       android:gravity="center"
                       android:padding="14dp"/>
               </LinearLayout>
-
               <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
@@ -259,31 +249,17 @@ jobs:
                       android:background="#1a1a2e"
                       android:padding="40dp"
                       xmlns:android="http://schemas.android.com/apk/res/android">
-                      <TextView
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_gravity="center"
-                          android:text="🎤 Dang nghe..."
-                          android:textSize="28sp"
-                          android:textColor="#ffffff"
-                          android:layout_marginBottom="16dp"/>
-                      <TextView
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_gravity="center"
-                          android:text="Noi ten phim hoac lenh:\nphat / dung / tua toi / tua lui"
-                          android:textSize="16sp"
-                          android:textColor="#aaaaaa"
-                          android:gravity="center"
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:layout_gravity="center" android:text="🎤 Dang nghe..."
+                          android:textSize="28sp" android:textColor="#ffffff" android:layout_marginBottom="16dp"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:layout_gravity="center" android:text="phat / dung / tua toi / tua lui"
+                          android:textSize="16sp" android:textColor="#aaaaaa" android:gravity="center"
                           android:layout_marginBottom="20dp"/>
                       <TextView android:id="@+id/voiceResult"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_gravity="center"
-                          android:text=""
-                          android:textSize="22sp"
-                          android:textColor="#E50914"
-                          android:gravity="center"/>
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:layout_gravity="center" android:text=""
+                          android:textSize="22sp" android:textColor="#E50914" android:gravity="center"/>
                   </LinearLayout>
               </RelativeLayout>
           </FrameLayout>
@@ -305,81 +281,43 @@ jobs:
                   android:paddingLeft="30dp"
                   android:paddingRight="30dp">
                   <Button android:id="@+id/btnBack"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="◀ Back"
-                      android:textSize="16sp"
-                      android:textColor="#ffffff"
-                      android:background="#333355"
-                      android:padding="12dp"
-                      android:layout_marginRight="20dp"/>
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:text="◀ Back" android:textSize="16sp" android:textColor="#ffffff"
+                      android:background="#333355" android:padding="12dp" android:layout_marginRight="20dp"/>
                   <TextView
-                      android:layout_width="0dp"
-                      android:layout_height="wrap_content"
-                      android:layout_weight="1"
-                      android:text="ALL IN ONE - Cai dat"
-                      android:textSize="28sp"
-                      android:textColor="#ffffff"
-                      android:textStyle="bold"/>
+                      android:layout_width="0dp" android:layout_height="wrap_content"
+                      android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
+                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"/>
               </LinearLayout>
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="vertical"
-                  android:padding="40dp">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:orientation="vertical" android:padding="40dp">
                   <EditText android:id="@+id/editUrl"
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:hint="Nhap duong dan web moi..."
-                      android:textSize="20sp"
-                      android:textColor="#ffffff"
-                      android:textColorHint="#555555"
-                      android:background="#1a1a2e"
-                      android:padding="18dp"
-                      android:inputType="textUri"
-                      android:layout_marginBottom="16dp"/>
-                  <LinearLayout
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:hint="Nhap duong dan web moi..." android:textSize="20sp"
+                      android:textColor="#ffffff" android:textColorHint="#555555"
+                      android:background="#1a1a2e" android:padding="18dp"
+                      android:inputType="textUri" android:layout_marginBottom="16dp"/>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:orientation="horizontal">
                       <Button android:id="@+id/btnSave"
-                          android:layout_width="0dp"
-                          android:layout_height="wrap_content"
-                          android:layout_weight="1"
-                          android:text="THEM VA MO"
-                          android:textSize="18sp"
-                          android:textColor="#ffffff"
-                          android:background="#E50914"
-                          android:padding="14dp"
-                          android:layout_marginRight="10dp"/>
+                          android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="THEM VA MO"
+                          android:textSize="18sp" android:textColor="#ffffff"
+                          android:background="#E50914" android:padding="14dp" android:layout_marginRight="10dp"/>
                       <Button android:id="@+id/btnReset"
-                          android:layout_width="0dp"
-                          android:layout_height="wrap_content"
-                          android:layout_weight="1"
-                          android:text="RESET MAC DINH"
-                          android:textSize="18sp"
-                          android:textColor="#aaaaaa"
-                          android:background="#1a1a2e"
-                          android:padding="14dp"/>
+                          android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="RESET MAC DINH"
+                          android:textSize="18sp" android:textColor="#aaaaaa"
+                          android:background="#1a1a2e" android:padding="14dp"/>
                   </LinearLayout>
               </LinearLayout>
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Danh sach kenh:"
-                  android:textSize="18sp"
-                  android:textColor="#888888"
-                  android:layout_marginLeft="40dp"
-                  android:layout_marginBottom="12dp"/>
-              <ScrollView
-                  android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:layout_weight="1"
-                  android:paddingLeft="40dp"
-                  android:paddingRight="40dp">
+              <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:text="Danh sach kenh:" android:textSize="18sp" android:textColor="#888888"
+                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"/>
+              <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
+                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp">
                   <LinearLayout android:id="@+id/listUrls"
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:orientation="vertical"/>
               </ScrollView>
           </LinearLayout>
@@ -387,11 +325,10 @@ jobs:
 
           cat > res/values/strings.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="app_name">ALL IN ONE</string>
-          </resources>
+          <resources><string name="app_name">ALL IN ONE</string></resources>
           ENDOFFILE
 
+          # ── CursorView: con trỏ vẽ mũi tên ──────────────────────────────────────────
           cat > src/com/allinone/app/CursorView.java << 'ENDOFFILE'
           package com.allinone.app;
           import android.content.Context;
@@ -401,43 +338,102 @@ jobs:
           import android.util.AttributeSet;
           import android.view.View;
           public class CursorView extends View {
-              private Paint paintFill, paintStroke, paintDot;
-              private float cx = 0, cy = 0;
-              public CursorView(Context c) { super(c); init(); }
-              public CursorView(Context c, AttributeSet a) { super(c, a); init(); }
-              private void init() {
-                  setLayerType(LAYER_TYPE_HARDWARE, null);
-                  paintFill = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  paintFill.setColor(0xFFFFFFFF);
-                  paintFill.setStyle(Paint.Style.FILL);
-                  paintStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  paintStroke.setColor(0xFF000000);
-                  paintStroke.setStyle(Paint.Style.STROKE);
-                  paintStroke.setStrokeWidth(2.5f);
-                  paintStroke.setStrokeJoin(Paint.Join.ROUND);
-                  paintDot = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  paintDot.setColor(0xFFE50914);
-                  paintDot.setStyle(Paint.Style.FILL);
+              private final Paint fill, stroke, dot;
+              public CursorView(Context c) { super(c); fill=mk(true); stroke=mkS(); dot=mkDot(); }
+              public CursorView(Context c, AttributeSet a) { super(c,a); fill=mk(true); stroke=mkS(); dot=mkDot(); }
+              private Paint mk(boolean f){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFFFFFFF);p.setStyle(f?Paint.Style.FILL:Paint.Style.STROKE);return p;}
+              private Paint mkS(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFF000000);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.5f);p.setStrokeJoin(Paint.Join.ROUND);return p;}
+              private Paint mkDot(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFE50914);p.setStyle(Paint.Style.FILL);return p;}
+              @Override protected void onDraw(Canvas c){
+                  // Vẽ tại (0,0) - view được định vị bằng WindowManager params
+                  Path p=new Path();
+                  p.moveTo(2,2); p.lineTo(2,22); p.lineTo(7,16); p.lineTo(13,27);
+                  p.lineTo(16,25); p.lineTo(10,14); p.lineTo(17,14); p.close();
+                  c.drawPath(p,stroke); c.drawPath(p,fill);
+                  c.drawCircle(2,2,3f,dot);
               }
-              public void setPosition(float x, float y) {
-                  cx = x; cy = y; invalidate();
+          }
+          ENDOFFILE
+
+          # ── GlobalCursor: singleton WindowManager overlay ─────────────────────────
+          cat > src/com/allinone/app/GlobalCursor.java << 'ENDOFFILE'
+          package com.allinone.app;
+          import android.content.Context;
+          import android.graphics.Canvas;
+          import android.graphics.Paint;
+          import android.graphics.Path;
+          import android.graphics.PixelFormat;
+          import android.os.Build;
+          import android.view.View;
+          import android.view.WindowManager;
+          /**
+           * Con trỏ chuột toàn màn hình dùng WindowManager.
+           * Nằm trên TẤT CẢ mọi View: WebView, TopBar, Settings, HomeActivity.
+           */
+          public class GlobalCursor {
+              private static GlobalCursor instance;
+              private WindowManager wm;
+              private CursorDrawView view;
+              private WindowManager.LayoutParams params;
+              private float x, y;
+              private float screenW, screenH;
+              private GlobalCursor(){}
+              public static GlobalCursor get(){ if(instance==null)instance=new GlobalCursor(); return instance; }
+              public void attach(Context ctx, float w, float h){
+                  screenW=w; screenH=h;
+                  if(x==0&&y==0){ x=w/2f; y=h/2f; }
+                  if(wm!=null && view!=null){
+                      try{ wm.removeView(view); }catch(Exception e){}
+                  }
+                  wm = (WindowManager) ctx.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+                  view = new CursorDrawView(ctx.getApplicationContext());
+                  params = new WindowManager.LayoutParams(
+                      50, 50,
+                      (int)x, (int)y,
+                      Build.VERSION.SDK_INT >= 26
+                          ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                          : WindowManager.LayoutParams.TYPE_PHONE,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                      | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                      | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                      | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      PixelFormat.TRANSLUCENT);
+                  params.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
+                  params.x = (int)x;
+                  params.y = (int)y;
+                  wm.addView(view, params);
               }
-              public float getCX() { return cx; }
-              public float getCY() { return cy; }
-              @Override
-              protected void onDraw(Canvas canvas) {
-                  Path p = new Path();
-                  p.moveTo(cx,       cy);
-                  p.lineTo(cx,       cy+22);
-                  p.lineTo(cx+5.5f,  cy+16);
-                  p.lineTo(cx+12,    cy+27);
-                  p.lineTo(cx+15,    cy+25.5f);
-                  p.lineTo(cx+8.5f,  cy+14.5f);
-                  p.lineTo(cx+16,    cy+14.5f);
-                  p.close();
-                  canvas.drawPath(p, paintStroke);
-                  canvas.drawPath(p, paintFill);
-                  canvas.drawCircle(cx, cy, 3f, paintDot);
+              public void detach(){
+                  if(wm!=null&&view!=null){ try{wm.removeView(view);}catch(Exception e){} view=null; }
+              }
+              public void move(float dx, float dy){
+                  x = Math.max(0, Math.min(screenW-2, x+dx));
+                  y = Math.max(0, Math.min(screenH-2, y+dy));
+                  if(wm!=null&&view!=null&&params!=null){
+                      params.x=(int)x; params.y=(int)y;
+                      try{ wm.updateViewLayout(view,params); }catch(Exception e){}
+                  }
+              }
+              public float getX(){ return x; }
+              public float getY(){ return y; }
+              // View nội bộ vẽ con trỏ
+              static class CursorDrawView extends View {
+                  private final Paint fill, stroke, dot;
+                  CursorDrawView(Context c){
+                      super(c);
+                      setLayerType(LAYER_TYPE_HARDWARE,null);
+                      fill=new Paint(Paint.ANTI_ALIAS_FLAG); fill.setColor(0xFFFFFFFF); fill.setStyle(Paint.Style.FILL);
+                      stroke=new Paint(Paint.ANTI_ALIAS_FLAG); stroke.setColor(0xFF000000);
+                      stroke.setStyle(Paint.Style.STROKE); stroke.setStrokeWidth(2.5f); stroke.setStrokeJoin(Paint.Join.ROUND);
+                      dot=new Paint(Paint.ANTI_ALIAS_FLAG); dot.setColor(0xFFE50914); dot.setStyle(Paint.Style.FILL);
+                  }
+                  @Override protected void onDraw(Canvas c){
+                      Path p=new Path();
+                      p.moveTo(2,2); p.lineTo(2,22); p.lineTo(7,16); p.lineTo(13,27);
+                      p.lineTo(16,25); p.lineTo(10,14); p.lineTo(17,14); p.close();
+                      c.drawPath(p,stroke); c.drawPath(p,fill);
+                      c.drawCircle(2,2,3.5f,dot);
+                  }
               }
           }
           ENDOFFILE
@@ -448,28 +444,130 @@ jobs:
           import android.util.AttributeSet;
           import android.webkit.WebView;
           public class ScrollWebView extends WebView {
-              public interface OnScrollChangedCallback {
-                  void onScrollUp();
-                  void onScrollDown();
-              }
+              public interface OnScrollChangedCallback { void onScrollUp(); void onScrollDown(); }
               private OnScrollChangedCallback cb;
-              public ScrollWebView(Context c) { super(c); }
-              public ScrollWebView(Context c, AttributeSet a) { super(c, a); }
-              public void setOnScrollChangedCallback(OnScrollChangedCallback c) { cb = c; }
-              @Override
-              protected void onScrollChanged(int l, int t, int ol, int ot) {
-                  super.onScrollChanged(l, t, ol, ot);
-                  if (cb != null) {
-                      if (t < ot) cb.onScrollUp();
-                      else if (t > ot) cb.onScrollDown();
+              public ScrollWebView(Context c){super(c);}
+              public ScrollWebView(Context c,AttributeSet a){super(c,a);}
+              public void setOnScrollChangedCallback(OnScrollChangedCallback c){cb=c;}
+              @Override protected void onScrollChanged(int l,int t,int ol,int ot){
+                  super.onScrollChanged(l,t,ol,ot);
+                  if(cb!=null){if(t<ot)cb.onScrollUp();else if(t>ot)cb.onScrollDown();}
+              }
+          }
+          ENDOFFILE
+
+          # ── BaseActivity: cung cấp con trỏ cho mọi Activity ──────────────────────
+          cat > src/com/allinone/app/BaseActivity.java << 'ENDOFFILE'
+          package com.allinone.app;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.util.DisplayMetrics;
+          import android.view.KeyEvent;
+          import android.view.View;
+          public abstract class BaseActivity extends Activity {
+              protected GlobalCursor cursor;
+              protected float screenW, screenH;
+              protected static final float STEP=28f, STEP_FAST=85f;
+              @Override protected void onCreate(Bundle s){
+                  super.onCreate(s);
+                  DisplayMetrics dm=new DisplayMetrics();
+                  getWindowManager().getDefaultDisplay().getMetrics(dm);
+                  screenW=dm.widthPixels; screenH=dm.heightPixels;
+                  cursor=GlobalCursor.get();
+              }
+              @Override protected void onResume(){
+                  super.onResume();
+                  cursor.attach(this, screenW, screenH);
+              }
+              @Override protected void onPause(){
+                  super.onPause();
+                  cursor.detach();
+              }
+              // Di chuyển con trỏ và highlight View bên dưới
+              protected void moveCursor(float dx, float dy){
+                  cursor.move(dx,dy);
+                  highlightUnder();
+              }
+              // Tìm view bên dưới con trỏ và highlight
+              private View lastHighlight=null;
+              protected void highlightUnder(){
+                  float cx=cursor.getX(), cy=cursor.getY();
+                  View root=getWindow().getDecorView();
+                  View found=findViewAt(root, (int)cx, (int)cy);
+                  if(lastHighlight!=null && lastHighlight!=found){
+                      lastHighlight.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                      // Restore original - đơn giản chỉ clear highlight đặc biệt
+                      lastHighlight.setSelected(false);
+                      lastHighlight=null;
+                  }
+                  if(found!=null){
+                      found.setSelected(true);
+                      lastHighlight=found;
                   }
               }
+              // Click view bên dưới con trỏ
+              protected boolean clickUnder(){
+                  float cx=cursor.getX(), cy=cursor.getY();
+                  View root=getWindow().getDecorView();
+                  View found=findClickableAt(root,(int)cx,(int)cy);
+                  if(found!=null){ found.performClick(); return true; }
+                  return false;
+              }
+              // DFS tìm view clickable tại toạ độ màn hình
+              private View findClickableAt(View v, int x, int y){
+                  if(!isViewAt(v,x,y)) return null;
+                  if(v instanceof android.view.ViewGroup){
+                      android.view.ViewGroup vg=(android.view.ViewGroup)v;
+                      for(int i=vg.getChildCount()-1;i>=0;i--){
+                          View child=vg.getChildAt(i);
+                          View r=findClickableAt(child,x,y);
+                          if(r!=null)return r;
+                      }
+                  }
+                  if((v.isClickable()||v.isFocusable())&&v.getVisibility()==View.VISIBLE
+                      && !(v instanceof android.view.ViewGroup && ((android.view.ViewGroup)v).getChildCount()>0)){
+                      return v;
+                  }
+                  if(v.isClickable()&&v.getVisibility()==View.VISIBLE) return v;
+                  return null;
+              }
+              private View findViewAt(View v, int x, int y){
+                  if(!isViewAt(v,x,y)) return null;
+                  if(v instanceof android.view.ViewGroup){
+                      android.view.ViewGroup vg=(android.view.ViewGroup)v;
+                      for(int i=vg.getChildCount()-1;i>=0;i--){
+                          View r=findViewAt(vg.getChildAt(i),x,y);
+                          if(r!=null)return r;
+                      }
+                  }
+                  return v;
+              }
+              private boolean isViewAt(View v, int x, int y){
+                  if(v.getVisibility()!=View.VISIBLE)return false;
+                  int[]loc=new int[2]; v.getLocationOnScreen(loc);
+                  return x>=loc[0]&&x<loc[0]+v.getWidth()&&y>=loc[1]&&y<loc[1]+v.getHeight();
+              }
+              @Override public boolean onKeyDown(int keyCode, KeyEvent event){
+                  float step=(event.getRepeatCount()>6)?STEP_FAST:STEP;
+                  switch(keyCode){
+                      case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0,-step); return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:  moveCursor(0, step); return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:  moveCursor(-step,0); return true;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT: moveCursor( step,0); return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          if(!clickUnder()) onCursorClick();
+                          return true;
+                  }
+                  return super.onKeyDown(keyCode,event);
+              }
+              // Override để xử lý click đặc biệt (vd: WebView)
+              protected void onCursorClick(){}
           }
           ENDOFFILE
 
           cat > src/com/allinone/app/HomeActivity.java << 'ENDOFFILE'
           package com.allinone.app;
-          import android.app.Activity;
           import android.content.Context;
           import android.content.Intent;
           import android.content.SharedPreferences;
@@ -490,51 +588,39 @@ jobs:
           import java.util.ArrayList;
           import java.util.Arrays;
           import java.util.List;
-          public class HomeActivity extends Activity {
-              private static final String PREF = "aio_prefs";
-              private static final String KEY_URL = "custom_url";
-              private static final String KEY_HIST = "url_history";
-              private static final String KEY_INIT = "inited";
-              private static final String DEF = "https://pointnorth.io";
-              private static final String SEP = "|||";
-              private static final String[] DEFAULTS = {
-                  "https://pointnorth.io","https://www.youtube.com",
-                  "https://www.google.com","https://vtvgo.vn",
-                  "https://tinnhac.com","https://vnexpress.net"
-              };
+          public class HomeActivity extends BaseActivity {
+              private static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",KEY_INIT="inited",DEF="https://pointnorth.io",SEP="|||";
+              private static final String[] DEFAULTS={"https://pointnorth.io","https://www.youtube.com","https://www.google.com","https://vtvgo.vn","https://tinnhac.com","https://vnexpress.net"};
               private LinearLayout grid;
               private SharedPreferences prefs;
-              private Handler handler = new Handler();
-              @Override protected void onCreate(Bundle s) {
+              private Handler handler=new Handler();
+              @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
                   setContentView(R.layout.home);
-                  prefs = getSharedPreferences(PREF, Context.MODE_PRIVATE);
-                  if (!prefs.getBoolean(KEY_INIT, false)) {
-                      StringBuilder sb = new StringBuilder();
-                      for (int i=0;i<DEFAULTS.length;i++){if(i>0)sb.append(SEP);sb.append(DEFAULTS[i]);}
+                  prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
+                  if(!prefs.getBoolean(KEY_INIT,false)){
+                      StringBuilder sb=new StringBuilder();
+                      for(int i=0;i<DEFAULTS.length;i++){if(i>0)sb.append(SEP);sb.append(DEFAULTS[i]);}
                       prefs.edit().putString(KEY_HIST,sb.toString()).putString(KEY_URL,DEF).putBoolean(KEY_INIT,true).apply();
                   }
-                  grid = (LinearLayout) findViewById(R.id.gridLinks);
+                  grid=(LinearLayout)findViewById(R.id.gridLinks);
                   ((Button)findViewById(R.id.btnSettings)).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){startActivity(new Intent(HomeActivity.this,SettingsActivity.class));}
                   });
               }
               @Override protected void onResume(){super.onResume();renderLinks();}
-              private List<String> getHistory(){
-                  return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
-              }
+              private List<String> hist(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
               private void renderLinks(){
                   grid.removeAllViews();
-                  List<String> hist = getHistory();
-                  String active = prefs.getString(KEY_URL,DEF);
+                  List<String> h=hist(); String active=prefs.getString(KEY_URL,DEF);
                   int cols=3; LinearLayout row=null;
-                  for(int i=0;i<hist.size();i++){
+                  for(int i=0;i<h.size();i++){
                       if(i%cols==0){
                           row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
                           LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                           rp.setMargins(0,0,0,20);row.setLayoutParams(rp);grid.addView(row);
                       }
-                      final String url=hist.get(i);
+                      final String url=h.get(i);
                       LinearLayout card=new LinearLayout(this);
                       card.setOrientation(LinearLayout.VERTICAL);card.setGravity(android.view.Gravity.CENTER);
                       card.setPadding(20,24,20,24);card.setBackgroundColor(url.equals(active)?0xff1a1a3e:0xff1a1a2e);
@@ -548,15 +634,14 @@ jobs:
                               @Override protected Bitmap doInBackground(String...u){
                                   try{HttpURLConnection c=(HttpURLConnection)new URL(u[0]).openConnection();
                                   c.setConnectTimeout(4000);c.setReadTimeout(4000);c.setInstanceFollowRedirects(true);
-                                  return BitmapFactory.decodeStream(c.getInputStream());}catch(Exception e){return null;}
-                              }
+                                  return BitmapFactory.decodeStream(c.getInputStream());}catch(Exception e){return null;}}
                               @Override protected void onPostExecute(Bitmap b){if(b!=null&&fv!=null)fv.setImageBitmap(b);}
                           }.execute("https://www.google.com/s2/favicons?domain="+url+"&sz=64");
                       }},idx*200L);
                       TextView lbl=new TextView(this);
-                      String dom=url.replace("https://","").replace("http://","").split("/")[0];
-                      lbl.setText(dom);lbl.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
-                      lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);lbl.setMaxLines(1);
+                      lbl.setText(url.replace("https://","").replace("http://","").split("/")[0]);
+                      lbl.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);lbl.setTextSize(13);
+                      lbl.setGravity(android.view.Gravity.CENTER);lbl.setMaxLines(1);
                       LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       lp.setMargins(0,10,0,0);lbl.setLayoutParams(lp);card.addView(lbl);
                       if(url.equals(active)){TextView t=new TextView(this);t.setText("▶ Dang xem");t.setTextColor(0xffE50914);t.setTextSize(11);t.setGravity(android.view.Gravity.CENTER);card.addView(t);}
@@ -564,23 +649,26 @@ jobs:
                           prefs.edit().putString(KEY_URL,url).apply();
                           startActivity(new Intent(HomeActivity.this,MainActivity.class).putExtra("url",url));
                       }});
+                      // Highlight khi focused
                       card.setOnFocusChangeListener(new View.OnFocusChangeListener(){@Override public void onFocusChange(View v,boolean f){
-                          v.setBackgroundColor(f?0xff2a2a5e:(url.equals(prefs.getString(KEY_URL,DEF))?0xff1a1a3e:0xff1a1a2e));
+                          v.setBackgroundColor(f?0xff3a3a6e:(url.equals(prefs.getString(KEY_URL,DEF))?0xff1a1a3e:0xff1a1a2e));
                       }});
                       row.addView(card);
                   }
-                  if(row!=null&&hist.size()%cols!=0){
-                      int rem=cols-(hist.size()%cols);
+                  if(row!=null&&h.size()%cols!=0){
+                      int rem=cols-(h.size()%cols);
                       for(int j=0;j<rem;j++){View e=new View(this);LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(0,200,1f);ep.setMargins(0,0,16,0);e.setLayoutParams(ep);row.addView(e);}
                   }
               }
-              @Override public boolean onKeyDown(int k,KeyEvent e){if(k==KeyEvent.KEYCODE_BACK){finish();return true;}return super.onKeyDown(k,e);}
+              @Override public boolean onKeyDown(int k,KeyEvent e){
+                  if(k==KeyEvent.KEYCODE_BACK){finish();return true;}
+                  return super.onKeyDown(k,e);
+              }
           }
           ENDOFFILE
 
           cat > src/com/allinone/app/SettingsActivity.java << 'ENDOFFILE'
           package com.allinone.app;
-          import android.app.Activity;
           import android.content.Context;
           import android.content.Intent;
           import android.content.SharedPreferences;
@@ -596,7 +684,7 @@ jobs:
           import java.util.ArrayList;
           import java.util.Arrays;
           import java.util.List;
-          public class SettingsActivity extends Activity {
+          public class SettingsActivity extends BaseActivity {
               private static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",DEF="https://pointnorth.io",SEP="|||";
               private EditText editUrl;
               private LinearLayout listUrls;
@@ -615,25 +703,28 @@ jobs:
                   }});
                   ((Button)findViewById(R.id.btnReset)).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(DEF);openUrl(DEF);}});
               }
-              private List<String> getHistory(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
-              private void addToHistory(String url){
-                  List<String> list=getHistory();list.remove(url);list.add(0,url);
+              private List<String> getHist(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
+              private void addHist(String url){
+                  List<String> list=getHist();list.remove(url);list.add(0,url);
                   if(list.size()>30)list=list.subList(0,30);
                   StringBuilder sb=new StringBuilder();for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
                   prefs.edit().putString(KEY_HIST,sb.toString()).apply();
               }
-              private void saveUrl(String url){prefs.edit().putString(KEY_URL,url).apply();addToHistory(url);renderHistory();}
-              private void openUrl(String url){
-                  startActivity(new Intent(this,MainActivity.class).putExtra("url",url).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish();
-              }
+              private void saveUrl(String url){prefs.edit().putString(KEY_URL,url).apply();addHist(url);renderHistory();}
+              private void openUrl(String url){startActivity(new Intent(this,MainActivity.class).putExtra("url",url).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish();}
               private void renderHistory(){
                   listUrls.removeAllViews();
-                  List<String> hist=getHistory();String active=prefs.getString(KEY_URL,DEF);
+                  List<String> hist=getHist();String active=prefs.getString(KEY_URL,DEF);
                   for(final String url:hist){
                       LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
-                      row.setPadding(16,12,16,12);row.setBackgroundColor(url.equals(active)?0xff1a1a2e:0xff111111);
+                      row.setPadding(16,14,16,14);row.setBackgroundColor(url.equals(active)?0xff1a1a2e:0xff111111);
+                      row.setClickable(true);row.setFocusable(true);
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
+                      // Highlight khi hover con trỏ
+                      row.setOnFocusChangeListener(new View.OnFocusChangeListener(){@Override public void onFocusChange(View v,boolean f){
+                          v.setBackgroundColor(f?0xff2a2a5e:(url.equals(prefs.getString(KEY_URL,DEF))?0xff1a1a2e:0xff111111));
+                      }});
                       TextView tv=new TextView(this);tv.setText((url.equals(active)?"▶  ":"      ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);tv.setTextSize(16);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));row.addView(tv);
@@ -643,20 +734,22 @@ jobs:
                       Button bd=new Button(this);bd.setText("X");bd.setTextColor(Color.WHITE);bd.setBackgroundColor(0xff660000);bd.setTextSize(13);bd.setPadding(16,8,16,8);
                       LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
                       bd.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
-                          List<String> list=getHistory();list.remove(url);
+                          List<String> list=getHist();list.remove(url);
                           StringBuilder sb=new StringBuilder();for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
                           prefs.edit().putString(KEY_HIST,sb.toString()).apply();renderHistory();
                       }});
                       row.addView(bu);row.addView(bd);listUrls.addView(row);
                   }
               }
-              @Override public boolean onKeyDown(int k,KeyEvent e){if(k==KeyEvent.KEYCODE_BACK){finish();return true;}return super.onKeyDown(k,e);}
+              @Override public boolean onKeyDown(int k,KeyEvent e){
+                  if(k==KeyEvent.KEYCODE_BACK){finish();return true;}
+                  return super.onKeyDown(k,e);
+              }
           }
           ENDOFFILE
 
           cat > src/com/allinone/app/MainActivity.java << 'ENDOFFILE'
           package com.allinone.app;
-          import android.app.Activity;
           import android.content.Context;
           import android.content.Intent;
           import android.content.SharedPreferences;
@@ -682,352 +775,154 @@ jobs:
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           import java.util.ArrayList;
-          public class MainActivity extends Activity {
+          public class MainActivity extends BaseActivity {
               private ScrollWebView webView;
               private ProgressBar progressBar;
               private LinearLayout topBar;
               private RelativeLayout voiceOverlay;
               private TextView voiceResult;
-              private CursorView cursorView;
               private SpeechRecognizer speechRecognizer;
               private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://pointnorth.io";
               private String currentUrl;
-              private Handler handler = new Handler();
-              // Cursor position (tọa độ màn hình tuyệt đối)
-              private float curX, curY;
-              private float screenW=1280, screenH=720;
-              private static final float STEP=25f, STEP_FAST=80f;
-              // TopBar
-              private boolean topBarLocked = false;
-              private Runnable hideBar = new Runnable(){
-                  @Override public void run(){ if(!topBarLocked) topBar.setVisibility(View.GONE); }
-              };
+              private Handler handler=new Handler();
+              private boolean topBarLocked=false;
+              private Runnable hideBar=new Runnable(){@Override public void run(){if(!topBarLocked)topBar.setVisibility(View.GONE);}};
 
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
+              @Override protected void onCreate(Bundle s){
+                  super.onCreate(s);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                   setContentView(R.layout.main);
-                  SharedPreferences prefs = getSharedPreferences(PREF, Context.MODE_PRIVATE);
-                  currentUrl = prefs.getString(KEY_URL, DEF);
-                  if (getIntent().hasExtra("url")) currentUrl = getIntent().getStringExtra("url");
-                  webView      = (ScrollWebView)  findViewById(R.id.webview);
-                  progressBar  = (ProgressBar)    findViewById(R.id.progress);
-                  topBar       = (LinearLayout)   findViewById(R.id.topBar);
-                  voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
-                  voiceResult  = (TextView)        findViewById(R.id.voiceResult);
-                  cursorView   = (CursorView)      findViewById(R.id.cursor);
-                  android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-                  getWindowManager().getDefaultDisplay().getMetrics(dm);
-                  screenW = dm.widthPixels;
-                  screenH = dm.heightPixels;
-                  // Bắt đầu giữa màn hình
-                  curX = screenW / 2f;
-                  curY = screenH / 2f;
-                  cursorView.setPosition(curX, curY);
-                  // WebView scroll callback
+                  SharedPreferences prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
+                  currentUrl=prefs.getString(KEY_URL,DEF);
+                  if(getIntent().hasExtra("url"))currentUrl=getIntent().getStringExtra("url");
+                  webView=(ScrollWebView)findViewById(R.id.webview);
+                  progressBar=(ProgressBar)findViewById(R.id.progress);
+                  topBar=(LinearLayout)findViewById(R.id.topBar);
+                  voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
+                  voiceResult=(TextView)findViewById(R.id.voiceResult);
                   webView.setOnScrollChangedCallback(new ScrollWebView.OnScrollChangedCallback(){
-                      @Override public void onScrollUp()   { showBar(false); }
-                      @Override public void onScrollDown() { schedBar(); }
+                      @Override public void onScrollUp(){showBar(false);}
+                      @Override public void onScrollDown(){schedBar();}
                   });
-                  // TopBar button listeners
-                  findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){ finish(); }
-                  });
-                  findViewById(R.id.btnVoice).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){ showVoice(); }
-                  });
-                  findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){
-                          startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-                      }
-                  });
+                  findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){finish();}});
+                  findViewById(R.id.btnVoice).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){showVoice();}});
+                  findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
                   showBar(false);
                   setupSpeech();
-                  // WebView settings
-                  WebSettings s = webView.getSettings();
-                  s.setJavaScriptEnabled(true);
-                  s.setDomStorageEnabled(true);
-                  s.setMediaPlaybackRequiresUserGesture(false);
-                  s.setUseWideViewPort(true);
-                  s.setLoadWithOverviewMode(true);
-                  s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-                  s.setBuiltInZoomControls(false);
-                  s.setDisplayZoomControls(false);
-                  s.setAppCacheEnabled(true);
-                  s.setCacheMode(WebSettings.LOAD_DEFAULT);
-                  s.setRenderPriority(WebSettings.RenderPriority.HIGH);
-                  s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-                  webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                  WebSettings ws=webView.getSettings();
+                  ws.setJavaScriptEnabled(true);ws.setDomStorageEnabled(true);
+                  ws.setMediaPlaybackRequiresUserGesture(false);ws.setUseWideViewPort(true);
+                  ws.setLoadWithOverviewMode(true);ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                  ws.setBuiltInZoomControls(false);ws.setDisplayZoomControls(false);
+                  ws.setAppCacheEnabled(true);ws.setCacheMode(WebSettings.LOAD_DEFAULT);
+                  ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
+                  ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                  webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.setWebViewClient(new WebViewClient(){
-                      @Override public void onPageStarted(WebView v, String url, Bitmap f){
+                      @Override public void onPageStarted(WebView v,String url,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);
-                          ((TextView)findViewById(R.id.txtTitle)).setText(
-                              url.replace("https://","").replace("http://","").split("/")[0]);
+                          ((TextView)findViewById(R.id.txtTitle)).setText(url.replace("https://","").replace("http://","").split("/")[0]);
                       }
-                      @Override public void onPageFinished(WebView v, String url){
-                          progressBar.setVisibility(View.GONE);
-                          // Inject JS cursor vào trang web
-                          injectJsCursor();
-                      }
-                      @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e){ h.proceed(); }
-                      @Override public boolean shouldOverrideUrlLoading(WebView v, String url){ v.loadUrl(url); return true; }
+                      @Override public void onPageFinished(WebView v,String url){progressBar.setVisibility(View.GONE);}
+                      @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
+                      @Override public boolean shouldOverrideUrlLoading(WebView v,String url){v.loadUrl(url);return true;}
                   });
                   webView.setWebChromeClient(new WebChromeClient(){
-                      @Override public void onProgressChanged(WebView v, int p){
-                          progressBar.setProgress(p);
-                          progressBar.setVisibility(p<100?View.VISIBLE:View.GONE);
-                      }
+                      @Override public void onProgressChanged(WebView v,int p){progressBar.setProgress(p);progressBar.setVisibility(p<100?View.VISIBLE:View.GONE);}
                   });
-                  webView.setFocusable(true);
-                  webView.setFocusableInTouchMode(true);
+                  webView.setFocusable(true);webView.setFocusableInTouchMode(true);
                   webView.setLongClickable(false);
-                  webView.setOnLongClickListener(new View.OnLongClickListener(){
-                      @Override public boolean onLongClick(View v){ return true; }
-                  });
+                  webView.setOnLongClickListener(new View.OnLongClickListener(){@Override public boolean onLongClick(View v){return true;}});
                   webView.loadUrl(currentUrl);
               }
 
-              // ── INJECT JS CURSOR ──────────────────────────────────────────────────────
-              private void injectJsCursor(){
-                  // Inject con trỏ JS vào trang web: di chuyển, hover, highlight element
-                  String js =
-                  "(function(){"
-                  // Xóa cursor cũ nếu có
-                  +"var old=document.getElementById('_aio_cursor');"
-                  +"if(old)old.parentNode.removeChild(old);"
-                  // Tạo cursor div
-                  +"var cur=document.createElement('div');"
-                  +"cur.id='_aio_cursor';"
-                  +"cur.style.cssText='position:fixed;top:0;left:0;width:20px;height:24px;"
-                  +"pointer-events:none;z-index:2147483647;transition:none;';"
-                  // SVG mũi tên
-                  +"cur.innerHTML='<svg width=\"20\" height=\"24\" viewBox=\"0 0 20 24\" style=\"filter:drop-shadow(1px 1px 1px rgba(0,0,0,0.8))\">"
-                  +"<path d=\"M2,2 L2,20 L7,14 L13,24 L16,22 L10,12 L18,12 Z\" fill=\"white\" stroke=\"black\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/>"
-                  +"</svg>';"
-                  +"document.body.appendChild(cur);"
-                  // Biến lưu vị trí
-                  +"window._aio_x=window.innerWidth/2;"
-                  +"window._aio_y=window.innerHeight/2;"
-                  +"cur.style.transform='translate('+window._aio_x+'px,'+window._aio_y+'px)';"
-                  // Hàm di chuyển cursor
-                  +"window._aio_move=function(dx,dy){"
-                  +"  window._aio_x=Math.max(0,Math.min(window.innerWidth-2,window._aio_x+dx));"
-                  +"  window._aio_y=Math.max(0,Math.min(window.innerHeight-2,window._aio_y+dy));"
-                  +"  cur.style.transform='translate('+window._aio_x+'px,'+window._aio_y+'px)';"
-                  // Highlight element tại vị trí con trỏ
-                  +"  cur.style.display='none';"
-                  +"  var el=document.elementFromPoint(window._aio_x,window._aio_y);"
-                  +"  cur.style.display='';"
-                  +"  if(window._aio_last&&window._aio_last!==el){"
-                  +"    window._aio_last.style.outline='';"
-                  +"    window._aio_last.style.opacity='';"
-                  +"  }"
-                  +"  if(el&&el.tagName&&el!==document.body&&el!==document.documentElement){"
-                  +"    var tag=el.tagName.toLowerCase();"
-                  +"    if(tag==='a'||tag==='button'||tag==='input'||tag==='select'||tag==='textarea'||el.onclick||el.style.cursor==='pointer'||window.getComputedStyle(el).cursor==='pointer'){"
-                  +"      el.style.outline='2px solid #E50914';"
-                  +"    }"
-                  +"    window._aio_last=el;"
-                  +"  }"
-                  +"  return {x:window._aio_x,y:window._aio_y};"
-                  +"};"
-                  // Hàm click tại vị trí con trỏ
-                  +"window._aio_click=function(){"
-                  +"  cur.style.display='none';"
-                  +"  var el=document.elementFromPoint(window._aio_x,window._aio_y);"
-                  +"  cur.style.display='';"
-                  +"  if(!el)return;"
-                  // Xóa highlight
-                  +"  if(window._aio_last){"
-                  +"    window._aio_last.style.outline='';"
-                  +"    window._aio_last.style.opacity='';"
-                  +"  }"
-                  // Focus nếu là input
-                  +"  if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT'){"
-                  +"    el.focus();"
-                  +"  }"
-                  // Click element gần nhất có thể click được
-                  +"  var target=el;"
-                  +"  for(var i=0;i<5;i++){"
-                  +"    if(!target||target===document.body)break;"
-                  +"    var tag=target.tagName.toLowerCase();"
-                  +"    if(tag==='a'||tag==='button'||tag==='input'||tag==='select'||target.onclick||window.getComputedStyle(target).cursor==='pointer'){"
-                  +"      target.click();"
-                  +"      return;"
-                  +"    }"
-                  +"    target=target.parentElement;"
-                  +"  }"
-                  +"  el.click();"
-                  +"};"
-                  +"})();";
-                  webView.evaluateJavascript(js, null);
-              }
-
-              // Di chuyển cursor JS trong WebView
-              private void moveJsCursor(float dx, float dy){
-                  String js = "if(window._aio_move){var r=window._aio_move("+dx+","+dy+");r;}";
-                  webView.evaluateJavascript(js, new android.webkit.ValueCallback<String>(){
-                      @Override public void onReceiveValue(String value){ }
-                  });
-              }
-
-              // Click JS cursor
-              private void clickJsCursor(){
-                  webView.evaluateJavascript("if(window._aio_click)window._aio_click();", null);
-              }
-
-              // ── CON TRỎ ANDROID (overlay để biết vị trí topBar) ────────────────────
-              private void moveCursor(final float dx, final float dy){
-                  curX = Math.max(0, Math.min(screenW-1, curX+dx));
-                  curY = Math.max(0, Math.min(screenH-1, curY+dy));
-                  cursorView.setPosition(curX, curY);
-                  // Khi con trỏ vào vùng top 60px → hiện và ghim topBar
-                  if(curY <= 60){
-                      topBarLocked = true;
-                      showBar(true);
-                  } else {
-                      if(topBarLocked){
-                          topBarLocked = false;
-                          schedBar();
-                      }
-                      // Di chuyển cursor JS trong WebView
-                      // Tính tỷ lệ: curX/screenW * viewport_width
-                      moveJsCursor(dx, dy);
-                  }
-              }
-
-              // Click tại vị trí con trỏ
-              private void doClick(){
-                  if(topBarLocked && topBar.getVisibility()==View.VISIBLE){
-                      // Kiểm tra click vào button topBar
-                      int[] btnIds = {R.id.btnBack, R.id.btnVoice, R.id.btnSettingsWeb};
-                      for(int id : btnIds){
-                          View btn = findViewById(id);
-                          int[] loc = new int[2]; btn.getLocationOnScreen(loc);
-                          if(curX>=loc[0]&&curX<=loc[0]+btn.getWidth()&&curY>=loc[1]&&curY<=loc[1]+btn.getHeight()){
-                              btn.performClick(); return;
+              // Khi clickUnder() không tìm được view → click WebView
+              @Override protected void onCursorClick(){
+                  float cx=cursor.getX(), cy=cursor.getY();
+                  // Kiểm tra topBar
+                  if(topBar.getVisibility()==View.VISIBLE){
+                      int[]loc=new int[2];topBar.getLocationOnScreen(loc);
+                      if(cy>=loc[1]&&cy<=loc[1]+topBar.getHeight()){
+                          int[]btnIds={R.id.btnBack,R.id.btnVoice,R.id.btnSettingsWeb};
+                          for(int id:btnIds){
+                              View btn=findViewById(id);int[]bl=new int[2];btn.getLocationOnScreen(bl);
+                              if(cx>=bl[0]&&cx<=bl[0]+btn.getWidth()&&cy>=bl[1]&&cy<=bl[1]+btn.getHeight()){btn.performClick();return;}
                           }
+                          return;
                       }
                   }
-                  // Click JS trong WebView
-                  clickJsCursor();
+                  // Click WebView tại tọa độ tương đối
+                  int[]wl=new int[2];webView.getLocationOnScreen(wl);
+                  final float rx=cx-wl[0], ry=cy-wl[1];
+                  final long t=SystemClock.uptimeMillis();
+                  MotionEvent dn=MotionEvent.obtain(t,t,MotionEvent.ACTION_DOWN,rx,ry,0);
+                  webView.dispatchTouchEvent(dn);dn.recycle();
+                  handler.postDelayed(new Runnable(){@Override public void run(){
+                      long t2=SystemClock.uptimeMillis();
+                      MotionEvent up=MotionEvent.obtain(t,t2,MotionEvent.ACTION_UP,rx,ry,0);
+                      webView.dispatchTouchEvent(up);up.recycle();
+                  }},120);
               }
 
-              // ── TOPBAR ──────────────────────────────────────────────────────────────
-              private void schedBar(){
-                  handler.removeCallbacks(hideBar);
-                  if(!topBarLocked) handler.postDelayed(hideBar, 4000);
-              }
-              private void showBar(final boolean lock){
-                  runOnUiThread(new Runnable(){ @Override public void run(){
-                      topBar.setVisibility(View.VISIBLE);
-                      if(!lock) schedBar();
-                  }});
+              // Override moveCursor để xử lý topBar lock
+              @Override protected void moveCursor(float dx,float dy){
+                  super.moveCursor(dx,dy);
+                  float cy=cursor.getY();
+                  if(cy<=60){topBarLocked=true;showBar(true);}
+                  else if(topBarLocked){topBarLocked=false;schedBar();}
               }
 
-              // ── SPEECH ──────────────────────────────────────────────────────────────
+              private void schedBar(){handler.removeCallbacks(hideBar);if(!topBarLocked)handler.postDelayed(hideBar,4000);}
+              private void showBar(final boolean lock){runOnUiThread(new Runnable(){@Override public void run(){topBar.setVisibility(View.VISIBLE);if(!lock)schedBar();}});}
+
               private void setupSpeech(){
-                  if(!SpeechRecognizer.isRecognitionAvailable(this)) return;
-                  speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+                  if(!SpeechRecognizer.isRecognitionAvailable(this))return;
+                  speechRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
                   speechRecognizer.setRecognitionListener(new RecognitionListener(){
-                      @Override public void onReadyForSpeech(Bundle p){ voiceResult.setText("Dang nghe..."); }
+                      @Override public void onReadyForSpeech(Bundle p){voiceResult.setText("Dang nghe...");}
                       @Override public void onResults(Bundle r){
-                          ArrayList<String> m=r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                          if(m!=null&&!m.isEmpty()){
-                              final String t=m.get(0).toLowerCase(); voiceResult.setText(m.get(0));
-                              handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},800);
-                              handleVoice(t);
-                          } else hideVoice();
+                          ArrayList<String>m=r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                          if(m!=null&&!m.isEmpty()){final String t=m.get(0).toLowerCase();voiceResult.setText(m.get(0));
+                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},800);handleVoice(t);}
+                          else hideVoice();
                       }
-                      @Override public void onError(int e){
-                          voiceResult.setText("Khong nghe duoc!");
-                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},1500);
-                      }
-                      @Override public void onBeginningOfSpeech(){}
-                      @Override public void onRmsChanged(float v){}
-                      @Override public void onBufferReceived(byte[] b){}
-                      @Override public void onEndOfSpeech(){}
-                      @Override public void onPartialResults(Bundle b){}
-                      @Override public void onEvent(int t,Bundle b){}
+                      @Override public void onError(int e){voiceResult.setText("Khong nghe duoc!");handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},1500);}
+                      @Override public void onBeginningOfSpeech(){}@Override public void onRmsChanged(float v){}
+                      @Override public void onBufferReceived(byte[]b){}@Override public void onEndOfSpeech(){}
+                      @Override public void onPartialResults(Bundle b){}@Override public void onEvent(int t,Bundle b){}
                   });
               }
               private void handleVoice(String t){
-                  if(t.contains("phat")||t.contains("play")||t.contains("xem"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
-                  else if(t.contains("dung")||t.contains("pause"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
-                  else if(t.contains("tua toi"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
-                  else if(t.contains("tua lui")||t.contains("quay lai"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
-                  else if(t.contains("trang chu")||t.contains("home")) finish();
-                  else if(t.contains("cai dat")||t.contains("settings"))
-                      startActivity(new Intent(this,SettingsActivity.class));
-                  else{
-                      String enc=t.replace(" ","+");
-                      webView.evaluateJavascript(
-                          "var i=document.querySelector('input[type=search],input[name=keyword],input[name=q]');"
-                          +"if(i){i.value='"+t+"';i.dispatchEvent(new Event('input'));i.form&&i.form.submit();}"
-                          +"else window.location='"+currentUrl+"/search?q="+enc+"';",null);
-                  }
+                  if(t.contains("phat")||t.contains("play"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
+                  else if(t.contains("dung")||t.contains("pause"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
+                  else if(t.contains("tua toi"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
+                  else if(t.contains("tua lui")||t.contains("quay lai"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
+                  else if(t.contains("trang chu")||t.contains("home"))finish();
+                  else if(t.contains("cai dat"))startActivity(new Intent(this,SettingsActivity.class));
               }
               private void showVoice(){
                   if(speechRecognizer==null)return;
-                  voiceOverlay.setVisibility(View.VISIBLE); voiceResult.setText("");
+                  voiceOverlay.setVisibility(View.VISIBLE);voiceResult.setText("");
                   Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                   i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"vi-VN");
-                  i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3);
+                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"vi-VN");i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3);
                   speechRecognizer.startListening(i);
               }
-              private void hideVoice(){
-                  if(speechRecognizer!=null)speechRecognizer.stopListening();
-                  voiceOverlay.setVisibility(View.GONE);
-              }
+              private void hideVoice(){if(speechRecognizer!=null)speechRecognizer.stopListening();voiceOverlay.setVisibility(View.GONE);}
 
-              // ── KEY ──────────────────────────────────────────────────────────────────
-              @Override
-              public boolean onKeyDown(int keyCode, KeyEvent event){
-                  if(voiceOverlay.getVisibility()==View.VISIBLE){
-                      if(keyCode==KeyEvent.KEYCODE_BACK){hideVoice();return true;}
-                      return true;
-                  }
-                  float step = (event.getRepeatCount()>6) ? STEP_FAST : STEP;
-                  switch(keyCode){
-                      case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0,-step); return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN:  moveCursor(0, step); return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT:  moveCursor(-step,0); return true;
-                      case KeyEvent.KEYCODE_DPAD_RIGHT: moveCursor( step,0); return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:
-                      case KeyEvent.KEYCODE_ENTER:      doClick(); return true;
-                      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                      case KeyEvent.KEYCODE_MEDIA_PLAY:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);
-                          return true;
-                      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
-                          return true;
-                      case KeyEvent.KEYCODE_MEDIA_REWIND:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
-                          return true;
-                      case KeyEvent.KEYCODE_BACK:
-                          if(webView.canGoBack()){webView.goBack();return true;}
-                          finish(); return true;
-                      case KeyEvent.KEYCODE_MENU: showVoice(); return true;
-                  }
-                  return super.onKeyDown(keyCode, event);
+              @Override public boolean onKeyDown(int k,KeyEvent e){
+                  if(voiceOverlay.getVisibility()==View.VISIBLE){if(k==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
+                  if(k==KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE||k==KeyEvent.KEYCODE_MEDIA_PLAY){
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);return true;}
+                  if(k==KeyEvent.KEYCODE_MEDIA_FAST_FORWARD){webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);return true;}
+                  if(k==KeyEvent.KEYCODE_MEDIA_REWIND){webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;}
+                  if(k==KeyEvent.KEYCODE_BACK){if(webView.canGoBack()){webView.goBack();return true;}finish();return true;}
+                  if(k==KeyEvent.KEYCODE_MENU){showVoice();return true;}
+                  return super.onKeyDown(k,e);
               }
-              @Override protected void onPause(){
-                  super.onPause();webView.onPause();handler.removeCallbacks(hideBar);
-                  if(voiceOverlay.getVisibility()==View.VISIBLE)hideVoice();
-              }
-              @Override protected void onResume(){ super.onResume();webView.onResume();showBar(false); }
-              @Override protected void onDestroy(){
-                  handler.removeCallbacksAndMessages(null);
-                  if(speechRecognizer!=null)speechRecognizer.destroy();
-                  webView.destroy(); super.onDestroy();
-              }
+              @Override protected void onPause(){super.onPause();webView.onPause();handler.removeCallbacks(hideBar);if(voiceOverlay.getVisibility()==View.VISIBLE)hideVoice();}
+              @Override protected void onResume(){super.onResume();webView.onResume();showBar(false);}
+              @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);if(speechRecognizer!=null)speechRecognizer.destroy();webView.destroy();super.onDestroy();}
           }
           ENDOFFILE
 
@@ -1045,7 +940,9 @@ jobs:
             -d build/classes \
             build/gen/com/allinone/app/R.java \
             src/com/allinone/app/CursorView.java \
+            src/com/allinone/app/GlobalCursor.java \
             src/com/allinone/app/ScrollWebView.java \
+            src/com/allinone/app/BaseActivity.java \
             src/com/allinone/app/HomeActivity.java \
             src/com/allinone/app/SettingsActivity.java \
             src/com/allinone/app/MainActivity.java
