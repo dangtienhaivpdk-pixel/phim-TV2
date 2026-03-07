@@ -95,8 +95,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.allinone.app"
-              android:versionCode="2"
-              android:versionName="2.0">
+              android:versionCode="3"
+              android:versionName="3.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -177,41 +177,45 @@ jobs:
 
           cat > res/layout/main.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:background="#000000">
+
               <com.allinone.app.ScrollWebView android:id="@+id/webview"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
+
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
                   android:layout_width="match_parent"
                   android:layout_height="4dp"
-                  android:layout_alignParentTop="true"
+                  android:layout_gravity="top"
                   android:max="100"
                   android:progressTint="#E50914"
                   android:visibility="gone" />
+
               <LinearLayout android:id="@+id/topBar"
                   android:layout_width="match_parent"
                   android:layout_height="52dp"
+                  android:layout_gravity="top"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:background="#ee111122"
                   android:paddingLeft="16dp"
                   android:paddingRight="8dp"
-                  android:layout_alignParentTop="true"
                   android:visibility="visible">
                   <TextView android:id="@+id/btnBack"
                       android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
+                      android:layout_height="match_parent"
                       android:text="◀ Home"
                       android:textSize="15sp"
                       android:textColor="#aaaaaa"
-                      android:padding="8dp"/>
+                      android:gravity="center"
+                      android:padding="12dp"/>
                   <TextView android:id="@+id/txtTitle"
                       android:layout_width="0dp"
-                      android:layout_height="wrap_content"
+                      android:layout_height="match_parent"
                       android:layout_weight="1"
                       android:text="ALL IN ONE"
                       android:textSize="17sp"
@@ -221,23 +225,27 @@ jobs:
                       android:singleLine="true"/>
                   <TextView android:id="@+id/btnVoice"
                       android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
+                      android:layout_height="match_parent"
                       android:text="🎤"
                       android:textSize="22sp"
-                      android:padding="10dp"/>
+                      android:gravity="center"
+                      android:padding="12dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
                       android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
+                      android:layout_height="match_parent"
                       android:text="⚙"
                       android:textSize="22sp"
                       android:textColor="#88ffffff"
-                      android:padding="10dp"/>
+                      android:gravity="center"
+                      android:padding="12dp"/>
               </LinearLayout>
+
               <com.allinone.app.CursorView android:id="@+id/cursor"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
                   android:clickable="false"
                   android:focusable="false"/>
+
               <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
@@ -278,7 +286,7 @@ jobs:
                           android:gravity="center"/>
                   </LinearLayout>
               </RelativeLayout>
-          </RelativeLayout>
+          </FrameLayout>
           ENDOFFILE
 
           cat > res/layout/settings.xml << 'ENDOFFILE'
@@ -390,41 +398,62 @@ jobs:
           import android.graphics.Canvas;
           import android.graphics.Color;
           import android.graphics.Paint;
+          import android.graphics.Path;
           import android.util.AttributeSet;
           import android.view.View;
           public class CursorView extends View {
-              private Paint paintOuter, paintInner, paintLine;
+              private Paint paintArrow, paintBorder, paintDot;
               private float cx = 640, cy = 360;
               public CursorView(Context context) { super(context); init(); }
               public CursorView(Context context, AttributeSet attrs) { super(context, attrs); init(); }
               private void init() {
                   setLayerType(LAYER_TYPE_HARDWARE, null);
-                  paintOuter = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  paintOuter.setColor(Color.WHITE);
-                  paintOuter.setStyle(Paint.Style.STROKE);
-                  paintOuter.setStrokeWidth(3f);
-                  paintInner = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  paintInner.setColor(0xccE50914);
-                  paintInner.setStyle(Paint.Style.FILL);
-                  paintLine = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  paintLine.setColor(Color.WHITE);
-                  paintLine.setStrokeWidth(2f);
+                  paintArrow = new Paint(Paint.ANTI_ALIAS_FLAG);
+                  paintArrow.setColor(0xFFFFFFFF);
+                  paintArrow.setStyle(Paint.Style.FILL);
+                  paintBorder = new Paint(Paint.ANTI_ALIAS_FLAG);
+                  paintBorder.setColor(0xFF000000);
+                  paintBorder.setStyle(Paint.Style.STROKE);
+                  paintBorder.setStrokeWidth(2.5f);
+                  paintDot = new Paint(Paint.ANTI_ALIAS_FLAG);
+                  paintDot.setColor(0xFFE50914);
+                  paintDot.setStyle(Paint.Style.FILL);
               }
               public void setPosition(float x, float y) { cx = x; cy = y; invalidate(); }
               public float getCursorX() { return cx; }
               public float getCursorY() { return cy; }
               @Override
               protected void onDraw(Canvas canvas) {
+                  // Vẽ mũi tên chuột như máy tính thật
+                  // Shadow
                   Paint shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  shadow.setColor(0x44000000);
+                  shadow.setColor(0x55000000);
                   shadow.setStyle(Paint.Style.FILL);
-                  canvas.drawCircle(cx+2, cy+2, 12, shadow);
-                  canvas.drawCircle(cx, cy, 12, paintOuter);
-                  canvas.drawCircle(cx, cy, 5, paintInner);
-                  canvas.drawLine(cx-18, cy, cx-14, cy, paintLine);
-                  canvas.drawLine(cx+14, cy, cx+18, cy, paintLine);
-                  canvas.drawLine(cx, cy-18, cx, cy-14, paintLine);
-                  canvas.drawLine(cx, cy+14, cx, cy+18, paintLine);
+                  Path sp = new Path();
+                  sp.moveTo(cx+2, cy+2);
+                  sp.lineTo(cx+2, cy+22);
+                  sp.lineTo(cx+7, cy+17);
+                  sp.lineTo(cx+12, cy+26);
+                  sp.lineTo(cx+14, cy+25);
+                  sp.lineTo(cx+9, cy+16);
+                  sp.lineTo(cx+16, cy+16);
+                  sp.close();
+                  canvas.drawPath(sp, shadow);
+                  // Border mũi tên
+                  Path bp = new Path();
+                  bp.moveTo(cx, cy);
+                  bp.lineTo(cx, cy+20);
+                  bp.lineTo(cx+5, cy+15);
+                  bp.lineTo(cx+10, cy+24);
+                  bp.lineTo(cx+12, cy+23);
+                  bp.lineTo(cx+7, cy+14);
+                  bp.lineTo(cx+14, cy+14);
+                  bp.close();
+                  canvas.drawPath(bp, paintBorder);
+                  // Fill trắng mũi tên
+                  canvas.drawPath(bp, paintArrow);
+                  // Chấm đỏ tại đầu mũi tên
+                  canvas.drawCircle(cx, cy, 2.5f, paintDot);
               }
           }
           ENDOFFILE
@@ -464,6 +493,7 @@ jobs:
           import android.graphics.BitmapFactory;
           import android.os.AsyncTask;
           import android.os.Bundle;
+          import android.os.Handler;
           import android.view.KeyEvent;
           import android.view.View;
           import android.view.ViewGroup;
@@ -493,6 +523,7 @@ jobs:
               };
               private LinearLayout gridLinks;
               private SharedPreferences prefs;
+              private Handler handler = new Handler();
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
@@ -553,11 +584,11 @@ jobs:
                       favicon.setLayoutParams(new LinearLayout.LayoutParams(72,72));
                       favicon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                       card.addView(favicon);
-                      // Load favicon tuần tự để không quá tải
                       final int idx = i;
+                      final ImageView fav = favicon;
                       handler.postDelayed(new Runnable() {
                           @Override public void run() {
-                              new LoadFaviconTask(favicon).execute(
+                              new LoadFaviconTask(fav).execute(
                                   "https://www.google.com/s2/favicons?domain=" + url + "&sz=64");
                           }
                       }, idx * 200L);
@@ -600,7 +631,6 @@ jobs:
                       }
                   }
               }
-              private android.os.Handler handler = new android.os.Handler();
               private void openUrl(String url) {
                   prefs.edit().putString(KEY_URL, url).apply();
                   Intent i = new Intent(this, MainActivity.class);
@@ -763,6 +793,7 @@ jobs:
           import android.graphics.Bitmap;
           import android.os.Bundle;
           import android.os.Handler;
+          import android.os.SystemClock;
           import android.speech.RecognitionListener;
           import android.speech.RecognizerIntent;
           import android.speech.SpeechRecognizer;
@@ -794,10 +825,13 @@ jobs:
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private String currentUrl;
               private Handler handler = new Handler();
+              // Con trỏ
               private float curX, curY;
               private float screenW = 1280, screenH = 720;
-              private static final float STEP_NORMAL = 35f;
-              private static final float STEP_FAST = 100f;
+              private static final float STEP = 30f;
+              private static final float STEP_FAST = 90f;
+              private static final int TOPBAR_H = 52;
+              // TopBar ẩn
               private Runnable hideTopBarRunnable = new Runnable() {
                   @Override public void run() { topBar.setVisibility(View.GONE); }
               };
@@ -809,12 +843,13 @@ jobs:
                   SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                   currentUrl = prefs.getString(KEY_URL, DEFAULT_URL);
                   if (getIntent().hasExtra("url")) currentUrl = getIntent().getStringExtra("url");
-                  webView = (ScrollWebView) findViewById(R.id.webview);
+                  webView    = (ScrollWebView) findViewById(R.id.webview);
                   progressBar = (ProgressBar) findViewById(R.id.progress);
-                  topBar = (LinearLayout) findViewById(R.id.topBar);
+                  topBar     = (LinearLayout) findViewById(R.id.topBar);
                   voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
-                  voiceResult = (TextView) findViewById(R.id.voiceResult);
-                  cursorView = (CursorView) findViewById(R.id.cursor);
+                  voiceResult  = (TextView) findViewById(R.id.voiceResult);
+                  cursorView   = (CursorView) findViewById(R.id.cursor);
+                  // Kích thước màn hình thực
                   android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
                   getWindowManager().getDefaultDisplay().getMetrics(dm);
                   screenW = dm.widthPixels;
@@ -822,23 +857,26 @@ jobs:
                   curX = screenW / 2f;
                   curY = screenH / 2f;
                   cursorView.setPosition(curX, curY);
+                  // Scroll callback
                   webView.setOnScrollChangedCallback(new ScrollWebView.OnScrollChangedCallback() {
                       @Override public void onScrollUp() { showTopBar(); }
                       @Override public void onScrollDown() { scheduleHideTopBar(); }
                   });
-                  ((TextView) findViewById(R.id.btnBack)).setOnClickListener(new View.OnClickListener() {
+                  // TopBar buttons
+                  findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) { finish(); }
                   });
-                  ((TextView) findViewById(R.id.btnVoice)).setOnClickListener(new View.OnClickListener() {
+                  findViewById(R.id.btnVoice).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) { showVoiceOverlay(); }
                   });
-                  ((TextView) findViewById(R.id.btnSettingsWeb)).setOnClickListener(new View.OnClickListener() {
+                  findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) {
                           startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                       }
                   });
                   scheduleHideTopBar();
                   setupSpeech();
+                  // WebView settings
                   WebSettings s = webView.getSettings();
                   s.setJavaScriptEnabled(true);
                   s.setDomStorageEnabled(true);
@@ -848,12 +886,9 @@ jobs:
                   s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                   s.setBuiltInZoomControls(false);
                   s.setDisplayZoomControls(false);
-                  // Tối ưu cache & render
                   s.setAppCacheEnabled(true);
-                  s.setCacheMode(android.webkit.WebSettings.LOAD_DEFAULT);
-                  s.setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH);
-                  s.setEnableSmoothTransition(true);
-                  // TV màn hình lớn: dùng desktop UA
+                  s.setCacheMode(WebSettings.LOAD_DEFAULT);
+                  s.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
                   webView.setWebViewClient(new WebViewClient() {
@@ -864,11 +899,9 @@ jobs:
                       }
                       @Override public void onPageFinished(WebView v, String url) {
                           progressBar.setVisibility(View.GONE);
-                          // Inject CSS tối ưu scroll mượt cho TV
                           v.evaluateJavascript(
                               "document.documentElement.style.scrollBehavior='auto';" +
-                              "document.body.style.overscrollBehavior='none';",
-                              null);
+                              "document.body.style.overscrollBehavior='none';", null);
                       }
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
                           h.proceed();
@@ -891,32 +924,64 @@ jobs:
                   });
                   webView.loadUrl(currentUrl);
               }
-              private void sendClick(float x, float y) {
-                  // Kiểm tra click vào topBar
-                  if (topBar.getVisibility() == View.VISIBLE && y <= topBar.getBottom()) {
-                      int[] ids = { R.id.btnBack, R.id.btnVoice, R.id.btnSettingsWeb };
-                      for (int id : ids) {
-                          View btn = findViewById(id);
-                          int[] loc = new int[2];
-                          btn.getLocationOnScreen(loc);
-                          if (x >= loc[0] && x <= loc[0]+btn.getWidth() &&
-                              y >= loc[1] && y <= loc[1]+btn.getHeight()) {
-                              btn.performClick(); return;
+              /**
+               * Click chính xác: tọa độ curX/curY là tọa độ màn hình tuyệt đối.
+               * WebView chiếm toàn màn hình nên không cần trừ offset.
+               * Nhưng nếu topBar đang hiện thì WebView vẫn full screen (FrameLayout overlap),
+               * nên tọa độ click thẳng vào WebView là đúng.
+               * Chỉ cần check xem có đang click vào topBar không.
+               */
+              private void sendClick(final float x, final float y) {
+                  // Check click vào topBar
+                  if (topBar.getVisibility() == View.VISIBLE) {
+                      int[] loc = new int[2];
+                      topBar.getLocationOnScreen(loc);
+                      int tx = loc[0], ty = loc[1];
+                      int tw = topBar.getWidth(), th = topBar.getHeight();
+                      if (x >= tx && x <= tx+tw && y >= ty && y <= ty+th) {
+                          // Tìm button nào trong topBar được click
+                          int[] btnIds = { R.id.btnBack, R.id.btnVoice, R.id.btnSettingsWeb };
+                          for (int id : btnIds) {
+                              View btn = findViewById(id);
+                              int[] bl = new int[2];
+                              btn.getLocationOnScreen(bl);
+                              if (x >= bl[0] && x <= bl[0]+btn.getWidth() &&
+                                  y >= bl[1] && y <= bl[1]+btn.getHeight()) {
+                                  btn.performClick();
+                                  return;
+                              }
                           }
+                          return;
                       }
-                      return;
                   }
-                  long now = android.os.SystemClock.uptimeMillis();
-                  MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
-                  MotionEvent up = MotionEvent.obtain(now, now+100, MotionEvent.ACTION_UP, x, y, 0);
+                  // Gửi touch event xuống WebView với tọa độ màn hình
+                  // WebView dùng tọa độ relative với chính nó
+                  int[] wvLoc = new int[2];
+                  webView.getLocationOnScreen(wvLoc);
+                  final float relX = x - wvLoc[0];
+                  final float relY = y - wvLoc[1];
+                  long now = SystemClock.uptimeMillis();
+                  MotionEvent down = MotionEvent.obtain(now, now,
+                      MotionEvent.ACTION_DOWN, relX, relY, 0);
                   webView.dispatchTouchEvent(down);
-                  webView.dispatchTouchEvent(up);
-                  down.recycle(); up.recycle();
+                  down.recycle();
+                  // UP sau 100ms để trang web nhận đủ event
+                  handler.postDelayed(new Runnable() {
+                      @Override public void run() {
+                          long t = SystemClock.uptimeMillis();
+                          MotionEvent up = MotionEvent.obtain(t, t,
+                              MotionEvent.ACTION_UP, relX, relY, 0);
+                          webView.dispatchTouchEvent(up);
+                          up.recycle();
+                      }
+                  }, 100);
               }
               private void moveCursor(float dx, float dy) {
                   curX = Math.max(0, Math.min(screenW - 1, curX + dx));
                   curY = Math.max(0, Math.min(screenH - 1, curY + dy));
                   cursorView.setPosition(curX, curY);
+                  // Hiện topBar khi con trỏ lên vùng trên
+                  if (curY < TOPBAR_H + 20) showTopBar();
               }
               private void scheduleHideTopBar() {
                   handler.removeCallbacks(hideTopBarRunnable);
@@ -947,7 +1012,7 @@ jobs:
                           } else hideVoiceOverlay();
                       }
                       @Override public void onError(int error) {
-                          voiceResult.setText("Khong nghe duoc, thu lai!");
+                          voiceResult.setText("Khong nghe duoc!");
                           handler.postDelayed(new Runnable() {
                               @Override public void run() { hideVoiceOverlay(); }
                           }, 1500);
@@ -975,7 +1040,7 @@ jobs:
                       startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                   } else {
                       String encoded = text.replace(" ", "+");
-                      String searchUrl = currentUrl + "/search?q=" + encoded + "&s=" + encoded;
+                      String searchUrl = currentUrl + "/search?q=" + encoded;
                       webView.evaluateJavascript(
                           "var inp=document.querySelector('input[type=search],input[name=keyword],input[name=q]');" +
                           "if(inp){inp.value='" + text + "';inp.dispatchEvent(new Event('input'));inp.form&&inp.form.submit();}" +
@@ -990,7 +1055,6 @@ jobs:
                   Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN");
-                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "vi-VN");
                   intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
                   speechRecognizer.startListening(intent);
               }
@@ -1004,35 +1068,35 @@ jobs:
                       if (keyCode == KeyEvent.KEYCODE_BACK) { hideVoiceOverlay(); return true; }
                       return true;
                   }
-                  float step = (event.getRepeatCount() > 5) ? STEP_FAST : STEP_NORMAL;
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                      moveCursor(0, -step);
-                      if (curY < 60) showTopBar();
-                      return true;
+                  // Tốc độ: giữ lâu → nhanh hơn
+                  float step = (event.getRepeatCount() > 8) ? STEP_FAST : STEP;
+                  switch (keyCode) {
+                      case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0, -step); return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:  moveCursor(0,  step); return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:  moveCursor(-step, 0); return true;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT: moveCursor( step, 0); return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          sendClick(curX, curY); return true;
+                      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                      case KeyEvent.KEYCODE_MEDIA_PLAY:
+                          webView.evaluateJavascript(
+                              "var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}", null);
+                          return true;
+                      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+                          webView.evaluateJavascript(
+                              "var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
+                          return true;
+                      case KeyEvent.KEYCODE_MEDIA_REWIND:
+                          webView.evaluateJavascript(
+                              "var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
+                          return true;
+                      case KeyEvent.KEYCODE_BACK:
+                          if (webView.canGoBack()) { webView.goBack(); return true; }
+                          finish(); return true;
+                      case KeyEvent.KEYCODE_MENU:
+                          showVoiceOverlay(); return true;
                   }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, step); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-step, 0); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(step, 0); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-                      sendClick(curX, curY); return true;
-                  }
-                  if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}", null);
-                      return true;
-                  }
-                  if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
-                      return true;
-                  }
-                  if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND) {
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
-                      return true;
-                  }
-                  if (keyCode == KeyEvent.KEYCODE_BACK) {
-                      if (webView.canGoBack()) { webView.goBack(); return true; }
-                      finish(); return true;
-                  }
-                  if (keyCode == KeyEvent.KEYCODE_MENU) { showVoiceOverlay(); return true; }
                   return super.onKeyDown(keyCode, event);
               }
               @Override protected void onPause() {
