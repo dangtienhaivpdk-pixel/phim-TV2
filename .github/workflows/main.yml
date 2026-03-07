@@ -179,7 +179,7 @@ jobs:
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:background="#000000">
-              <WebView android:id="@+id/webview"
+              <com.allinone.app.ScrollWebView android:id="@+id/webview"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
               <ProgressBar android:id="@+id/progress"
@@ -377,6 +377,31 @@ jobs:
           </resources>
           ENDOFFILE
 
+          cat > src/com/allinone/app/ScrollWebView.java << 'ENDOFFILE'
+          package com.allinone.app;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.webkit.WebView;
+          public class ScrollWebView extends WebView {
+              public interface OnScrollChangedCallback {
+                  void onScrollUp();
+                  void onScrollDown();
+              }
+              private OnScrollChangedCallback callback;
+              public ScrollWebView(Context c) { super(c); }
+              public ScrollWebView(Context c, AttributeSet a) { super(c, a); }
+              public void setOnScrollChangedCallback(OnScrollChangedCallback cb) { this.callback = cb; }
+              @Override
+              protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+                  super.onScrollChanged(l, t, oldl, oldt);
+                  if (callback != null) {
+                      if (t < oldt) callback.onScrollUp();
+                      else if (t > oldt) callback.onScrollDown();
+                  }
+              }
+          }
+          ENDOFFILE
+
           cat > src/com/allinone/app/HomeActivity.java << 'ENDOFFILE'
           package com.allinone.app;
           import android.app.Activity;
@@ -405,6 +430,7 @@ jobs:
               private static final String PREF_NAME = "aio_prefs";
               private static final String KEY_URL = "custom_url";
               private static final String KEY_HISTORY = "url_history";
+              private static final String KEY_INITED = "inited";
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private static final String SEP = "|||";
               private static final String[] DEFAULT_URLS = {
@@ -432,7 +458,7 @@ jobs:
               }
               @Override protected void onResume() { super.onResume(); renderLinks(); }
               private void initDefaultUrls() {
-                  if (prefs.getString(KEY_HISTORY, "").isEmpty()) {
+                  if (!prefs.getBoolean(KEY_INITED, false)) {
                       StringBuilder sb = new StringBuilder();
                       for (int i = 0; i < DEFAULT_URLS.length; i++) {
                           if (i > 0) sb.append(SEP);
@@ -441,6 +467,7 @@ jobs:
                       prefs.edit()
                           .putString(KEY_HISTORY, sb.toString())
                           .putString(KEY_URL, DEFAULT_URL)
+                          .putBoolean(KEY_INITED, true)
                           .apply();
                   }
               }
@@ -458,7 +485,8 @@ jobs:
                       if (i % cols == 0) {
                           row = new LinearLayout(this);
                           row.setOrientation(LinearLayout.HORIZONTAL);
-                          LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                          LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                           rp.setMargins(0,0,0,20); row.setLayoutParams(rp);
                           gridLinks.addView(row);
                       }
@@ -472,17 +500,19 @@ jobs:
                       cp.setMargins(0,0,16,0); card.setLayoutParams(cp);
                       card.setFocusable(true); card.setClickable(true);
                       ImageView favicon = new ImageView(this);
-                      LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(72,72);
-                      favicon.setLayoutParams(fp);
+                      favicon.setLayoutParams(new LinearLayout.LayoutParams(72,72));
                       favicon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                       card.addView(favicon);
-                      new LoadFaviconTask(favicon).execute("https://www.google.com/s2/favicons?domain=" + url + "&sz=64");
+                      new LoadFaviconTask(favicon).execute(
+                          "https://www.google.com/s2/favicons?domain=" + url + "&sz=64");
                       TextView label = new TextView(this);
                       String domain = url.replace("https://","").replace("http://","").split("/")[0];
                       label.setText(domain);
                       label.setTextColor(url.equals(activeUrl) ? 0xffE50914 : 0xffcccccc);
-                      label.setTextSize(13); label.setGravity(android.view.Gravity.CENTER); label.setMaxLines(1);
-                      LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      label.setTextSize(13); label.setGravity(android.view.Gravity.CENTER);
+                      label.setMaxLines(1);
+                      LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                       lp.setMargins(0,10,0,0); label.setLayoutParams(lp);
                       card.addView(label);
                       if (url.equals(activeUrl)) {
@@ -497,14 +527,15 @@ jobs:
                       });
                       card.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                           @Override public void onFocusChange(View v, boolean focused) {
-                              v.setBackgroundColor(focused ? 0xff2a2a5e : (url.equals(prefs.getString(KEY_URL, DEFAULT_URL)) ? 0xff1a1a3e : 0xff1a1a2e));
+                              v.setBackgroundColor(focused ? 0xff2a2a5e :
+                                  (url.equals(prefs.getString(KEY_URL, DEFAULT_URL)) ? 0xff1a1a3e : 0xff1a1a2e));
                           }
                       });
                       row.addView(card);
                   }
                   if (row != null && history.size() % cols != 0) {
-                      int remaining = cols - (history.size() % cols);
-                      for (int j = 0; j < remaining; j++) {
+                      int rem = cols - (history.size() % cols);
+                      for (int j = 0; j < rem; j++) {
                           View empty = new View(this);
                           LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(0, 200, 1f);
                           ep.setMargins(0,0,16,0); empty.setLayoutParams(ep); row.addView(empty);
@@ -620,23 +651,29 @@ jobs:
                       row.setOrientation(LinearLayout.HORIZONTAL);
                       row.setPadding(16,12,16,12);
                       row.setBackgroundColor(url.equals(activeUrl) ? 0xff1a1a2e : 0xff111111);
-                      LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8); row.setLayoutParams(rp);
                       TextView txtUrl = new TextView(this);
                       txtUrl.setText((url.equals(activeUrl) ? "▶  " : "      ") + url);
                       txtUrl.setTextColor(url.equals(activeUrl) ? 0xffE50914 : 0xffcccccc);
                       txtUrl.setTextSize(16);
-                      txtUrl.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+                      txtUrl.setLayoutParams(new LinearLayout.LayoutParams(
+                          0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
                       row.addView(txtUrl);
                       Button btnUse = new Button(this);
                       btnUse.setText("Chon"); btnUse.setTextColor(Color.WHITE);
                       btnUse.setBackgroundColor(0xff333355); btnUse.setTextSize(13); btnUse.setPadding(16,8,16,8);
-                      btnUse.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                      btnUse.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { saveUrl(url); openUrl(url); } });
+                      btnUse.setLayoutParams(new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                      btnUse.setOnClickListener(new View.OnClickListener() {
+                          @Override public void onClick(View v) { saveUrl(url); openUrl(url); }
+                      });
                       Button btnDel = new Button(this);
                       btnDel.setText("X"); btnDel.setTextColor(Color.WHITE);
                       btnDel.setBackgroundColor(0xff660000); btnDel.setTextSize(13); btnDel.setPadding(16,8,16,8);
-                      LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                       dp.setMargins(8,0,0,0); btnDel.setLayoutParams(dp);
                       btnDel.setOnClickListener(new View.OnClickListener() {
                           @Override public void onClick(View v) {
@@ -675,7 +712,6 @@ jobs:
           import android.view.WindowManager;
           import android.webkit.WebChromeClient;
           import android.webkit.WebSettings;
-          import android.webkit.WebView;
           import android.webkit.WebViewClient;
           import android.widget.LinearLayout;
           import android.widget.ProgressBar;
@@ -685,7 +721,7 @@ jobs:
           import android.webkit.SslErrorHandler;
           import java.util.ArrayList;
           public class MainActivity extends Activity {
-              private WebView webView;
+              private ScrollWebView webView;
               private ProgressBar progressBar;
               private LinearLayout topBar;
               private RelativeLayout voiceOverlay;
@@ -696,12 +732,8 @@ jobs:
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private String currentUrl;
               private Handler handler = new Handler();
-              private boolean topBarVisible = true;
               private Runnable hideTopBarRunnable = new Runnable() {
-                  @Override public void run() {
-                      topBar.setVisibility(View.GONE);
-                      topBarVisible = false;
-                  }
+                  @Override public void run() { topBar.setVisibility(View.GONE); }
               };
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -711,11 +743,16 @@ jobs:
                   SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                   currentUrl = prefs.getString(KEY_URL, DEFAULT_URL);
                   if (getIntent().hasExtra("url")) currentUrl = getIntent().getStringExtra("url");
-                  webView = (WebView) findViewById(R.id.webview);
+                  webView = (ScrollWebView) findViewById(R.id.webview);
                   progressBar = (ProgressBar) findViewById(R.id.progress);
                   topBar = (LinearLayout) findViewById(R.id.topBar);
                   voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
                   voiceResult = (TextView) findViewById(R.id.voiceResult);
+                  // Bắt scroll từ WebView → hiện/ẩn topBar
+                  webView.setOnScrollChangedCallback(new ScrollWebView.OnScrollChangedCallback() {
+                      @Override public void onScrollUp() { showTopBar(); }
+                      @Override public void onScrollDown() { scheduleHideTopBar(); }
+                  });
                   ((TextView) findViewById(R.id.btnBack)).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) { finish(); }
                   });
@@ -727,7 +764,6 @@ jobs:
                           startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                       }
                   });
-                  // Tự ẩn topBar sau 5 giây
                   scheduleHideTopBar();
                   setupSpeech();
                   WebSettings s = webView.getSettings();
@@ -741,17 +777,23 @@ jobs:
                   s.setDisplayZoomControls(false);
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setWebViewClient(new WebViewClient() {
-                      @Override public void onPageStarted(WebView v, String url, Bitmap f) {
+                      @Override public void onPageStarted(ScrollWebView v, String url, Bitmap f) {
                           progressBar.setVisibility(View.VISIBLE);
                           String domain = url.replace("https://","").replace("http://","").split("/")[0];
                           ((TextView)findViewById(R.id.txtTitle)).setText(domain);
                       }
-                      @Override public void onPageFinished(WebView v, String url) { progressBar.setVisibility(View.GONE); }
-                      @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) { h.proceed(); }
-                      @Override public boolean shouldOverrideUrlLoading(WebView v, String url) { v.loadUrl(url); return true; }
+                      @Override public void onPageFinished(ScrollWebView v, String url) {
+                          progressBar.setVisibility(View.GONE);
+                      }
+                      @Override public void onReceivedSslError(ScrollWebView v, SslErrorHandler h, SslError e) {
+                          h.proceed();
+                      }
+                      @Override public boolean shouldOverrideUrlLoading(ScrollWebView v, String url) {
+                          v.loadUrl(url); return true;
+                      }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
-                      @Override public void onProgressChanged(WebView v, int p) {
+                      @Override public void onProgressChanged(ScrollWebView v, int p) {
                           progressBar.setProgress(p);
                           progressBar.setVisibility(p < 100 ? View.VISIBLE : View.GONE);
                       }
@@ -769,9 +811,12 @@ jobs:
                   handler.postDelayed(hideTopBarRunnable, 5000);
               }
               private void showTopBar() {
-                  topBar.setVisibility(View.VISIBLE);
-                  topBarVisible = true;
-                  scheduleHideTopBar();
+                  runOnUiThread(new Runnable() {
+                      @Override public void run() {
+                          topBar.setVisibility(View.VISIBLE);
+                          scheduleHideTopBar();
+                      }
+                  });
               }
               private void setupSpeech() {
                   if (!SpeechRecognizer.isRecognitionAvailable(this)) return;
@@ -783,13 +828,17 @@ jobs:
                           if (matches != null && !matches.isEmpty()) {
                               final String text = matches.get(0).toLowerCase();
                               voiceResult.setText(matches.get(0));
-                              handler.postDelayed(new Runnable() { @Override public void run() { hideVoiceOverlay(); } }, 800);
+                              handler.postDelayed(new Runnable() {
+                                  @Override public void run() { hideVoiceOverlay(); }
+                              }, 800);
                               handleVoiceCommand(text);
                           } else hideVoiceOverlay();
                       }
                       @Override public void onError(int error) {
                           voiceResult.setText("Khong nghe duoc, thu lai!");
-                          handler.postDelayed(new Runnable() { @Override public void run() { hideVoiceOverlay(); } }, 1500);
+                          handler.postDelayed(new Runnable() {
+                              @Override public void run() { hideVoiceOverlay(); }
+                          }, 1500);
                       }
                       @Override public void onBeginningOfSpeech() {}
                       @Override public void onRmsChanged(float v) {}
@@ -843,11 +892,8 @@ jobs:
                       if (keyCode == KeyEvent.KEYCODE_BACK) { hideVoiceOverlay(); return true; }
                       return true;
                   }
-                  // Cuộn lên → hiện topBar
                   if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                      webView.scrollBy(0, -300);
-                      showTopBar();
-                      return true;
+                      webView.scrollBy(0, -300); showTopBar(); return true;
                   }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { webView.scrollBy(0, 300); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { webView.scrollBy(-200, 0); return true; }
@@ -881,8 +927,7 @@ jobs:
                   if (voiceOverlay.getVisibility() == View.VISIBLE) hideVoiceOverlay();
               }
               @Override protected void onResume() {
-                  super.onResume(); webView.onResume();
-                  showTopBar();
+                  super.onResume(); webView.onResume(); showTopBar();
               }
               @Override protected void onDestroy() {
                   handler.removeCallbacksAndMessages(null);
@@ -906,6 +951,7 @@ jobs:
             -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
             build/gen/com/allinone/app/R.java \
+            src/com/allinone/app/ScrollWebView.java \
             src/com/allinone/app/HomeActivity.java \
             src/com/allinone/app/SettingsActivity.java \
             src/com/allinone/app/MainActivity.java
