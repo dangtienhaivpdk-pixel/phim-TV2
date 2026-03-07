@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="11" android:versionName="11.0">
+              package="com.allinone.app" android:versionCode="12" android:versionName="12.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -111,25 +111,31 @@ jobs:
           </manifest>
           XMLEOF
 
+          # home.xml — tất cả focusable=false, descendantFocusability=blocksDescendants
           cat > res/layout/home.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:background="#0a0a0f">
+              android:orientation="vertical" android:background="#0a0a0f"
+              android:focusable="false" android:descendantFocusability="blocksDescendants">
               <LinearLayout android:layout_width="match_parent" android:layout_height="80dp"
                   android:orientation="horizontal" android:gravity="center_vertical"
-                  android:background="#111122" android:paddingLeft="40dp" android:paddingRight="40dp">
+                  android:background="#111122" android:paddingLeft="40dp" android:paddingRight="40dp"
+                  android:focusable="false">
                   <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                       android:layout_weight="1" android:text="ALL IN ONE"
-                      android:textSize="32sp" android:textColor="#E50914" android:textStyle="bold"/>
-                  <Button android:id="@+id/btnSettings"
+                      android:textSize="32sp" android:textColor="#E50914" android:textStyle="bold"
+                      android:focusable="false"/>
+                  <TextView android:id="@+id/btnSettings"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⚙ Cai dat" android:textSize="16sp" android:textColor="#ffffff"
-                      android:background="#333355" android:padding="12dp" android:focusable="true"/>
+                      android:background="#333355" android:padding="12dp"
+                      android:focusable="false" android:clickable="true"/>
               </LinearLayout>
               <ScrollView android:id="@+id/scrollView"
                   android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:padding="40dp" android:focusable="false">
+                  android:padding="40dp" android:focusable="false"
+                  android:descendantFocusability="blocksDescendants">
                   <LinearLayout android:id="@+id/gridLinks"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:orientation="vertical" android:focusable="false"/>
@@ -137,60 +143,75 @@ jobs:
           </LinearLayout>
           XMLEOF
 
+          # main.xml — bottom bar ẨN mặc định (visibility=gone), cursor trên cùng
           cat > res/layout/main.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:background="#000000">
+              android:background="#000000" android:focusable="false"
+              android:descendantFocusability="blocksDescendants">
+
               <com.allinone.app.ScrollWebView android:id="@+id/webview"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:focusable="false" android:focusableInTouchMode="false"/>
+
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
                   android:layout_width="match_parent" android:layout_height="4dp"
                   android:layout_gravity="top" android:max="100"
                   android:progressTint="#E50914" android:visibility="gone"/>
-              <!-- 3 nút cố định góc dưới trái, luôn hiển thị -->
-              <LinearLayout
+
+              <!-- Bottom bar: ẨN mặc định, chỉ hiện khi chuột vào góc dưới trái -->
+              <LinearLayout android:id="@+id/bottomBar"
                   android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:layout_gravity="bottom|start" android:orientation="horizontal"
-                  android:layout_margin="20dp">
+                  android:layout_margin="16dp" android:visibility="gone"
+                  android:focusable="false">
                   <TextView android:id="@+id/btnHome"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⌂" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#dd111122" android:clickable="true" android:layout_marginRight="8dp"/>
+                      android:background="#ee111122" android:clickable="true"
+                      android:focusable="false" android:layout_marginRight="8dp"/>
                   <TextView android:id="@+id/btnWebBack"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="◀" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#dd111122" android:clickable="true" android:layout_marginRight="8dp"/>
+                      android:background="#ee111122" android:clickable="true"
+                      android:focusable="false" android:layout_marginRight="8dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⚙" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#dd111122" android:clickable="true"/>
+                      android:background="#ee111122" android:clickable="true"
+                      android:focusable="false"/>
               </LinearLayout>
+
               <!-- Voice overlay -->
               <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:background="#cc000000" android:visibility="gone">
+                  android:background="#cc000000" android:visibility="gone"
+                  android:focusable="false">
                   <LinearLayout android:layout_width="600dp" android:layout_height="wrap_content"
                       android:layout_centerInParent="true" android:orientation="vertical"
                       android:background="#1a1a2e" android:padding="40dp"
+                      android:focusable="false"
                       xmlns:android="http://schemas.android.com/apk/res/android">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:layout_gravity="center" android:text="🎤 Dang nghe..."
-                          android:textSize="28sp" android:textColor="#ffffff" android:layout_marginBottom="12dp"/>
+                          android:textSize="28sp" android:textColor="#ffffff"
+                          android:layout_marginBottom="12dp" android:focusable="false"/>
                       <TextView android:id="@+id/voiceResult"
                           android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:layout_gravity="center" android:text=""
-                          android:textSize="22sp" android:textColor="#E50914" android:gravity="center"/>
+                          android:textSize="22sp" android:textColor="#E50914"
+                          android:gravity="center" android:focusable="false"/>
                   </LinearLayout>
               </RelativeLayout>
+
               <!-- Cursor luôn trên cùng -->
               <com.allinone.app.CursorView android:id="@+id/cursor"
                   android:layout_width="match_parent" android:layout_height="match_parent"
@@ -202,47 +223,55 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:background="#0d0d1a">
+              android:orientation="vertical" android:background="#0d0d1a"
+              android:focusable="false" android:descendantFocusability="blocksDescendants">
               <LinearLayout android:layout_width="match_parent" android:layout_height="70dp"
                   android:orientation="horizontal" android:gravity="center_vertical"
-                  android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp">
-                  <Button android:id="@+id/btnBack" android:layout_width="wrap_content"
+                  android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp"
+                  android:focusable="false">
+                  <TextView android:id="@+id/btnBack" android:layout_width="wrap_content"
                       android:layout_height="wrap_content" android:text="◀ Back"
                       android:textSize="16sp" android:textColor="#ffffff"
                       android:background="#333355" android:padding="12dp"
-                      android:layout_marginRight="20dp" android:focusable="true"/>
+                      android:layout_marginRight="20dp" android:focusable="false" android:clickable="true"/>
                   <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                       android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
-                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"/>
+                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"
+                      android:focusable="false"/>
               </LinearLayout>
               <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:orientation="vertical" android:padding="40dp">
+                  android:orientation="vertical" android:padding="40dp" android:focusable="false">
                   <EditText android:id="@+id/editUrl" android:layout_width="match_parent"
                       android:layout_height="wrap_content" android:hint="Nhap duong dan web moi..."
                       android:textSize="20sp" android:textColor="#ffffff" android:textColorHint="#555555"
                       android:background="#1a1a2e" android:padding="18dp"
                       android:inputType="textUri" android:layout_marginBottom="16dp"/>
                   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="horizontal">
-                      <Button android:id="@+id/btnSave" android:layout_width="0dp"
+                      android:orientation="horizontal" android:focusable="false">
+                      <TextView android:id="@+id/btnSave" android:layout_width="0dp"
                           android:layout_height="wrap_content" android:layout_weight="1"
                           android:text="THEM VA MO" android:textSize="18sp"
                           android:textColor="#ffffff" android:background="#E50914"
-                          android:padding="14dp" android:layout_marginRight="10dp" android:focusable="true"/>
-                      <Button android:id="@+id/btnReset" android:layout_width="0dp"
+                          android:padding="14dp" android:layout_marginRight="10dp"
+                          android:gravity="center" android:focusable="false" android:clickable="true"/>
+                      <TextView android:id="@+id/btnReset" android:layout_width="0dp"
                           android:layout_height="wrap_content" android:layout_weight="1"
                           android:text="RESET MAC DINH" android:textSize="18sp"
                           android:textColor="#aaaaaa" android:background="#1a1a2e"
-                          android:padding="14dp" android:focusable="true"/>
+                          android:padding="14dp" android:gravity="center"
+                          android:focusable="false" android:clickable="true"/>
                   </LinearLayout>
               </LinearLayout>
               <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:text="Danh sach kenh:" android:textSize="18sp" android:textColor="#888888"
-                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"/>
+                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"
+                  android:focusable="false"/>
               <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
-                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp">
+                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp"
+                  android:focusable="false" android:descendantFocusability="blocksDescendants">
                   <LinearLayout android:id="@+id/listUrls" android:layout_width="match_parent"
-                      android:layout_height="wrap_content" android:orientation="vertical"/>
+                      android:layout_height="wrap_content" android:orientation="vertical"
+                      android:focusable="false"/>
               </ScrollView>
           </LinearLayout>
           XMLEOF
@@ -303,7 +332,7 @@ jobs:
           }
           JEOF
 
-          # ── HomeActivity — Netflix D-pad, không chuột ─────────────────────────────────
+          # ── HomeActivity — Netflix style, KHÔNG focus, KHÔNG chuột ───────────────────
           cat > src/com/allinone/app/HomeActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -319,7 +348,6 @@ jobs:
           import android.view.KeyEvent;
           import android.view.View;
           import android.view.ViewGroup;
-          import android.widget.Button;
           import android.widget.ImageView;
           import android.widget.LinearLayout;
           import android.widget.ScrollView;
@@ -332,8 +360,15 @@ jobs:
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
                   KEY_INIT="inited",DEF="https://pointnorth.io",SEP="|||";
-              static final String[]DEFS={"https://pointnorth.io","https://www.youtube.com",
-                  "https://www.google.com","https://vtvgo.vn","https://tinnhac.com","https://vnexpress.net"};
+              // ── TV360 thay vtvgo ──
+              static final String[]DEFS={
+                  "https://pointnorth.io",
+                  "https://www.youtube.com",
+                  "https://www.google.com",
+                  "https://tv360.vn/tv/vtv1-hd?ch=2&c=0",
+                  "https://tinnhac.com",
+                  "https://vnexpress.net"
+              };
               private static final int COLS=3;
               private LinearLayout grid;
               private ScrollView scrollView;
@@ -345,6 +380,8 @@ jobs:
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.home);
+                  // Tắt focus toàn bộ window
+                  getWindow().getDecorView().setFocusable(false);
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   if(!prefs.getBoolean(KEY_INIT,false)){
                       StringBuilder sb=new StringBuilder();
@@ -354,7 +391,7 @@ jobs:
                   }
                   grid=(LinearLayout)findViewById(R.id.gridLinks);
                   scrollView=(ScrollView)findViewById(R.id.scrollView);
-                  ((Button)findViewById(R.id.btnSettings)).setOnClickListener(
+                  findViewById(R.id.btnSettings).setOnClickListener(
                       new View.OnClickListener(){@Override public void onClick(View v){
                           startActivity(new Intent(HomeActivity.this,SettingsActivity.class));
                       }});
@@ -372,30 +409,40 @@ jobs:
                   LinearLayout row=null;
                   for(int i=0;i<h.size();i++){
                       if(i%COLS==0){
-                          row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
+                          row=new LinearLayout(this);
+                          row.setOrientation(LinearLayout.HORIZONTAL);
+                          row.setFocusable(false);
                           LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                           rp.setMargins(0,0,0,20);row.setLayoutParams(rp);grid.addView(row);
                       }
                       final String url=h.get(i);urls.add(url);
-                      // Wrapper để làm border khi focus
+                      // Border wrapper
                       final LinearLayout wrap=new LinearLayout(this);
                       wrap.setOrientation(LinearLayout.VERTICAL);
-                      LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f);
+                      wrap.setFocusable(false);
+                      LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,
+                          ViewGroup.LayoutParams.WRAP_CONTENT,1f);
                       wp.setMargins(0,0,16,0);wrap.setLayoutParams(wp);
-                      wrap.setBackgroundColor(0xff1a1a2e); // default: border tối
+                      wrap.setBackgroundColor(0x00000000);
                       wrap.setPadding(3,3,3,3);
+                      // Card bên trong
                       final LinearLayout card=new LinearLayout(this);
                       card.setOrientation(LinearLayout.VERTICAL);
                       card.setGravity(android.view.Gravity.CENTER);
                       card.setPadding(18,22,18,22);
                       card.setLayoutParams(new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,196));
-                      card.setBackgroundColor(url.equals(act)?0xff1a1a3e:0xff111122);
-                      card.setClickable(true);card.setFocusable(false);
+                      card.setBackgroundColor(url.equals(act)?0xff1f1f40:0xff141428);
+                      card.setClickable(true);
+                      card.setFocusable(false);
+                      // Tắt hoàn toàn state list drawable mặc định
+                      card.setStateListAnimator(null);
                       ImageView fav=new ImageView(this);
                       fav.setLayoutParams(new LinearLayout.LayoutParams(68,68));
-                      fav.setScaleType(ImageView.ScaleType.FIT_CENTER);card.addView(fav);
+                      fav.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                      fav.setFocusable(false);
+                      card.addView(fav);
                       final int idx=i;final ImageView fv=fav;
                       handler.postDelayed(new Runnable(){@Override public void run(){
                           new AsyncTask<String,Void,Bitmap>(){
@@ -410,16 +457,19 @@ jobs:
                           }.execute("https://www.google.com/s2/favicons?domain="+url+"&sz=64");
                       }},idx*180L);
                       TextView lbl=new TextView(this);
-                      lbl.setText(url.replace("https://","").replace("http://","").split("/")[0]);
+                      String domain=url.replace("https://","").replace("http://","").split("/")[0];
+                      lbl.setText(domain);
                       lbl.setTextColor(url.equals(act)?0xffE50914:0xffaaaaaa);
-                      lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);lbl.setMaxLines(1);
+                      lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);
+                      lbl.setMaxLines(1);lbl.setFocusable(false);
                       LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       lp.setMargins(0,8,0,0);lbl.setLayoutParams(lp);card.addView(lbl);
                       if(url.equals(act)){
                           TextView t=new TextView(this);t.setText("▶ Dang xem");
                           t.setTextColor(0xffE50914);t.setTextSize(11);
-                          t.setGravity(android.view.Gravity.CENTER);card.addView(t);
+                          t.setGravity(android.view.Gravity.CENTER);
+                          t.setFocusable(false);card.addView(t);
                       }
                       final int fi=i;
                       card.setOnClickListener(new View.OnClickListener(){
@@ -427,11 +477,10 @@ jobs:
                       });
                       wrap.addView(card);cards.add(wrap);row.addView(wrap);
                   }
-                  // Ô rỗng
                   if(row!=null&&h.size()%COLS!=0){
                       int rem=COLS-(h.size()%COLS);
                       for(int j=0;j<rem;j++){
-                          View e=new View(this);
+                          View e=new View(this);e.setFocusable(false);
                           LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(0,196,1f);
                           ep.setMargins(0,0,16,0);e.setLayoutParams(ep);row.addView(e);
                       }
@@ -444,23 +493,30 @@ jobs:
                   startActivity(new Intent(HomeActivity.this,MainActivity.class).putExtra("url",url));
               }
 
-              // Highlight: viền đỏ sáng + scale lên chút
               private void applyFocus(int idx){
                   // Xoá highlight cũ
                   if(focusIdx>=0&&focusIdx<cards.size()){
-                      cards.get(focusIdx).setBackgroundColor(0xff1a1a2e);
-                      cards.get(focusIdx).setPadding(3,3,3,3);
+                      LinearLayout old=cards.get(focusIdx);
+                      old.setBackgroundColor(0x00000000);
+                      old.setPadding(3,3,3,3);
+                      // Restore card màu nền
+                      if(old.getChildCount()>0){
+                          String ou=urls.get(focusIdx);
+                          String act=prefs.getString(KEY_URL,DEF);
+                          old.getChildAt(0).setBackgroundColor(ou.equals(act)?0xff1f1f40:0xff141428);
+                      }
                   }
                   focusIdx=idx;
                   if(focusIdx<0||focusIdx>=cards.size())return;
                   LinearLayout cur=cards.get(focusIdx);
                   cur.setBackgroundColor(0xffE50914); // viền đỏ
-                  cur.setPadding(4,4,4,4);
-                  // Scroll để card luôn nhìn thấy
+                  cur.setPadding(3,3,3,3);
+                  if(cur.getChildCount()>0)
+                      cur.getChildAt(0).setBackgroundColor(0xff2a1020);
+                  // Auto-scroll để card luôn nhìn thấy
                   final LinearLayout fc=cur;
                   scrollView.post(new Runnable(){@Override public void run(){
-                      Rect r=new Rect();
-                      fc.getDrawingRect(r);
+                      Rect r=new Rect();fc.getDrawingRect(r);
                       scrollView.requestChildRectangleOnScreen(grid,r,false);
                   }});
               }
@@ -470,21 +526,16 @@ jobs:
                   if(total==0)return super.onKeyDown(key,e);
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_RIGHT:
-                          if(focusIdx+1<total)applyFocus(focusIdx+1);
-                          return true;
+                          if(focusIdx+1<total)applyFocus(focusIdx+1);return true;
                       case KeyEvent.KEYCODE_DPAD_LEFT:
-                          if(focusIdx-1>=0)applyFocus(focusIdx-1);
-                          return true;
+                          if(focusIdx-1>=0)applyFocus(focusIdx-1);return true;
                       case KeyEvent.KEYCODE_DPAD_DOWN:
-                          if(focusIdx+COLS<total)applyFocus(focusIdx+COLS);
-                          return true;
+                          if(focusIdx+COLS<total)applyFocus(focusIdx+COLS);return true;
                       case KeyEvent.KEYCODE_DPAD_UP:
-                          if(focusIdx-COLS>=0)applyFocus(focusIdx-COLS);
-                          return true;
+                          if(focusIdx-COLS>=0)applyFocus(focusIdx-COLS);return true;
                       case KeyEvent.KEYCODE_DPAD_CENTER:
                       case KeyEvent.KEYCODE_ENTER:
-                          if(e.getRepeatCount()==0)openUrl(urls.get(focusIdx));
-                          return true;
+                          if(e.getRepeatCount()==0)openUrl(urls.get(focusIdx));return true;
                       case KeyEvent.KEYCODE_BACK:
                           finish();return true;
                   }
@@ -505,7 +556,6 @@ jobs:
           import android.view.KeyEvent;
           import android.view.View;
           import android.view.ViewGroup;
-          import android.widget.Button;
           import android.widget.EditText;
           import android.widget.LinearLayout;
           import android.widget.TextView;
@@ -522,14 +572,14 @@ jobs:
                   editUrl=(EditText)findViewById(R.id.editUrl);
                   listUrls=(LinearLayout)findViewById(R.id.listUrls);
                   editUrl.setText(prefs.getString(KEY_URL,DEF));renderHistory();
-                  ((Button)findViewById(R.id.btnBack)).setOnClickListener(
+                  findViewById(R.id.btnBack).setOnClickListener(
                       new View.OnClickListener(){@Override public void onClick(View v){finish();}});
-                  ((Button)findViewById(R.id.btnSave)).setOnClickListener(new View.OnClickListener(){
+                  findViewById(R.id.btnSave).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){
                           String u=editUrl.getText().toString().trim();
                           if(u.isEmpty())return;if(!u.startsWith("http"))u="https://"+u;
                           saveUrl(u);openUrl(u);}});
-                  ((Button)findViewById(R.id.btnReset)).setOnClickListener(new View.OnClickListener(){
+                  findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){saveUrl(DEF);openUrl(DEF);}});
               }
               private List<String> getHist(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
@@ -548,21 +598,25 @@ jobs:
                   for(final String url:hist){
                       final LinearLayout row=new LinearLayout(this);
                       row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(16,14,16,14);
-                      row.setBackgroundColor(url.equals(active)?0xff1a1a2e:0xff111111);row.setClickable(true);
+                      row.setBackgroundColor(url.equals(active)?0xff1a1a2e:0xff111111);
+                      row.setClickable(true);row.setFocusable(false);
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
                       tv.setText((url.equals(active)?"▶  ":"      ")+url);
-                      tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);tv.setTextSize(16);
+                      tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
+                      tv.setTextSize(15);tv.setFocusable(false);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
                       row.addView(tv);
-                      Button bu=new Button(this);bu.setText("Chon");bu.setTextColor(Color.WHITE);
-                      bu.setBackgroundColor(0xff333355);bu.setTextSize(13);bu.setPadding(16,8,16,8);
+                      TextView bu=new TextView(this);bu.setText(" Chon ");bu.setTextColor(Color.WHITE);
+                      bu.setBackgroundColor(0xff333355);bu.setTextSize(13);bu.setPadding(16,10,16,10);
+                      bu.setGravity(android.view.Gravity.CENTER);bu.setFocusable(false);bu.setClickable(true);
                       bu.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
                       bu.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
-                      Button bd=new Button(this);bd.setText("X");bd.setTextColor(Color.WHITE);
-                      bd.setBackgroundColor(0xff660000);bd.setTextSize(13);bd.setPadding(16,8,16,8);
+                      TextView bd=new TextView(this);bd.setText("  X  ");bd.setTextColor(Color.WHITE);
+                      bd.setBackgroundColor(0xff660000);bd.setTextSize(13);bd.setPadding(16,10,16,10);
+                      bd.setGravity(android.view.Gravity.CENTER);bd.setFocusable(false);bd.setClickable(true);
                       LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
                       bd.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
@@ -580,7 +634,7 @@ jobs:
           }
           JEOF
 
-          # ── MainActivity — chỉ chuột, không focus web ────────────────────────────────
+          # ── MainActivity — chuột thuần, bottom bar ẩn, hiện khi chuột vào góc dưới trái
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -604,6 +658,7 @@ jobs:
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
+          import android.widget.LinearLayout;
           import android.widget.ProgressBar;
           import android.widget.RelativeLayout;
           import android.widget.TextView;
@@ -613,6 +668,7 @@ jobs:
           public class MainActivity extends Activity {
               private ScrollWebView webView;
               private ProgressBar progressBar;
+              private LinearLayout bottomBar;
               private RelativeLayout voiceOverlay;
               private TextView voiceResult;
               private CursorView cursorView;
@@ -621,17 +677,23 @@ jobs:
               private String currentUrl;
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
-
-              // Vị trí cursor lưu khi chuyển activity
               private static float savedCX=-1,savedCY=-1;
 
-              // ═══ TUỲ CHỈNH TỐC ĐỘ TẠI ĐÂY ═══════════════════════════════════════════
-              private static final float CURSOR_STEP      = 22f;  // bước di chuyển chuột bình thường (px)
-              private static final float CURSOR_STEP_FAST = 75f;  // bước di chuyển khi giữ lâu (px)
-              private static final int   SCROLL_PX        = 500;  // pixel cuộn mỗi bước (tăng = cuộn nhanh hơn)
-              private static final float SCROLL_AXIS      = 3f;   // lực scroll gửi vào web (tăng = web cuộn nhiều hơn)
-              private static final int   SCROLL_HOLD      = 2;    // repeatCount từ đây bắt đầu scroll (thay vì di chuyển chuột)
-              // ═══════════════════════════════════════════════════════════════════════════
+              // ═══ THÔNG SỐ TUỲ CHỈNH ════════════════════════════════════════════════════
+              private static final float CURSOR_STEP      = 22f;
+              private static final float CURSOR_STEP_FAST = 75f;
+              private static final int   SCROLL_PX        = 500;
+              private static final float SCROLL_AXIS      = 3f;
+              private static final int   SCROLL_HOLD      = 2;
+              // Vùng góc dưới trái để hiện bottom bar (px từ góc)
+              private static final int   BAR_ZONE_W       = 200;
+              private static final int   BAR_ZONE_H       = 120;
+              // ════════════════════════════════════════════════════════════════════════════
+
+              private boolean barVisible=false;
+              private Runnable hideBarRunnable=new Runnable(){@Override public void run(){
+                  bottomBar.setVisibility(View.GONE);barVisible=false;
+              }};
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
@@ -652,12 +714,12 @@ jobs:
 
                   webView=(ScrollWebView)findViewById(R.id.webview);
                   progressBar=(ProgressBar)findViewById(R.id.progress);
+                  bottomBar=(LinearLayout)findViewById(R.id.bottomBar);
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
 
-                  // WebView KHÔNG nhận focus — Activity giữ toàn bộ key events
-                  webView.setFocusable(false);
-                  webView.setFocusableInTouchMode(false);
+                  // WebView không nhận focus
+                  webView.setFocusable(false);webView.setFocusableInTouchMode(false);
 
                   // Bottom bar buttons
                   findViewById(R.id.btnHome).setOnClickListener(
@@ -672,8 +734,7 @@ jobs:
                           startActivity(new Intent(MainActivity.this,SettingsActivity.class));
                       }});
 
-                  setupSpeech();
-                  setupWebView();
+                  setupSpeech();setupWebView();
                   webView.loadUrl(currentUrl);
               }
 
@@ -710,27 +771,39 @@ jobs:
                   });
               }
 
-              // ── Di chuyển cursor ──────────────────────────────────────────────────────
+              // ── Di chuyển cursor + kiểm tra vùng bottom bar ──────────────────────────
               private void moveCursor(float dx,float dy){
                   float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx));
                   float ny=Math.max(0,Math.min(screenH-2,cursorView.getCY()+dy));
                   cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
+                  // Chuột vào góc dưới trái → hiện bottom bar
+                  boolean inZone=(nx<=BAR_ZONE_W && ny>=screenH-BAR_ZONE_H);
+                  if(inZone&&!barVisible){
+                      bottomBar.setVisibility(View.VISIBLE);barVisible=true;
+                      handler.removeCallbacks(hideBarRunnable);
+                  } else if(!inZone&&barVisible){
+                      // Rời khỏi zone → ẩn sau 2 giây
+                      handler.removeCallbacks(hideBarRunnable);
+                      handler.postDelayed(hideBarRunnable,2000);
+                  }
               }
 
-              // ── Click tại vị trí con trỏ — không inject focus/hover ──────────────────
+              // ── Click tại vị trí con trỏ ─────────────────────────────────────────────
               private void clickAtCursor(){
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
-                  // Kiểm tra bottom bar buttons
-                  int[]btnIds={R.id.btnHome,R.id.btnWebBack,R.id.btnSettingsWeb};
-                  for(int id:btnIds){
-                      View btn=findViewById(id);
-                      int[]loc=new int[2];btn.getLocationOnScreen(loc);
-                      if(sx>=loc[0]&&sx<loc[0]+btn.getWidth()
-                          &&sy>=loc[1]&&sy<loc[1]+btn.getHeight()){
-                          btn.performClick();return;
+                  // Kiểm tra bottom bar nếu đang hiện
+                  if(barVisible){
+                      int[]btnIds={R.id.btnHome,R.id.btnWebBack,R.id.btnSettingsWeb};
+                      for(int id:btnIds){
+                          View btn=findViewById(id);
+                          int[]loc=new int[2];btn.getLocationOnScreen(loc);
+                          if(sx>=loc[0]&&sx<loc[0]+btn.getWidth()
+                              &&sy>=loc[1]&&sy<loc[1]+btn.getHeight()){
+                              btn.performClick();return;
+                          }
                       }
                   }
-                  // Touch vào WebView đúng tọa độ con trỏ
+                  // Touch WebView
                   int[]wloc=new int[2];webView.getLocationOnScreen(wloc);
                   final float rx=sx-wloc[0],ry=sy-wloc[1];
                   final long t0=SystemClock.uptimeMillis();
@@ -745,9 +818,7 @@ jobs:
 
               // ── Scroll như con lăn chuột ──────────────────────────────────────────────
               private void scrollPage(int dy){
-                  // 1. scrollBy trực tiếp (đảm bảo cuộn)
                   webView.scrollBy(0,dy);
-                  // 2. ACTION_SCROLL để web JS nhận mouse wheel event
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
                   int[]wloc=new int[2];webView.getLocationOnScreen(wloc);
                   float rx=sx-wloc[0],ry=sy-wloc[1];
@@ -758,33 +829,26 @@ jobs:
                   MotionEvent.PointerCoords[]pc=new MotionEvent.PointerCoords[1];
                   pc[0]=new MotionEvent.PointerCoords();
                   pc[0].x=rx;pc[0].y=ry;
-                  pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL, dy>0 ? -SCROLL_AXIS : SCROLL_AXIS);
+                  pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-SCROLL_AXIS:SCROLL_AXIS);
                   MotionEvent ev=MotionEvent.obtain(t,t,MotionEvent.ACTION_SCROLL,1,pp,pc,
                       0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
               }
 
-              // ── Key events ────────────────────────────────────────────────────────────
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   if(voiceOverlay.getVisibility()==View.VISIBLE){
                       if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
-
                   int rep=e.getRepeatCount();
                   float step=rep>5?CURSOR_STEP_FAST:CURSOR_STEP;
-
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:
-                          if(rep>=SCROLL_HOLD) scrollPage(-SCROLL_PX);
-                          else moveCursor(0,-step);
-                          return true;
+                          if(rep>=SCROLL_HOLD)scrollPage(-SCROLL_PX);
+                          else moveCursor(0,-step);return true;
                       case KeyEvent.KEYCODE_DPAD_DOWN:
-                          if(rep>=SCROLL_HOLD) scrollPage(SCROLL_PX);
-                          else moveCursor(0,step);
-                          return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT:
-                          moveCursor(-step,0);return true;
-                      case KeyEvent.KEYCODE_DPAD_RIGHT:
-                          moveCursor(step,0);return true;
+                          if(rep>=SCROLL_HOLD)scrollPage(SCROLL_PX);
+                          else moveCursor(0,step);return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:  moveCursor(-step,0);return true;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT: moveCursor( step,0);return true;
                       case KeyEvent.KEYCODE_DPAD_CENTER:
                       case KeyEvent.KEYCODE_ENTER:
                           if(rep==0)clickAtCursor();return true;
@@ -794,13 +858,10 @@ jobs:
                               "var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);
                           return true;
                       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
-                          return true;
+                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);return true;
                       case KeyEvent.KEYCODE_MEDIA_REWIND:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
-                          return true;
-                      case KeyEvent.KEYCODE_MENU:
-                          showVoice();return true;
+                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;
+                      case KeyEvent.KEYCODE_MENU:showVoice();return true;
                       case KeyEvent.KEYCODE_BACK:
                           if(webView.canGoBack()){webView.goBack();return true;}
                           finish();return true;
@@ -821,12 +882,9 @@ jobs:
                           handleVoice(t);}else hideVoice();}
                       @Override public void onError(int err){voiceResult.setText("Khong nghe duoc!");
                           handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},1500);}
-                      @Override public void onBeginningOfSpeech(){}
-                      @Override public void onRmsChanged(float v){}
-                      @Override public void onBufferReceived(byte[]b){}
-                      @Override public void onEndOfSpeech(){}
-                      @Override public void onPartialResults(Bundle b){}
-                      @Override public void onEvent(int t,Bundle b){}
+                      @Override public void onBeginningOfSpeech(){}@Override public void onRmsChanged(float v){}
+                      @Override public void onBufferReceived(byte[]b){}@Override public void onEndOfSpeech(){}
+                      @Override public void onPartialResults(Bundle b){}@Override public void onEvent(int t,Bundle b){}
                   });
               }
               private void handleVoice(String t){
@@ -856,8 +914,7 @@ jobs:
               @Override protected void onPause(){
                   super.onPause();webView.onPause();
                   savedCX=cursorView.getCX();savedCY=cursorView.getCY();
-                  handler.removeCallbacksAndMessages(null);
-                  if(voiceOverlay.getVisibility()==View.VISIBLE)hideVoice();}
+                  handler.removeCallbacksAndMessages(null);}
               @Override protected void onResume(){super.onResume();webView.onResume();}
               @Override protected void onDestroy(){
                   handler.removeCallbacksAndMessages(null);
