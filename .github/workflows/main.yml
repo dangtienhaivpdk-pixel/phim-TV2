@@ -51,18 +51,14 @@ jobs:
               if dx*dx+dy*dy > r*r: return [0,0,0,0]
               if dx*dx+dy*dy > 40*40: return [180,150,80,255]
               film_top=8; film_bot=88; strip_h=14
-              in_top=(film_top<=y<=film_top+strip_h)
-              in_bot=(film_bot-strip_h<=y<=film_bot)
+              in_top=(film_top<=y<=film_top+strip_h); in_bot=(film_bot-strip_h<=y<=film_bot)
               if in_top or in_bot:
-                  sx=(x-4)%16
-                  sy=y-film_top-3 if in_top else y-(film_bot-strip_h)-3
+                  sx=(x-4)%16; sy=y-film_top-3 if in_top else y-(film_bot-strip_h)-3
                   if 2<=sx<=10 and 2<=sy<=8: return [220,210,180,255]
                   return [60,40,20,255]
-              rel_y=y-(film_top+strip_h+1)
-              scene_h=(film_bot-strip_h)-(film_top+strip_h+1)
+              rel_y=y-(film_top+strip_h+1); scene_h=(film_bot-strip_h)-(film_top+strip_h+1)
               if scene_h>0:
-                  t=rel_y/scene_h
-                  noise=((x*13+y*7)%20)-10
+                  t=rel_y/scene_h; noise=((x*13+y*7)%20)-10
                   if t<0.45: br,bg2,bb=int(200+noise),int(170+noise),int(120+noise//2)
                   elif t<0.55: br,bg2,bb=int(140+noise),int(100+noise),int(60+noise//2)
                   else: br,bg2,bb=int(120+noise),int(85+noise),int(45+noise//2)
@@ -72,11 +68,9 @@ jobs:
                   if 0.65<=t<=0.80 and (abs(x-(px-3))<=2 or abs(x-(px+3))<=2): return [30,20,10,255]
                   return [max(0,min(255,br)),max(0,min(255,bg2)),max(0,min(255,bb)),255]
               return [20,20,20,255]
-          with open('res/drawable/ic_launcher.png','wb') as f:
-              f.write(make_png(96,96,icon_pixel))
+          with open('res/drawable/ic_launcher.png','wb') as f: f.write(make_png(96,96,icon_pixel))
           def banner_pixel(x, y):
-              noise=((x*13+y*7)%20)-10
-              t_y=y/180
+              noise=((x*13+y*7)%20)-10; t_y=y/180
               if t_y<0.4: br,bg2,bb=int(180+noise),int(150+noise),int(100+noise//2)
               elif t_y<0.55: br,bg2,bb=int(120+noise),int(90+noise),int(50+noise//2)
               else: br,bg2,bb=int(100+noise),int(70+noise),int(35+noise//2)
@@ -86,250 +80,190 @@ jobs:
                   if 3<=sx<=16 and 3<=sy<=12: return [220,210,180,255]
                   return [40,25,10,255]
               return [max(0,min(255,br)),max(0,min(255,bg2)),max(0,min(255,bb)),255]
-          with open('res/drawable/banner.png','wb') as f:
-              f.write(make_png(320,180,banner_pixel))
-          print('Icons OK')
+          with open('res/drawable/banner.png','wb') as f: f.write(make_png(320,180,banner_pixel))
+          print('OK')
           "
 
-          cat > AndroidManifest.xml << 'ENDOFFILE'
+          cat > AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app"
-              android:versionCode="6"
-              android:versionName="6.0">
-              <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-              <uses-feature android:name="android.software.leanback" android:required="false" />
-              <application
-                  android:label="ALL IN ONE"
-                  android:icon="@drawable/ic_launcher"
+              package="com.allinone.app" android:versionCode="7" android:versionName="7.0">
+              <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+              <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+              <uses-feature android:name="android.software.leanback" android:required="false"/>
+              <application android:label="ALL IN ONE" android:icon="@drawable/ic_launcher"
                   android:banner="@drawable/banner"
                   android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-                  android:usesCleartextTraffic="true"
-                  android:hardwareAccelerated="true"
+                  android:usesCleartextTraffic="true" android:hardwareAccelerated="true"
                   android:largeHeap="true">
                   <activity android:name=".HomeActivity" android:exported="true"
-                      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:configChanges="orientation|screenSize|keyboardHidden">
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                          <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                          <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
                       </intent-filter>
                   </activity>
                   <activity android:name=".MainActivity" android:exported="false"
-                      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:hardwareAccelerated="true"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
-                      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
-          ENDOFFILE
+          EOF
 
-          cat > res/layout/home.xml << 'ENDOFFILE'
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
-              android:background="#0a0a0f">
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="80dp"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:background="#111122"
-                  android:paddingLeft="40dp"
-                  android:paddingRight="40dp">
-                  <TextView
-                      android:layout_width="0dp"
-                      android:layout_height="wrap_content"
-                      android:layout_weight="1"
-                      android:text="ALL IN ONE"
-                      android:textSize="32sp"
-                      android:textColor="#E50914"
-                      android:textStyle="bold"/>
-                  <Button android:id="@+id/btnSettings"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="⚙ Cai dat"
-                      android:textSize="16sp"
-                      android:textColor="#ffffff"
-                      android:background="#333355"
-                      android:padding="12dp"/>
-              </LinearLayout>
-              <ScrollView
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:padding="40dp">
-                  <LinearLayout android:id="@+id/gridLinks"
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:orientation="vertical"/>
-              </ScrollView>
-          </LinearLayout>
-          ENDOFFILE
-
-          cat > res/layout/main.xml << 'ENDOFFILE'
+          cat > res/layout/home.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:background="#0a0a0f">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:orientation="vertical">
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="80dp"
+                      android:orientation="horizontal" android:gravity="center_vertical"
+                      android:background="#111122" android:paddingLeft="40dp" android:paddingRight="40dp">
+                      <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="ALL IN ONE"
+                          android:textSize="32sp" android:textColor="#E50914" android:textStyle="bold"/>
+                      <Button android:id="@+id/btnSettings" android:layout_width="wrap_content"
+                          android:layout_height="wrap_content" android:text="⚙ Cai dat"
+                          android:textSize="16sp" android:textColor="#ffffff"
+                          android:background="#333355" android:padding="12dp"/>
+                  </LinearLayout>
+                  <ScrollView android:layout_width="match_parent" android:layout_height="match_parent"
+                      android:padding="40dp">
+                      <LinearLayout android:id="@+id/gridLinks" android:layout_width="match_parent"
+                          android:layout_height="wrap_content" android:orientation="vertical"/>
+                  </ScrollView>
+              </LinearLayout>
+              <com.allinone.app.CursorView android:id="@+id/cursor"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:clickable="false" android:focusable="false"/>
+          </FrameLayout>
+          EOF
+
+          cat > res/layout/main.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent"
               android:background="#000000">
               <com.allinone.app.ScrollWebView android:id="@+id/webview"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent" />
+                  android:layout_width="match_parent" android:layout_height="match_parent"/>
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
-                  android:layout_width="match_parent"
-                  android:layout_height="4dp"
-                  android:layout_gravity="top"
-                  android:max="100"
-                  android:progressTint="#E50914"
-                  android:visibility="gone" />
+                  android:layout_width="match_parent" android:layout_height="4dp"
+                  android:layout_gravity="top" android:max="100"
+                  android:progressTint="#E50914" android:visibility="gone"/>
               <LinearLayout android:id="@+id/topBar"
-                  android:layout_width="match_parent"
-                  android:layout_height="56dp"
-                  android:layout_gravity="top"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:background="#f2111122"
-                  android:paddingLeft="16dp"
-                  android:paddingRight="8dp"
-                  android:visibility="visible">
-                  <TextView android:id="@+id/btnBack"
-                      android:layout_width="wrap_content"
-                      android:layout_height="match_parent"
-                      android:text="◀ Home"
-                      android:textSize="15sp"
-                      android:textColor="#aaaaaa"
-                      android:gravity="center"
-                      android:padding="14dp"/>
-                  <TextView android:id="@+id/txtTitle"
-                      android:layout_width="0dp"
-                      android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:text="ALL IN ONE"
-                      android:textSize="17sp"
-                      android:textColor="#E50914"
-                      android:textStyle="bold"
-                      android:gravity="center"
-                      android:singleLine="true"/>
-                  <TextView android:id="@+id/btnVoice"
-                      android:layout_width="wrap_content"
-                      android:layout_height="match_parent"
-                      android:text="🎤"
-                      android:textSize="22sp"
-                      android:gravity="center"
-                      android:padding="14dp"/>
-                  <TextView android:id="@+id/btnSettingsWeb"
-                      android:layout_width="wrap_content"
-                      android:layout_height="match_parent"
-                      android:text="⚙"
-                      android:textSize="22sp"
-                      android:textColor="#ccffffff"
-                      android:gravity="center"
-                      android:padding="14dp"/>
+                  android:layout_width="match_parent" android:layout_height="56dp"
+                  android:layout_gravity="top" android:orientation="horizontal"
+                  android:gravity="center_vertical" android:background="#f2111122"
+                  android:paddingLeft="16dp" android:paddingRight="8dp">
+                  <TextView android:id="@+id/btnBack" android:layout_width="wrap_content"
+                      android:layout_height="match_parent" android:text="◀ Home"
+                      android:textSize="15sp" android:textColor="#aaaaaa"
+                      android:gravity="center" android:padding="14dp"/>
+                  <TextView android:id="@+id/txtTitle" android:layout_width="0dp"
+                      android:layout_height="match_parent" android:layout_weight="1"
+                      android:text="ALL IN ONE" android:textSize="17sp"
+                      android:textColor="#E50914" android:textStyle="bold"
+                      android:gravity="center" android:singleLine="true"/>
+                  <TextView android:id="@+id/btnVoice" android:layout_width="wrap_content"
+                      android:layout_height="match_parent" android:text="🎤"
+                      android:textSize="22sp" android:gravity="center" android:padding="14dp"/>
+                  <TextView android:id="@+id/btnSettingsWeb" android:layout_width="wrap_content"
+                      android:layout_height="match_parent" android:text="⚙"
+                      android:textSize="22sp" android:textColor="#ccffffff"
+                      android:gravity="center" android:padding="14dp"/>
               </LinearLayout>
               <RelativeLayout android:id="@+id/voiceOverlay"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:background="#cc000000"
-                  android:visibility="gone">
-                  <LinearLayout
-                      android:layout_width="600dp"
-                      android:layout_height="wrap_content"
-                      android:layout_centerInParent="true"
-                      android:orientation="vertical"
-                      android:background="#1a1a2e"
-                      android:padding="40dp"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:background="#cc000000" android:visibility="gone">
+                  <LinearLayout android:layout_width="600dp" android:layout_height="wrap_content"
+                      android:layout_centerInParent="true" android:orientation="vertical"
+                      android:background="#1a1a2e" android:padding="40dp"
                       xmlns:android="http://schemas.android.com/apk/res/android">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:layout_gravity="center" android:text="🎤 Dang nghe..."
                           android:textSize="28sp" android:textColor="#ffffff" android:layout_marginBottom="16dp"/>
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                          android:layout_gravity="center" android:text="phat / dung / tua toi / tua lui"
-                          android:textSize="16sp" android:textColor="#aaaaaa" android:gravity="center"
-                          android:layout_marginBottom="20dp"/>
-                      <TextView android:id="@+id/voiceResult"
-                          android:layout_width="wrap_content" android:layout_height="wrap_content"
-                          android:layout_gravity="center" android:text=""
-                          android:textSize="22sp" android:textColor="#E50914" android:gravity="center"/>
+                      <TextView android:id="@+id/voiceResult" android:layout_width="wrap_content"
+                          android:layout_height="wrap_content" android:layout_gravity="center"
+                          android:text="" android:textSize="22sp" android:textColor="#E50914"
+                          android:gravity="center"/>
                   </LinearLayout>
               </RelativeLayout>
+              <!-- CursorView CUỐI CÙNG = nằm trên tất cả -->
+              <com.allinone.app.CursorView android:id="@+id/cursor"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:clickable="false" android:focusable="false"/>
           </FrameLayout>
-          ENDOFFILE
+          EOF
 
-          cat > res/layout/settings.xml << 'ENDOFFILE'
+          cat > res/layout/settings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent"
               android:background="#0d0d1a">
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="70dp"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:background="#111122"
-                  android:paddingLeft="30dp"
-                  android:paddingRight="30dp">
-                  <Button android:id="@+id/btnBack"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:text="◀ Back" android:textSize="16sp" android:textColor="#ffffff"
-                      android:background="#333355" android:padding="12dp" android:layout_marginRight="20dp"/>
-                  <TextView
-                      android:layout_width="0dp" android:layout_height="wrap_content"
-                      android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
-                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"/>
-              </LinearLayout>
-              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:orientation="vertical" android:padding="40dp">
-                  <EditText android:id="@+id/editUrl"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:hint="Nhap duong dan web moi..." android:textSize="20sp"
-                      android:textColor="#ffffff" android:textColorHint="#555555"
-                      android:background="#1a1a2e" android:padding="18dp"
-                      android:inputType="textUri" android:layout_marginBottom="16dp"/>
-                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="horizontal">
-                      <Button android:id="@+id/btnSave"
-                          android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1" android:text="THEM VA MO"
-                          android:textSize="18sp" android:textColor="#ffffff"
-                          android:background="#E50914" android:padding="14dp" android:layout_marginRight="10dp"/>
-                      <Button android:id="@+id/btnReset"
-                          android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1" android:text="RESET MAC DINH"
-                          android:textSize="18sp" android:textColor="#aaaaaa"
-                          android:background="#1a1a2e" android:padding="14dp"/>
+              <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:orientation="vertical">
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="70dp"
+                      android:orientation="horizontal" android:gravity="center_vertical"
+                      android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp">
+                      <Button android:id="@+id/btnBack" android:layout_width="wrap_content"
+                          android:layout_height="wrap_content" android:text="◀ Back"
+                          android:textSize="16sp" android:textColor="#ffffff"
+                          android:background="#333355" android:padding="12dp" android:layout_marginRight="20dp"/>
+                      <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
+                          android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"/>
                   </LinearLayout>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:orientation="vertical" android:padding="40dp">
+                      <EditText android:id="@+id/editUrl" android:layout_width="match_parent"
+                          android:layout_height="wrap_content" android:hint="Nhap duong dan web moi..."
+                          android:textSize="20sp" android:textColor="#ffffff"
+                          android:textColorHint="#555555" android:background="#1a1a2e"
+                          android:padding="18dp" android:inputType="textUri" android:layout_marginBottom="16dp"/>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:orientation="horizontal">
+                          <Button android:id="@+id/btnSave" android:layout_width="0dp"
+                              android:layout_height="wrap_content" android:layout_weight="1"
+                              android:text="THEM VA MO" android:textSize="18sp"
+                              android:textColor="#ffffff" android:background="#E50914"
+                              android:padding="14dp" android:layout_marginRight="10dp"/>
+                          <Button android:id="@+id/btnReset" android:layout_width="0dp"
+                              android:layout_height="wrap_content" android:layout_weight="1"
+                              android:text="RESET MAC DINH" android:textSize="18sp"
+                              android:textColor="#aaaaaa" android:background="#1a1a2e" android:padding="14dp"/>
+                      </LinearLayout>
+                  </LinearLayout>
+                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:text="Danh sach kenh:" android:textSize="18sp" android:textColor="#888888"
+                      android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"/>
+                  <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
+                      android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp">
+                      <LinearLayout android:id="@+id/listUrls" android:layout_width="match_parent"
+                          android:layout_height="wrap_content" android:orientation="vertical"/>
+                  </ScrollView>
               </LinearLayout>
-              <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                  android:text="Danh sach kenh:" android:textSize="18sp" android:textColor="#888888"
-                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"/>
-              <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
-                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp">
-                  <LinearLayout android:id="@+id/listUrls"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="vertical"/>
-              </ScrollView>
-          </LinearLayout>
-          ENDOFFILE
+              <!-- CursorView nằm trên tất cả -->
+              <com.allinone.app.CursorView android:id="@+id/cursor"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:clickable="false" android:focusable="false"/>
+          </FrameLayout>
+          EOF
 
-          cat > res/values/strings.xml << 'ENDOFFILE'
+          cat > res/values/strings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources><string name="app_name">ALL IN ONE</string></resources>
-          ENDOFFILE
+          EOF
 
-          # ── CursorView: con trỏ vẽ mũi tên ──────────────────────────────────────────
-          cat > src/com/allinone/app/CursorView.java << 'ENDOFFILE'
+          # CursorView: vẽ mũi tên tại (curX, curY)
+          cat > src/com/allinone/app/CursorView.java << 'EOF'
           package com.allinone.app;
           import android.content.Context;
           import android.graphics.Canvas;
@@ -339,234 +273,164 @@ jobs:
           import android.view.View;
           public class CursorView extends View {
               private final Paint fill, stroke, dot;
-              public CursorView(Context c) { super(c); fill=mk(true); stroke=mkS(); dot=mkDot(); }
-              public CursorView(Context c, AttributeSet a) { super(c,a); fill=mk(true); stroke=mkS(); dot=mkDot(); }
-              private Paint mk(boolean f){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFFFFFFF);p.setStyle(f?Paint.Style.FILL:Paint.Style.STROKE);return p;}
-              private Paint mkS(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFF000000);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.5f);p.setStrokeJoin(Paint.Join.ROUND);return p;}
-              private Paint mkDot(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFE50914);p.setStyle(Paint.Style.FILL);return p;}
+              private float cx = -999, cy = -999;
+              public CursorView(Context c){super(c);fill=f();stroke=s();dot=d();}
+              public CursorView(Context c,AttributeSet a){super(c,a);fill=f();stroke=s();dot=d();}
+              private Paint f(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFFFFFFF);p.setStyle(Paint.Style.FILL);return p;}
+              private Paint s(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFF000000);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.5f);p.setStrokeJoin(Paint.Join.ROUND);return p;}
+              private Paint d(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFE50914);p.setStyle(Paint.Style.FILL);return p;}
+              public void setPos(float x,float y){cx=x;cy=y;invalidate();}
+              public float getCX(){return cx;}
+              public float getCY(){return cy;}
               @Override protected void onDraw(Canvas c){
-                  // Vẽ tại (0,0) - view được định vị bằng WindowManager params
+                  if(cx<0)return;
                   Path p=new Path();
-                  p.moveTo(2,2); p.lineTo(2,22); p.lineTo(7,16); p.lineTo(13,27);
-                  p.lineTo(16,25); p.lineTo(10,14); p.lineTo(17,14); p.close();
+                  p.moveTo(cx,cy); p.lineTo(cx,cy+22); p.lineTo(cx+6,cy+16);
+                  p.lineTo(cx+13,cy+27); p.lineTo(cx+16,cy+25); p.lineTo(cx+9,cy+14);
+                  p.lineTo(cx+17,cy+14); p.close();
                   c.drawPath(p,stroke); c.drawPath(p,fill);
-                  c.drawCircle(2,2,3f,dot);
+                  c.drawCircle(cx,cy,3.5f,dot);
               }
           }
-          ENDOFFILE
+          EOF
 
-          # ── GlobalCursor: singleton WindowManager overlay ─────────────────────────
-          cat > src/com/allinone/app/GlobalCursor.java << 'ENDOFFILE'
-          package com.allinone.app;
-          import android.content.Context;
-          import android.graphics.Canvas;
-          import android.graphics.Paint;
-          import android.graphics.Path;
-          import android.graphics.PixelFormat;
-          import android.os.Build;
-          import android.view.View;
-          import android.view.WindowManager;
-          /**
-           * Con trỏ chuột toàn màn hình dùng WindowManager.
-           * Nằm trên TẤT CẢ mọi View: WebView, TopBar, Settings, HomeActivity.
-           */
-          public class GlobalCursor {
-              private static GlobalCursor instance;
-              private WindowManager wm;
-              private CursorDrawView view;
-              private WindowManager.LayoutParams params;
-              private float x, y;
-              private float screenW, screenH;
-              private GlobalCursor(){}
-              public static GlobalCursor get(){ if(instance==null)instance=new GlobalCursor(); return instance; }
-              public void attach(Context ctx, float w, float h){
-                  screenW=w; screenH=h;
-                  if(x==0&&y==0){ x=w/2f; y=h/2f; }
-                  if(wm!=null && view!=null){
-                      try{ wm.removeView(view); }catch(Exception e){}
-                  }
-                  wm = (WindowManager) ctx.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-                  view = new CursorDrawView(ctx.getApplicationContext());
-                  params = new WindowManager.LayoutParams(
-                      50, 50,
-                      (int)x, (int)y,
-                      Build.VERSION.SDK_INT >= 26
-                          ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                          : WindowManager.LayoutParams.TYPE_PHONE,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                      | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                      | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                      | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                      PixelFormat.TRANSLUCENT);
-                  params.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
-                  params.x = (int)x;
-                  params.y = (int)y;
-                  wm.addView(view, params);
-              }
-              public void detach(){
-                  if(wm!=null&&view!=null){ try{wm.removeView(view);}catch(Exception e){} view=null; }
-              }
-              public void move(float dx, float dy){
-                  x = Math.max(0, Math.min(screenW-2, x+dx));
-                  y = Math.max(0, Math.min(screenH-2, y+dy));
-                  if(wm!=null&&view!=null&&params!=null){
-                      params.x=(int)x; params.y=(int)y;
-                      try{ wm.updateViewLayout(view,params); }catch(Exception e){}
-                  }
-              }
-              public float getX(){ return x; }
-              public float getY(){ return y; }
-              // View nội bộ vẽ con trỏ
-              static class CursorDrawView extends View {
-                  private final Paint fill, stroke, dot;
-                  CursorDrawView(Context c){
-                      super(c);
-                      setLayerType(LAYER_TYPE_HARDWARE,null);
-                      fill=new Paint(Paint.ANTI_ALIAS_FLAG); fill.setColor(0xFFFFFFFF); fill.setStyle(Paint.Style.FILL);
-                      stroke=new Paint(Paint.ANTI_ALIAS_FLAG); stroke.setColor(0xFF000000);
-                      stroke.setStyle(Paint.Style.STROKE); stroke.setStrokeWidth(2.5f); stroke.setStrokeJoin(Paint.Join.ROUND);
-                      dot=new Paint(Paint.ANTI_ALIAS_FLAG); dot.setColor(0xFFE50914); dot.setStyle(Paint.Style.FILL);
-                  }
-                  @Override protected void onDraw(Canvas c){
-                      Path p=new Path();
-                      p.moveTo(2,2); p.lineTo(2,22); p.lineTo(7,16); p.lineTo(13,27);
-                      p.lineTo(16,25); p.lineTo(10,14); p.lineTo(17,14); p.close();
-                      c.drawPath(p,stroke); c.drawPath(p,fill);
-                      c.drawCircle(2,2,3.5f,dot);
-                  }
-              }
-          }
-          ENDOFFILE
-
-          cat > src/com/allinone/app/ScrollWebView.java << 'ENDOFFILE'
+          cat > src/com/allinone/app/ScrollWebView.java << 'EOF'
           package com.allinone.app;
           import android.content.Context;
           import android.util.AttributeSet;
           import android.webkit.WebView;
           public class ScrollWebView extends WebView {
-              public interface OnScrollChangedCallback { void onScrollUp(); void onScrollDown(); }
-              private OnScrollChangedCallback cb;
+              public interface Cb{void up();void down();}
+              private Cb cb;
               public ScrollWebView(Context c){super(c);}
               public ScrollWebView(Context c,AttributeSet a){super(c,a);}
-              public void setOnScrollChangedCallback(OnScrollChangedCallback c){cb=c;}
+              public void setCb(Cb c){cb=c;}
               @Override protected void onScrollChanged(int l,int t,int ol,int ot){
                   super.onScrollChanged(l,t,ol,ot);
-                  if(cb!=null){if(t<ot)cb.onScrollUp();else if(t>ot)cb.onScrollDown();}
+                  if(cb!=null){if(t<ot)cb.up();else if(t>ot)cb.down();}
               }
           }
-          ENDOFFILE
+          EOF
 
-          # ── BaseActivity: cung cấp con trỏ cho mọi Activity ──────────────────────
-          cat > src/com/allinone/app/BaseActivity.java << 'ENDOFFILE'
+          # BaseActivity: xử lý D-pad → di chuyển cursor + click view bên dưới
+          cat > src/com/allinone/app/BaseActivity.java << 'EOF'
           package com.allinone.app;
           import android.app.Activity;
           import android.os.Bundle;
           import android.util.DisplayMetrics;
           import android.view.KeyEvent;
           import android.view.View;
+          import android.view.ViewGroup;
           public abstract class BaseActivity extends Activity {
-              protected GlobalCursor cursor;
+              protected CursorView cursorView;
               protected float screenW, screenH;
-              protected static final float STEP=28f, STEP_FAST=85f;
+              private static float savedX = -1, savedY = -1;
+              protected static final float STEP = 25f, STEP_FAST = 80f;
+              private View lastHover = null;
+
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
                   DisplayMetrics dm=new DisplayMetrics();
                   getWindowManager().getDefaultDisplay().getMetrics(dm);
                   screenW=dm.widthPixels; screenH=dm.heightPixels;
-                  cursor=GlobalCursor.get();
               }
-              @Override protected void onResume(){
-                  super.onResume();
-                  cursor.attach(this, screenW, screenH);
+
+              // Gọi sau setContentView để gắn cursor
+              protected void initCursor(){
+                  cursorView=(CursorView)findViewById(R.id.cursor);
+                  if(cursorView==null)return;
+                  float ix = savedX>0 ? savedX : screenW/2f;
+                  float iy = savedY>0 ? savedY : screenH/2f;
+                  cursorView.setPos(ix, iy);
               }
-              @Override protected void onPause(){
-                  super.onPause();
-                  cursor.detach();
+
+              protected void saveCursorPos(){
+                  if(cursorView!=null){ savedX=cursorView.getCX(); savedY=cursorView.getCY(); }
               }
-              // Di chuyển con trỏ và highlight View bên dưới
+
+              @Override protected void onPause(){ super.onPause(); saveCursorPos(); }
+
+              // Di chuyển con trỏ và highlight view bên dưới
               protected void moveCursor(float dx, float dy){
-                  cursor.move(dx,dy);
-                  highlightUnder();
+                  if(cursorView==null)return;
+                  float nx=Math.max(0,Math.min(screenW-2, cursorView.getCX()+dx));
+                  float ny=Math.max(0,Math.min(screenH-2, cursorView.getCY()+dy));
+                  cursorView.setPos(nx,ny);
+                  updateHover(nx,ny);
+                  onCursorMoved(nx,ny);
               }
-              // Tìm view bên dưới con trỏ và highlight
-              private View lastHighlight=null;
-              protected void highlightUnder(){
-                  float cx=cursor.getX(), cy=cursor.getY();
+
+              // Hook cho subclass
+              protected void onCursorMoved(float x, float y){}
+
+              // Tìm và highlight view clickable tại tọa độ màn hình
+              private void updateHover(float x, float y){
                   View root=getWindow().getDecorView();
-                  View found=findViewAt(root, (int)cx, (int)cy);
-                  if(lastHighlight!=null && lastHighlight!=found){
-                      lastHighlight.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-                      // Restore original - đơn giản chỉ clear highlight đặc biệt
-                      lastHighlight.setSelected(false);
-                      lastHighlight=null;
+                  View found=findClickable(root,(int)x,(int)y);
+                  if(lastHover!=null && lastHover!=found){
+                      clearHighlight(lastHover); lastHover=null;
                   }
-                  if(found!=null){
-                      found.setSelected(true);
-                      lastHighlight=found;
+                  if(found!=null && found!=lastHover){
+                      applyHighlight(found); lastHover=found;
                   }
               }
-              // Click view bên dưới con trỏ
-              protected boolean clickUnder(){
-                  float cx=cursor.getX(), cy=cursor.getY();
+
+              private void applyHighlight(View v){
+                  v.setBackgroundColor(0x44E50914); // overlay đỏ nhạt
+              }
+              private void clearHighlight(View v){
+                  // Restore: đặt transparent để không ảnh hưởng layout
+                  v.setBackgroundColor(0x00000000);
+              }
+
+              // Click view tại vị trí con trỏ
+              protected boolean doClick(){
+                  if(cursorView==null)return false;
+                  float x=cursorView.getCX(), y=cursorView.getCY();
                   View root=getWindow().getDecorView();
-                  View found=findClickableAt(root,(int)cx,(int)cy);
+                  View found=findClickable(root,(int)x,(int)y);
                   if(found!=null){ found.performClick(); return true; }
                   return false;
               }
-              // DFS tìm view clickable tại toạ độ màn hình
-              private View findClickableAt(View v, int x, int y){
-                  if(!isViewAt(v,x,y)) return null;
-                  if(v instanceof android.view.ViewGroup){
-                      android.view.ViewGroup vg=(android.view.ViewGroup)v;
+
+              // Tìm view nhỏ nhất clickable tại (x,y) trên màn hình
+              protected View findClickable(View v, int x, int y){
+                  if(!isAt(v,x,y)||v.getVisibility()!=View.VISIBLE)return null;
+                  if(v instanceof ViewGroup){
+                      ViewGroup vg=(ViewGroup)v;
                       for(int i=vg.getChildCount()-1;i>=0;i--){
-                          View child=vg.getChildAt(i);
-                          View r=findClickableAt(child,x,y);
+                          View r=findClickable(vg.getChildAt(i),x,y);
                           if(r!=null)return r;
                       }
                   }
-                  if((v.isClickable()||v.isFocusable())&&v.getVisibility()==View.VISIBLE
-                      && !(v instanceof android.view.ViewGroup && ((android.view.ViewGroup)v).getChildCount()>0)){
-                      return v;
-                  }
-                  if(v.isClickable()&&v.getVisibility()==View.VISIBLE) return v;
+                  if(v.isClickable()&&v.getVisibility()==View.VISIBLE)return v;
                   return null;
               }
-              private View findViewAt(View v, int x, int y){
-                  if(!isViewAt(v,x,y)) return null;
-                  if(v instanceof android.view.ViewGroup){
-                      android.view.ViewGroup vg=(android.view.ViewGroup)v;
-                      for(int i=vg.getChildCount()-1;i>=0;i--){
-                          View r=findViewAt(vg.getChildAt(i),x,y);
-                          if(r!=null)return r;
-                      }
-                  }
-                  return v;
+
+              protected boolean isAt(View v,int x,int y){
+                  int[]l=new int[2];v.getLocationOnScreen(l);
+                  return x>=l[0]&&x<l[0]+v.getWidth()&&y>=l[1]&&y<l[1]+v.getHeight();
               }
-              private boolean isViewAt(View v, int x, int y){
-                  if(v.getVisibility()!=View.VISIBLE)return false;
-                  int[]loc=new int[2]; v.getLocationOnScreen(loc);
-                  return x>=loc[0]&&x<loc[0]+v.getWidth()&&y>=loc[1]&&y<loc[1]+v.getHeight();
-              }
-              @Override public boolean onKeyDown(int keyCode, KeyEvent event){
-                  float step=(event.getRepeatCount()>6)?STEP_FAST:STEP;
-                  switch(keyCode){
+
+              @Override public boolean onKeyDown(int key, KeyEvent e){
+                  float step=e.getRepeatCount()>6?STEP_FAST:STEP;
+                  switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0,-step); return true;
                       case KeyEvent.KEYCODE_DPAD_DOWN:  moveCursor(0, step); return true;
                       case KeyEvent.KEYCODE_DPAD_LEFT:  moveCursor(-step,0); return true;
                       case KeyEvent.KEYCODE_DPAD_RIGHT: moveCursor( step,0); return true;
                       case KeyEvent.KEYCODE_DPAD_CENTER:
                       case KeyEvent.KEYCODE_ENTER:
-                          if(!clickUnder()) onCursorClick();
-                          return true;
+                          if(!doClick()) onClickFallback(); return true;
                   }
-                  return super.onKeyDown(keyCode,event);
+                  return super.onKeyDown(key,e);
               }
-              // Override để xử lý click đặc biệt (vd: WebView)
-              protected void onCursorClick(){}
-          }
-          ENDOFFILE
 
-          cat > src/com/allinone/app/HomeActivity.java << 'ENDOFFILE'
+              protected void onClickFallback(){}
+          }
+          EOF
+
+          cat > src/com/allinone/app/HomeActivity.java << 'EOF'
           package com.allinone.app;
           import android.content.Context;
           import android.content.Intent;
@@ -590,17 +454,14 @@ jobs:
           import java.util.List;
           public class HomeActivity extends BaseActivity {
               private static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",KEY_INIT="inited",DEF="https://pointnorth.io",SEP="|||";
-              private static final String[] DEFAULTS={"https://pointnorth.io","https://www.youtube.com","https://www.google.com","https://vtvgo.vn","https://tinnhac.com","https://vnexpress.net"};
-              private LinearLayout grid;
-              private SharedPreferences prefs;
-              private Handler handler=new Handler();
+              private static final String[]DEFS={"https://pointnorth.io","https://www.youtube.com","https://www.google.com","https://vtvgo.vn","https://tinnhac.com","https://vnexpress.net"};
+              private LinearLayout grid; private SharedPreferences prefs; private Handler handler=new Handler();
               @Override protected void onCreate(Bundle s){
-                  super.onCreate(s);
-                  setContentView(R.layout.home);
+                  super.onCreate(s); setContentView(R.layout.home); initCursor();
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   if(!prefs.getBoolean(KEY_INIT,false)){
                       StringBuilder sb=new StringBuilder();
-                      for(int i=0;i<DEFAULTS.length;i++){if(i>0)sb.append(SEP);sb.append(DEFAULTS[i]);}
+                      for(int i=0;i<DEFS.length;i++){if(i>0)sb.append(SEP);sb.append(DEFS[i]);}
                       prefs.edit().putString(KEY_HIST,sb.toString()).putString(KEY_URL,DEF).putBoolean(KEY_INIT,true).apply();
                   }
                   grid=(LinearLayout)findViewById(R.id.gridLinks);
@@ -611,63 +472,49 @@ jobs:
               @Override protected void onResume(){super.onResume();renderLinks();}
               private List<String> hist(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
               private void renderLinks(){
-                  grid.removeAllViews();
-                  List<String> h=hist(); String active=prefs.getString(KEY_URL,DEF);
+                  grid.removeAllViews(); List<String>h=hist(); String act=prefs.getString(KEY_URL,DEF);
                   int cols=3; LinearLayout row=null;
                   for(int i=0;i<h.size();i++){
-                      if(i%cols==0){
-                          row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
+                      if(i%cols==0){row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
                           LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                          rp.setMargins(0,0,0,20);row.setLayoutParams(rp);grid.addView(row);
-                      }
+                          rp.setMargins(0,0,0,20);row.setLayoutParams(rp);grid.addView(row);}
                       final String url=h.get(i);
-                      LinearLayout card=new LinearLayout(this);
+                      final LinearLayout card=new LinearLayout(this);
                       card.setOrientation(LinearLayout.VERTICAL);card.setGravity(android.view.Gravity.CENTER);
-                      card.setPadding(20,24,20,24);card.setBackgroundColor(url.equals(active)?0xff1a1a3e:0xff1a1a2e);
+                      card.setPadding(20,24,20,24);card.setBackgroundColor(url.equals(act)?0xff1a1a3e:0xff1a1a2e);
                       LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,200,1f);cp.setMargins(0,0,16,0);card.setLayoutParams(cp);
                       card.setFocusable(true);card.setClickable(true);
+                      final int[] bgColor={url.equals(act)?0xff1a1a3e:0xff1a1a2e};
                       ImageView fav=new ImageView(this);fav.setLayoutParams(new LinearLayout.LayoutParams(72,72));
                       fav.setScaleType(ImageView.ScaleType.FIT_CENTER);card.addView(fav);
                       final int idx=i;final ImageView fv=fav;
                       handler.postDelayed(new Runnable(){@Override public void run(){
                           new AsyncTask<String,Void,Bitmap>(){
-                              @Override protected Bitmap doInBackground(String...u){
-                                  try{HttpURLConnection c=(HttpURLConnection)new URL(u[0]).openConnection();
-                                  c.setConnectTimeout(4000);c.setReadTimeout(4000);c.setInstanceFollowRedirects(true);
-                                  return BitmapFactory.decodeStream(c.getInputStream());}catch(Exception e){return null;}}
+                              @Override protected Bitmap doInBackground(String...u){try{HttpURLConnection c=(HttpURLConnection)new URL(u[0]).openConnection();c.setConnectTimeout(4000);c.setReadTimeout(4000);c.setInstanceFollowRedirects(true);return BitmapFactory.decodeStream(c.getInputStream());}catch(Exception e){return null;}}
                               @Override protected void onPostExecute(Bitmap b){if(b!=null&&fv!=null)fv.setImageBitmap(b);}
                           }.execute("https://www.google.com/s2/favicons?domain="+url+"&sz=64");
                       }},idx*200L);
                       TextView lbl=new TextView(this);
                       lbl.setText(url.replace("https://","").replace("http://","").split("/")[0]);
-                      lbl.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);lbl.setTextSize(13);
-                      lbl.setGravity(android.view.Gravity.CENTER);lbl.setMaxLines(1);
-                      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      lp.setMargins(0,10,0,0);lbl.setLayoutParams(lp);card.addView(lbl);
-                      if(url.equals(active)){TextView t=new TextView(this);t.setText("▶ Dang xem");t.setTextColor(0xffE50914);t.setTextSize(11);t.setGravity(android.view.Gravity.CENTER);card.addView(t);}
+                      lbl.setTextColor(url.equals(act)?0xffE50914:0xffcccccc);lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);lbl.setMaxLines(1);
+                      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);lp.setMargins(0,10,0,0);lbl.setLayoutParams(lp);card.addView(lbl);
+                      if(url.equals(act)){TextView t=new TextView(this);t.setText("▶ Dang xem");t.setTextColor(0xffE50914);t.setTextSize(11);t.setGravity(android.view.Gravity.CENTER);card.addView(t);}
                       card.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
                           prefs.edit().putString(KEY_URL,url).apply();
                           startActivity(new Intent(HomeActivity.this,MainActivity.class).putExtra("url",url));
                       }});
-                      // Highlight khi focused
-                      card.setOnFocusChangeListener(new View.OnFocusChangeListener(){@Override public void onFocusChange(View v,boolean f){
-                          v.setBackgroundColor(f?0xff3a3a6e:(url.equals(prefs.getString(KEY_URL,DEF))?0xff1a1a3e:0xff1a1a2e));
-                      }});
                       row.addView(card);
                   }
-                  if(row!=null&&h.size()%cols!=0){
-                      int rem=cols-(h.size()%cols);
-                      for(int j=0;j<rem;j++){View e=new View(this);LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(0,200,1f);ep.setMargins(0,0,16,0);e.setLayoutParams(ep);row.addView(e);}
-                  }
+                  if(row!=null&&h.size()%cols!=0){int rem=cols-(h.size()%cols);for(int j=0;j<rem;j++){View e=new View(this);LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(0,200,1f);ep.setMargins(0,0,16,0);e.setLayoutParams(ep);row.addView(e);}}
               }
               @Override public boolean onKeyDown(int k,KeyEvent e){
                   if(k==KeyEvent.KEYCODE_BACK){finish();return true;}
                   return super.onKeyDown(k,e);
               }
           }
-          ENDOFFILE
+          EOF
 
-          cat > src/com/allinone/app/SettingsActivity.java << 'ENDOFFILE'
+          cat > src/com/allinone/app/SettingsActivity.java << 'EOF'
           package com.allinone.app;
           import android.content.Context;
           import android.content.Intent;
@@ -686,45 +533,31 @@ jobs:
           import java.util.List;
           public class SettingsActivity extends BaseActivity {
               private static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",DEF="https://pointnorth.io",SEP="|||";
-              private EditText editUrl;
-              private LinearLayout listUrls;
-              private SharedPreferences prefs;
+              private EditText editUrl; private LinearLayout listUrls; private SharedPreferences prefs;
               @Override protected void onCreate(Bundle s){
-                  super.onCreate(s);setContentView(R.layout.settings);
+                  super.onCreate(s);setContentView(R.layout.settings);initCursor();
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   editUrl=(EditText)findViewById(R.id.editUrl);
                   listUrls=(LinearLayout)findViewById(R.id.listUrls);
-                  editUrl.setText(prefs.getString(KEY_URL,DEF));
-                  renderHistory();
+                  editUrl.setText(prefs.getString(KEY_URL,DEF)); renderHistory();
                   ((Button)findViewById(R.id.btnBack)).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){finish();}});
                   ((Button)findViewById(R.id.btnSave)).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
                       String u=editUrl.getText().toString().trim();if(u.isEmpty())return;
-                      if(!u.startsWith("http"))u="https://"+u;saveUrl(u);openUrl(u);
-                  }});
+                      if(!u.startsWith("http"))u="https://"+u;saveUrl(u);openUrl(u);}});
                   ((Button)findViewById(R.id.btnReset)).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(DEF);openUrl(DEF);}});
               }
               private List<String> getHist(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
-              private void addHist(String url){
-                  List<String> list=getHist();list.remove(url);list.add(0,url);
-                  if(list.size()>30)list=list.subList(0,30);
-                  StringBuilder sb=new StringBuilder();for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
-                  prefs.edit().putString(KEY_HIST,sb.toString()).apply();
-              }
+              private void addHist(String url){List<String>list=getHist();list.remove(url);list.add(0,url);if(list.size()>30)list=list.subList(0,30);StringBuilder sb=new StringBuilder();for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}prefs.edit().putString(KEY_HIST,sb.toString()).apply();}
               private void saveUrl(String url){prefs.edit().putString(KEY_URL,url).apply();addHist(url);renderHistory();}
               private void openUrl(String url){startActivity(new Intent(this,MainActivity.class).putExtra("url",url).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish();}
               private void renderHistory(){
-                  listUrls.removeAllViews();
-                  List<String> hist=getHist();String active=prefs.getString(KEY_URL,DEF);
+                  listUrls.removeAllViews();List<String>hist=getHist();String active=prefs.getString(KEY_URL,DEF);
                   for(final String url:hist){
-                      LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
-                      row.setPadding(16,14,16,14);row.setBackgroundColor(url.equals(active)?0xff1a1a2e:0xff111111);
-                      row.setClickable(true);row.setFocusable(true);
-                      LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
-                      // Highlight khi hover con trỏ
-                      row.setOnFocusChangeListener(new View.OnFocusChangeListener(){@Override public void onFocusChange(View v,boolean f){
-                          v.setBackgroundColor(f?0xff2a2a5e:(url.equals(prefs.getString(KEY_URL,DEF))?0xff1a1a2e:0xff111111));
-                      }});
+                      final LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
+                      row.setPadding(16,14,16,14);
+                      final int rowBg=url.equals(active)?0xff1a1a2e:0xff111111;
+                      row.setBackgroundColor(rowBg);row.setClickable(true);row.setFocusable(true);
+                      LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);tv.setText((url.equals(active)?"▶  ":"      ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);tv.setTextSize(16);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));row.addView(tv);
@@ -734,11 +567,11 @@ jobs:
                       Button bd=new Button(this);bd.setText("X");bd.setTextColor(Color.WHITE);bd.setBackgroundColor(0xff660000);bd.setTextSize(13);bd.setPadding(16,8,16,8);
                       LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
                       bd.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
-                          List<String> list=getHist();list.remove(url);
-                          StringBuilder sb=new StringBuilder();for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
-                          prefs.edit().putString(KEY_HIST,sb.toString()).apply();renderHistory();
-                      }});
-                      row.addView(bu);row.addView(bd);listUrls.addView(row);
+                          List<String>list=getHist();list.remove(url);StringBuilder sb=new StringBuilder();
+                          for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
+                          prefs.edit().putString(KEY_HIST,sb.toString()).apply();renderHistory();}});
+                      row.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
+                      row.addView(tv);row.addView(bu);row.addView(bd);listUrls.addView(row);
                   }
               }
               @Override public boolean onKeyDown(int k,KeyEvent e){
@@ -746,9 +579,9 @@ jobs:
                   return super.onKeyDown(k,e);
               }
           }
-          ENDOFFILE
+          EOF
 
-          cat > src/com/allinone/app/MainActivity.java << 'ENDOFFILE'
+          cat > src/com/allinone/app/MainActivity.java << 'EOF'
           package com.allinone.app;
           import android.content.Context;
           import android.content.Intent;
@@ -791,7 +624,7 @@ jobs:
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                  setContentView(R.layout.main);
+                  setContentView(R.layout.main); initCursor();
                   SharedPreferences prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   currentUrl=prefs.getString(KEY_URL,DEF);
                   if(getIntent().hasExtra("url"))currentUrl=getIntent().getStringExtra("url");
@@ -800,15 +633,14 @@ jobs:
                   topBar=(LinearLayout)findViewById(R.id.topBar);
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
-                  webView.setOnScrollChangedCallback(new ScrollWebView.OnScrollChangedCallback(){
-                      @Override public void onScrollUp(){showBar(false);}
-                      @Override public void onScrollDown(){schedBar();}
+                  webView.setCb(new ScrollWebView.Cb(){
+                      @Override public void up(){showBar(false);}
+                      @Override public void down(){schedBar();}
                   });
                   findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){finish();}});
                   findViewById(R.id.btnVoice).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){showVoice();}});
                   findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
-                  showBar(false);
-                  setupSpeech();
+                  showBar(false); setupSpeech();
                   WebSettings ws=webView.getSettings();
                   ws.setJavaScriptEnabled(true);ws.setDomStorageEnabled(true);
                   ws.setMediaPlaybackRequiresUserGesture(false);ws.setUseWideViewPort(true);
@@ -821,8 +653,7 @@ jobs:
                   webView.setWebViewClient(new WebViewClient(){
                       @Override public void onPageStarted(WebView v,String url,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);
-                          ((TextView)findViewById(R.id.txtTitle)).setText(url.replace("https://","").replace("http://","").split("/")[0]);
-                      }
+                          ((TextView)findViewById(R.id.txtTitle)).setText(url.replace("https://","").replace("http://","").split("/")[0]);}
                       @Override public void onPageFinished(WebView v,String url){progressBar.setVisibility(View.GONE);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
                       @Override public boolean shouldOverrideUrlLoading(WebView v,String url){v.loadUrl(url);return true;}
@@ -836,24 +667,28 @@ jobs:
                   webView.loadUrl(currentUrl);
               }
 
-              // Khi clickUnder() không tìm được view → click WebView
-              @Override protected void onCursorClick(){
-                  float cx=cursor.getX(), cy=cursor.getY();
-                  // Kiểm tra topBar
+              @Override protected void onCursorMoved(float x, float y){
+                  // Khi con trỏ vào vùng top 60px → ghim topBar
+                  if(y<=60){topBarLocked=true;showBar(true);}
+                  else if(topBarLocked){topBarLocked=false;schedBar();}
+              }
+
+              // Fallback: click WebView khi không tìm được Android view
+              @Override protected void onClickFallback(){
+                  if(cursorView==null)return;
+                  float cx=cursorView.getCX(), cy=cursorView.getCY();
+                  // Kiểm tra topBar buttons
                   if(topBar.getVisibility()==View.VISIBLE){
                       int[]loc=new int[2];topBar.getLocationOnScreen(loc);
                       if(cy>=loc[1]&&cy<=loc[1]+topBar.getHeight()){
-                          int[]btnIds={R.id.btnBack,R.id.btnVoice,R.id.btnSettingsWeb};
-                          for(int id:btnIds){
-                              View btn=findViewById(id);int[]bl=new int[2];btn.getLocationOnScreen(bl);
-                              if(cx>=bl[0]&&cx<=bl[0]+btn.getWidth()&&cy>=bl[1]&&cy<=bl[1]+btn.getHeight()){btn.performClick();return;}
-                          }
+                          int[]ids={R.id.btnBack,R.id.btnVoice,R.id.btnSettingsWeb};
+                          for(int id:ids){View btn=findViewById(id);if(isAt(btn,(int)cx,(int)cy)){btn.performClick();return;}}
                           return;
                       }
                   }
-                  // Click WebView tại tọa độ tương đối
+                  // Gửi touch tới WebView
                   int[]wl=new int[2];webView.getLocationOnScreen(wl);
-                  final float rx=cx-wl[0], ry=cy-wl[1];
+                  final float rx=cx-wl[0],ry=cy-wl[1];
                   final long t=SystemClock.uptimeMillis();
                   MotionEvent dn=MotionEvent.obtain(t,t,MotionEvent.ACTION_DOWN,rx,ry,0);
                   webView.dispatchTouchEvent(dn);dn.recycle();
@@ -862,14 +697,6 @@ jobs:
                       MotionEvent up=MotionEvent.obtain(t,t2,MotionEvent.ACTION_UP,rx,ry,0);
                       webView.dispatchTouchEvent(up);up.recycle();
                   }},120);
-              }
-
-              // Override moveCursor để xử lý topBar lock
-              @Override protected void moveCursor(float dx,float dy){
-                  super.moveCursor(dx,dy);
-                  float cy=cursor.getY();
-                  if(cy<=60){topBarLocked=true;showBar(true);}
-                  else if(topBarLocked){topBarLocked=false;schedBar();}
               }
 
               private void schedBar(){handler.removeCallbacks(hideBar);if(!topBarLocked)handler.postDelayed(hideBar,4000);}
@@ -883,9 +710,7 @@ jobs:
                       @Override public void onResults(Bundle r){
                           ArrayList<String>m=r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                           if(m!=null&&!m.isEmpty()){final String t=m.get(0).toLowerCase();voiceResult.setText(m.get(0));
-                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},800);handleVoice(t);}
-                          else hideVoice();
-                      }
+                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},800);handleVoice(t);}else hideVoice();}
                       @Override public void onError(int e){voiceResult.setText("Khong nghe duoc!");handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},1500);}
                       @Override public void onBeginningOfSpeech(){}@Override public void onRmsChanged(float v){}
                       @Override public void onBufferReceived(byte[]b){}@Override public void onEndOfSpeech(){}
@@ -912,8 +737,7 @@ jobs:
 
               @Override public boolean onKeyDown(int k,KeyEvent e){
                   if(voiceOverlay.getVisibility()==View.VISIBLE){if(k==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
-                  if(k==KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE||k==KeyEvent.KEYCODE_MEDIA_PLAY){
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);return true;}
+                  if(k==KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE||k==KeyEvent.KEYCODE_MEDIA_PLAY){webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);return true;}
                   if(k==KeyEvent.KEYCODE_MEDIA_FAST_FORWARD){webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);return true;}
                   if(k==KeyEvent.KEYCODE_MEDIA_REWIND){webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;}
                   if(k==KeyEvent.KEYCODE_BACK){if(webView.canGoBack()){webView.goBack();return true;}finish();return true;}
@@ -924,31 +748,25 @@ jobs:
               @Override protected void onResume(){super.onResume();webView.onResume();showBar(false);}
               @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);if(speechRecognizer!=null)speechRecognizer.destroy();webView.destroy();super.onDestroy();}
           }
-          ENDOFFILE
+          EOF
 
       - name: Build APK
         run: |
           mkdir -p build/classes build/gen
           $ANDROID_HOME/build-tools/28.0.3/aapt package -f -m \
             -I $ANDROID_HOME/platforms/android-28/android.jar \
-            -M AndroidManifest.xml \
-            -S res \
-            -J build/gen \
-            -F build/resources.ap_
+            -M AndroidManifest.xml -S res -J build/gen -F build/resources.ap_
           javac -source 8 -target 8 \
             -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
             build/gen/com/allinone/app/R.java \
             src/com/allinone/app/CursorView.java \
-            src/com/allinone/app/GlobalCursor.java \
             src/com/allinone/app/ScrollWebView.java \
             src/com/allinone/app/BaseActivity.java \
             src/com/allinone/app/HomeActivity.java \
             src/com/allinone/app/SettingsActivity.java \
             src/com/allinone/app/MainActivity.java
-          $ANDROID_HOME/build-tools/28.0.3/dx \
-            --dex --output=build/classes.dex \
-            build/classes
+          $ANDROID_HOME/build-tools/28.0.3/dx --dex --output=build/classes.dex build/classes
           cp build/resources.ap_ build/allinone.apk
           cd build && zip -u allinone.apk classes.dex && cd ..
           $ANDROID_HOME/build-tools/28.0.3/zipalign -f 4 build/allinone.apk build/aligned.apk
