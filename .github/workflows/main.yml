@@ -1,4 +1,4 @@
-name: Build HAI TV APK
+name: Build ALL IN ONE APK
 on:
   push:
     branches: [ main ]
@@ -26,7 +26,7 @@ jobs:
 
       - name: Create project files
         run: |
-          mkdir -p src/com/haitv/app res/layout res/values res/drawable
+          mkdir -p src/com/allinone/app res/layout res/values res/drawable
 
           python3 -c "
           import struct, zlib, math
@@ -46,84 +46,57 @@ jobs:
               png += chunk(b'IEND', b'')
               return png
           def icon_pixel(x, y):
-              w, h = 96, 96
               cx, cy, r = 48, 48, 46
               dx, dy = x-cx, y-cy
-              if dx*dx + dy*dy > r*r: return [0,0,0,0]
-              if dx*dx + dy*dy > 40*40: return [180,150,80,255]
-              film_top = 8; film_bot = h-8; strip_h = 14
-              in_top = (film_top <= y <= film_top+strip_h)
-              in_bot = (film_bot-strip_h <= y <= film_bot)
+              if dx*dx+dy*dy > r*r: return [0,0,0,0]
+              if dx*dx+dy*dy > 40*40: return [180,150,80,255]
+              film_top=8; film_bot=88; strip_h=14
+              in_top=(film_top<=y<=film_top+strip_h)
+              in_bot=(film_bot-strip_h<=y<=film_bot)
               if in_top or in_bot:
-                  sx = (x-4) % 16
-                  sy = y-film_top-3 if in_top else y-(film_bot-strip_h)-3
+                  sx=(x-4)%16
+                  sy=y-film_top-3 if in_top else y-(film_bot-strip_h)-3
                   if 2<=sx<=10 and 2<=sy<=8: return [220,210,180,255]
                   return [60,40,20,255]
-              rel_y = y-(film_top+strip_h+1)
-              scene_h = (film_bot-strip_h)-(film_top+strip_h+1)
-              if scene_h > 0:
-                  t = rel_y/scene_h
-                  noise = ((x*13+y*7) % 20)-10
-                  if t < 0.45: base_r,base_g,base_b = int(200+noise),int(170+noise),int(120+noise//2)
-                  elif t < 0.55: base_r,base_g,base_b = int(140+noise),int(100+noise),int(60+noise//2)
-                  else: base_r,base_g,base_b = int(120+noise),int(85+noise),int(45+noise//2)
-                  px = 48
+              rel_y=y-(film_top+strip_h+1)
+              scene_h=(film_bot-strip_h)-(film_top+strip_h+1)
+              if scene_h>0:
+                  t=rel_y/scene_h
+                  noise=((x*13+y*7)%20)-10
+                  if t<0.45: br,bg2,bb=int(200+noise),int(170+noise),int(120+noise//2)
+                  elif t<0.55: br,bg2,bb=int(140+noise),int(100+noise),int(60+noise//2)
+                  else: br,bg2,bb=int(120+noise),int(85+noise),int(45+noise//2)
+                  px=48
                   if 0.30<=t<=0.42 and abs(x-px)<=5: return [30,20,10,255]
                   if 0.42<=t<=0.65 and abs(x-px)<=3: return [30,20,10,255]
                   if 0.65<=t<=0.80 and (abs(x-(px-3))<=2 or abs(x-(px+3))<=2): return [30,20,10,255]
-                  return [max(0,min(255,base_r)),max(0,min(255,base_g)),max(0,min(255,base_b)),255]
+                  return [max(0,min(255,br)),max(0,min(255,bg2)),max(0,min(255,bb)),255]
               return [20,20,20,255]
           with open('res/drawable/ic_launcher.png','wb') as f:
-              f.write(make_png(96, 96, icon_pixel))
+              f.write(make_png(96,96,icon_pixel))
           def banner_pixel(x, y):
-              w2,h2 = 320,180
-              noise = ((x*13+y*7)%20)-10
-              t_y = y/h2
-              if t_y<0.4: base_r,base_g,base_b = int(180+noise),int(150+noise),int(100+noise//2)
-              elif t_y<0.55: base_r,base_g,base_b = int(120+noise),int(90+noise),int(50+noise//2)
-              else: base_r,base_g,base_b = int(100+noise),int(70+noise),int(35+noise//2)
-              strip_h2=20
-              in_top2 = y<=strip_h2; in_bot2 = y>=h2-strip_h2
+              noise=((x*13+y*7)%20)-10
+              t_y=y/180
+              if t_y<0.4: br,bg2,bb=int(180+noise),int(150+noise),int(100+noise//2)
+              elif t_y<0.55: br,bg2,bb=int(120+noise),int(90+noise),int(50+noise//2)
+              else: br,bg2,bb=int(100+noise),int(70+noise),int(35+noise//2)
+              sh=20; in_top2=y<=sh; in_bot2=y>=180-sh
               if in_top2 or in_bot2:
-                  sx=(x-4)%24; sy=y-3 if in_top2 else y-(h2-strip_h2)-3
+                  sx=(x-4)%24; sy=y-3 if in_top2 else y-(180-sh)-3
                   if 3<=sx<=16 and 3<=sy<=12: return [220,210,180,255]
                   return [40,25,10,255]
-              px2=160; t_y2=y/h2
-              if 0.30<=t_y2<=0.42 and abs(x-px2)<=6: return [20,12,5,255]
-              if 0.42<=t_y2<=0.65 and abs(x-px2)<=4: return [20,12,5,255]
-              if 0.65<=t_y2<=0.82 and (abs(x-(px2-5))<=3 or abs(x-(px2+5))<=3): return [20,12,5,255]
-              lx,ly=x-20,y-75
-              if 0<=lx<=6 and 0<=ly<=30: return [255,245,220,255]
-              if 0<=lx<=22 and 13<=ly<=17: return [255,245,220,255]
-              if 16<=lx<=22 and 0<=ly<=30: return [255,245,220,255]
-              lx2=lx-32
-              if 0<=lx2<=3 and 8<=ly<=30: return [255,245,220,255]
-              if 19<=lx2<=22 and 8<=ly<=30: return [255,245,220,255]
-              if 0<=lx2<=22 and 5<=ly<=9: return [255,245,220,255]
-              if 0<=lx2<=22 and 18<=ly<=22: return [255,245,220,255]
-              lx3=lx-62
-              if 0<=lx3<=16 and 0<=ly<=4: return [255,245,220,255]
-              if 6<=lx3<=10 and 0<=ly<=30: return [255,245,220,255]
-              if 0<=lx3<=16 and 26<=ly<=30: return [255,245,220,255]
-              lx4,ly4=x-110,y-75
-              if 0<=lx4<=22 and 0<=ly4<=4: return [229,9,20,255]
-              if 9<=lx4<=13 and 0<=ly4<=30: return [229,9,20,255]
-              lx5=lx4-32
-              if 0<=lx5<=3 and 0<=ly4<=30: return [229,9,20,255]
-              if 0<=lx5<=22 and 13<=ly4<=17: return [229,9,20,255]
-              if 19<=lx5<=22 and 0<=ly4<=30: return [229,9,20,255]
-              return [max(0,min(255,base_r)),max(0,min(255,base_g)),max(0,min(255,base_b)),255]
+              return [max(0,min(255,br)),max(0,min(255,bg2)),max(0,min(255,bb)),255]
           with open('res/drawable/banner.png','wb') as f:
-              f.write(make_png(320, 180, banner_pixel))
+              f.write(make_png(320,180,banner_pixel))
           print('Icons OK')
           "
 
           cat > AndroidManifest.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.haitv.app"
-              android:versionCode="2"
-              android:versionName="2.0">
+              package="com.allinone.app"
+              android:versionCode="1"
+              android:versionName="1.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -131,12 +104,14 @@ jobs:
               <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
               <uses-feature android:name="android.software.leanback" android:required="false" />
               <application
-                  android:label="HAI TV"
+                  android:label="ALL IN ONE"
                   android:icon="@drawable/ic_launcher"
                   android:banner="@drawable/banner"
+                  android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                   android:usesCleartextTraffic="true"
                   android:hardwareAccelerated="true">
                   <activity android:name=".HomeActivity" android:exported="true"
+                      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:configChanges="orientation|screenSize|keyboardHidden">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -145,8 +120,10 @@ jobs:
                       </intent-filter>
                   </activity>
                   <activity android:name=".MainActivity" android:exported="false"
+                      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
+                      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
@@ -171,7 +148,7 @@ jobs:
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
-                      android:text="HAI TV"
+                      android:text="ALL IN ONE"
                       android:textSize="32sp"
                       android:textColor="#E50914"
                       android:textStyle="bold"/>
@@ -198,107 +175,103 @@ jobs:
 
           cat > res/layout/main.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:orientation="vertical"
               android:background="#000000">
-              <LinearLayout
-                  android:id="@+id/topBar"
+              <WebView android:id="@+id/webview"
                   android:layout_width="match_parent"
-                  android:layout_height="50dp"
+                  android:layout_height="match_parent" />
+              <ProgressBar android:id="@+id/progress"
+                  style="?android:attr/progressBarStyleHorizontal"
+                  android:layout_width="match_parent"
+                  android:layout_height="5dp"
+                  android:layout_alignParentTop="true"
+                  android:max="100"
+                  android:progressTint="#E50914"
+                  android:visibility="gone" />
+              <LinearLayout android:id="@+id/topBar"
+                  android:layout_width="match_parent"
+                  android:layout_height="56dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
-                  android:background="#cc111122"
-                  android:paddingLeft="20dp"
-                  android:paddingRight="10dp">
+                  android:background="#dd111122"
+                  android:paddingLeft="16dp"
+                  android:paddingRight="8dp"
+                  android:layout_alignParentTop="true"
+                  android:visibility="visible">
                   <TextView android:id="@+id/btnBack"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:text="◀ Home"
-                      android:textSize="16sp"
+                      android:textSize="15sp"
                       android:textColor="#aaaaaa"
                       android:padding="8dp"/>
                   <TextView android:id="@+id/txtTitle"
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
-                      android:text="HAI TV"
-                      android:textSize="18sp"
+                      android:text="ALL IN ONE"
+                      android:textSize="17sp"
                       android:textColor="#E50914"
                       android:textStyle="bold"
                       android:gravity="center"
-                      android:padding="8dp"/>
+                      android:singleLine="true"/>
                   <TextView android:id="@+id/btnVoice"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:text="🎤"
                       android:textSize="22sp"
-                      android:padding="8dp"/>
+                      android:padding="10dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:text="⚙"
                       android:textSize="22sp"
                       android:textColor="#88ffffff"
-                      android:padding="8dp"/>
+                      android:padding="10dp"/>
               </LinearLayout>
-              <FrameLayout
+              <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:layout_weight="1">
-                  <WebView android:id="@+id/webview"
-                      android:layout_width="match_parent"
-                      android:layout_height="match_parent" />
-                  <ProgressBar android:id="@+id/progress"
-                      style="?android:attr/progressBarStyleHorizontal"
-                      android:layout_width="match_parent"
-                      android:layout_height="5dp"
-                      android:max="100"
-                      android:progressTint="#E50914"
-                      android:visibility="gone" />
-                  <RelativeLayout android:id="@+id/voiceOverlay"
-                      android:layout_width="match_parent"
-                      android:layout_height="match_parent"
-                      android:background="#cc000000"
-                      android:visibility="gone">
-                      <LinearLayout
-                          android:layout_width="600dp"
+                  android:layout_height="match_parent"
+                  android:background="#cc000000"
+                  android:visibility="gone">
+                  <LinearLayout
+                      android:layout_width="600dp"
+                      android:layout_height="wrap_content"
+                      android:layout_centerInParent="true"
+                      android:orientation="vertical"
+                      android:background="#1a1a2e"
+                      android:padding="40dp"
+                      xmlns:android="http://schemas.android.com/apk/res/android">
+                      <TextView
+                          android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:layout_centerInParent="true"
-                          android:orientation="vertical"
-                          android:background="#1a1a2e"
-                          android:padding="40dp"
-                          xmlns:android="http://schemas.android.com/apk/res/android">
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:layout_gravity="center"
-                              android:text="🎤 Dang nghe..."
-                              android:textSize="28sp"
-                              android:textColor="#ffffff"
-                              android:layout_marginBottom="16dp"/>
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:layout_gravity="center"
-                              android:text="Noi ten phim hoac lenh:\nphat / dung / tua toi / tua lui"
-                              android:textSize="16sp"
-                              android:textColor="#aaaaaa"
-                              android:gravity="center"
-                              android:layout_marginBottom="20dp"/>
-                          <TextView android:id="@+id/voiceResult"
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:layout_gravity="center"
-                              android:text=""
-                              android:textSize="22sp"
-                              android:textColor="#E50914"
-                              android:gravity="center"/>
-                      </LinearLayout>
-                  </RelativeLayout>
-              </FrameLayout>
-          </LinearLayout>
+                          android:layout_gravity="center"
+                          android:text="🎤 Dang nghe..."
+                          android:textSize="28sp"
+                          android:textColor="#ffffff"
+                          android:layout_marginBottom="16dp"/>
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_gravity="center"
+                          android:text="Noi ten phim hoac lenh:\nphat / dung / tua toi / tua lui"
+                          android:textSize="16sp"
+                          android:textColor="#aaaaaa"
+                          android:gravity="center"
+                          android:layout_marginBottom="20dp"/>
+                      <TextView android:id="@+id/voiceResult"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_gravity="center"
+                          android:text=""
+                          android:textSize="22sp"
+                          android:textColor="#E50914"
+                          android:gravity="center"/>
+                  </LinearLayout>
+              </RelativeLayout>
+          </RelativeLayout>
           ENDOFFILE
 
           cat > res/layout/settings.xml << 'ENDOFFILE'
@@ -329,7 +302,7 @@ jobs:
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
-                      android:text="HAI TV - Cai dat"
+                      android:text="ALL IN ONE - Cai dat"
                       android:textSize="28sp"
                       android:textColor="#ffffff"
                       android:textStyle="bold"/>
@@ -353,8 +326,7 @@ jobs:
                   <LinearLayout
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
-                      android:orientation="horizontal"
-                      android:layout_marginBottom="20dp">
+                      android:orientation="horizontal">
                       <Button android:id="@+id/btnSave"
                           android:layout_width="0dp"
                           android:layout_height="wrap_content"
@@ -379,7 +351,7 @@ jobs:
               <TextView
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:text="Danh sach kenh (nhan de chon):"
+                  android:text="Danh sach kenh:"
                   android:textSize="18sp"
                   android:textColor="#888888"
                   android:layout_marginLeft="40dp"
@@ -401,12 +373,12 @@ jobs:
           cat > res/values/strings.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <string name="app_name">HAI TV</string>
+              <string name="app_name">ALL IN ONE</string>
           </resources>
           ENDOFFILE
 
-          cat > src/com/haitv/app/HomeActivity.java << 'ENDOFFILE'
-          package com.haitv.app;
+          cat > src/com/allinone/app/HomeActivity.java << 'ENDOFFILE'
+          package com.allinone.app;
           import android.app.Activity;
           import android.content.Context;
           import android.content.Intent;
@@ -430,11 +402,19 @@ jobs:
           import java.util.Arrays;
           import java.util.List;
           public class HomeActivity extends Activity {
-              private static final String PREF_NAME = "haitv_prefs";
+              private static final String PREF_NAME = "aio_prefs";
               private static final String KEY_URL = "custom_url";
               private static final String KEY_HISTORY = "url_history";
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private static final String SEP = "|||";
+              private static final String[] DEFAULT_URLS = {
+                  "https://pointnorth.io",
+                  "https://www.youtube.com",
+                  "https://www.google.com",
+                  "https://vtvgo.vn",
+                  "https://tinnhac.com",
+                  "https://vnexpress.net"
+              };
               private LinearLayout gridLinks;
               private SharedPreferences prefs;
               @Override
@@ -442,18 +422,27 @@ jobs:
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.home);
                   prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                  initDefaultUrls();
                   gridLinks = (LinearLayout) findViewById(R.id.gridLinks);
                   ((Button) findViewById(R.id.btnSettings)).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) {
                           startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
                       }
                   });
-                  renderLinks();
               }
-              @Override
-              protected void onResume() {
-                  super.onResume();
-                  renderLinks();
+              @Override protected void onResume() { super.onResume(); renderLinks(); }
+              private void initDefaultUrls() {
+                  if (prefs.getString(KEY_HISTORY, "").isEmpty()) {
+                      StringBuilder sb = new StringBuilder();
+                      for (int i = 0; i < DEFAULT_URLS.length; i++) {
+                          if (i > 0) sb.append(SEP);
+                          sb.append(DEFAULT_URLS[i]);
+                      }
+                      prefs.edit()
+                          .putString(KEY_HISTORY, sb.toString())
+                          .putString(KEY_URL, DEFAULT_URL)
+                          .apply();
+                  }
               }
               public List<String> getHistory() {
                   String raw = prefs.getString(KEY_HISTORY, DEFAULT_URL);
@@ -463,53 +452,43 @@ jobs:
                   gridLinks.removeAllViews();
                   List<String> history = getHistory();
                   String activeUrl = prefs.getString(KEY_URL, DEFAULT_URL);
-                  // 3 cột mỗi hàng
                   int cols = 3;
                   LinearLayout row = null;
                   for (int i = 0; i < history.size(); i++) {
                       if (i % cols == 0) {
                           row = new LinearLayout(this);
                           row.setOrientation(LinearLayout.HORIZONTAL);
-                          row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                          ((LinearLayout.LayoutParams)row.getLayoutParams()).setMargins(0,0,0,20);
+                          LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                          rp.setMargins(0,0,0,20); row.setLayoutParams(rp);
                           gridLinks.addView(row);
                       }
                       final String url = history.get(i);
                       LinearLayout card = new LinearLayout(this);
                       card.setOrientation(LinearLayout.VERTICAL);
                       card.setGravity(android.view.Gravity.CENTER);
-                      card.setPadding(20, 24, 20, 24);
+                      card.setPadding(20,24,20,24);
                       card.setBackgroundColor(url.equals(activeUrl) ? 0xff1a1a3e : 0xff1a1a2e);
-                      LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, 180, 1f);
-                      cp.setMargins(0,0,16,0);
-                      card.setLayoutParams(cp);
-                      card.setFocusable(true);
-                      card.setClickable(true);
-                      // Favicon
+                      LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, 200, 1f);
+                      cp.setMargins(0,0,16,0); card.setLayoutParams(cp);
+                      card.setFocusable(true); card.setClickable(true);
                       ImageView favicon = new ImageView(this);
-                      favicon.setLayoutParams(new LinearLayout.LayoutParams(64, 64));
+                      LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(72,72);
+                      favicon.setLayoutParams(fp);
                       favicon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                       card.addView(favicon);
-                      // Load favicon async
-                      String faviconUrl = "https://www.google.com/s2/favicons?domain=" + url + "&sz=64";
-                      new LoadFaviconTask(favicon).execute(faviconUrl);
-                      // URL label
+                      new LoadFaviconTask(favicon).execute("https://www.google.com/s2/favicons?domain=" + url + "&sz=64");
                       TextView label = new TextView(this);
                       String domain = url.replace("https://","").replace("http://","").split("/")[0];
                       label.setText(domain);
                       label.setTextColor(url.equals(activeUrl) ? 0xffE50914 : 0xffcccccc);
-                      label.setTextSize(13);
-                      label.setGravity(android.view.Gravity.CENTER);
-                      label.setMaxLines(1);
+                      label.setTextSize(13); label.setGravity(android.view.Gravity.CENTER); label.setMaxLines(1);
                       LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                      lp.setMargins(0,8,0,0);
-                      label.setLayoutParams(lp);
+                      lp.setMargins(0,10,0,0); label.setLayoutParams(lp);
                       card.addView(label);
                       if (url.equals(activeUrl)) {
                           TextView active = new TextView(this);
                           active.setText("▶ Dang xem");
-                          active.setTextColor(0xffE50914);
-                          active.setTextSize(11);
+                          active.setTextColor(0xffE50914); active.setTextSize(11);
                           active.setGravity(android.view.Gravity.CENTER);
                           card.addView(active);
                       }
@@ -523,23 +502,19 @@ jobs:
                       });
                       row.addView(card);
                   }
-                  // Padding cuối
                   if (row != null && history.size() % cols != 0) {
                       int remaining = cols - (history.size() % cols);
                       for (int j = 0; j < remaining; j++) {
                           View empty = new View(this);
-                          LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(0, 180, 1f);
-                          ep.setMargins(0,0,16,0);
-                          empty.setLayoutParams(ep);
-                          row.addView(empty);
+                          LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(0, 200, 1f);
+                          ep.setMargins(0,0,16,0); empty.setLayoutParams(ep); row.addView(empty);
                       }
                   }
               }
               private void openUrl(String url) {
                   prefs.edit().putString(KEY_URL, url).apply();
                   Intent i = new Intent(this, MainActivity.class);
-                  i.putExtra("url", url);
-                  startActivity(i);
+                  i.putExtra("url", url); startActivity(i);
               }
               private static class LoadFaviconTask extends AsyncTask<String, Void, Bitmap> {
                   private ImageView imageView;
@@ -549,24 +524,22 @@ jobs:
                           HttpURLConnection conn = (HttpURLConnection) new URL(urls[0]).openConnection();
                           conn.setConnectTimeout(5000); conn.setReadTimeout(5000);
                           conn.setInstanceFollowRedirects(true);
-                          InputStream is = conn.getInputStream();
-                          return BitmapFactory.decodeStream(is);
+                          return BitmapFactory.decodeStream(conn.getInputStream());
                       } catch (Exception e) { return null; }
                   }
                   @Override protected void onPostExecute(Bitmap bmp) {
                       if (bmp != null && imageView != null) imageView.setImageBitmap(bmp);
                   }
               }
-              @Override
-              public boolean onKeyDown(int keyCode, KeyEvent event) {
+              @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
                   if (keyCode == KeyEvent.KEYCODE_BACK) { finish(); return true; }
                   return super.onKeyDown(keyCode, event);
               }
           }
           ENDOFFILE
 
-          cat > src/com/haitv/app/SettingsActivity.java << 'ENDOFFILE'
-          package com.haitv.app;
+          cat > src/com/allinone/app/SettingsActivity.java << 'ENDOFFILE'
+          package com.allinone.app;
           import android.app.Activity;
           import android.content.Context;
           import android.content.Intent;
@@ -584,7 +557,7 @@ jobs:
           import java.util.Arrays;
           import java.util.List;
           public class SettingsActivity extends Activity {
-              private static final String PREF_NAME = "haitv_prefs";
+              private static final String PREF_NAME = "aio_prefs";
               private static final String KEY_URL = "custom_url";
               private static final String KEY_HISTORY = "url_history";
               private static final String DEFAULT_URL = "https://pointnorth.io";
@@ -609,8 +582,7 @@ jobs:
                           String newUrl = editUrl.getText().toString().trim();
                           if (newUrl.isEmpty()) return;
                           if (!newUrl.startsWith("http")) newUrl = "https://" + newUrl;
-                          saveUrl(newUrl);
-                          openUrl(newUrl);
+                          saveUrl(newUrl); openUrl(newUrl);
                       }
                   });
                   ((Button) findViewById(R.id.btnReset)).setOnClickListener(new View.OnClickListener() {
@@ -624,15 +596,14 @@ jobs:
               private void addToHistory(String url) {
                   List<String> list = getHistory();
                   list.remove(url); list.add(0, url);
-                  if (list.size() > 20) list = list.subList(0, 20);
+                  if (list.size() > 30) list = list.subList(0, 30);
                   StringBuilder sb = new StringBuilder();
                   for (int i=0; i<list.size(); i++) { if (i>0) sb.append(SEP); sb.append(list.get(i)); }
                   prefs.edit().putString(KEY_HISTORY, sb.toString()).apply();
               }
               private void saveUrl(String url) {
                   prefs.edit().putString(KEY_URL, url).apply();
-                  addToHistory(url);
-                  renderHistory();
+                  addToHistory(url); renderHistory();
               }
               private void openUrl(String url) {
                   Intent i = new Intent(this, MainActivity.class);
@@ -687,8 +658,8 @@ jobs:
           }
           ENDOFFILE
 
-          cat > src/com/haitv/app/MainActivity.java << 'ENDOFFILE'
-          package com.haitv.app;
+          cat > src/com/allinone/app/MainActivity.java << 'ENDOFFILE'
+          package com.allinone.app;
           import android.app.Activity;
           import android.content.Context;
           import android.content.Intent;
@@ -706,6 +677,7 @@ jobs:
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
+          import android.widget.LinearLayout;
           import android.widget.ProgressBar;
           import android.widget.RelativeLayout;
           import android.widget.TextView;
@@ -715,14 +687,22 @@ jobs:
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
+              private LinearLayout topBar;
               private RelativeLayout voiceOverlay;
               private TextView voiceResult;
               private SpeechRecognizer speechRecognizer;
-              private static final String PREF_NAME = "haitv_prefs";
+              private static final String PREF_NAME = "aio_prefs";
               private static final String KEY_URL = "custom_url";
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private String currentUrl;
               private Handler handler = new Handler();
+              private boolean topBarVisible = true;
+              private Runnable hideTopBarRunnable = new Runnable() {
+                  @Override public void run() {
+                      topBar.setVisibility(View.GONE);
+                      topBarVisible = false;
+                  }
+              };
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
@@ -733,6 +713,7 @@ jobs:
                   if (getIntent().hasExtra("url")) currentUrl = getIntent().getStringExtra("url");
                   webView = (WebView) findViewById(R.id.webview);
                   progressBar = (ProgressBar) findViewById(R.id.progress);
+                  topBar = (LinearLayout) findViewById(R.id.topBar);
                   voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
                   voiceResult = (TextView) findViewById(R.id.voiceResult);
                   ((TextView) findViewById(R.id.btnBack)).setOnClickListener(new View.OnClickListener() {
@@ -746,6 +727,8 @@ jobs:
                           startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                       }
                   });
+                  // Tự ẩn topBar sau 5 giây
+                  scheduleHideTopBar();
                   setupSpeech();
                   WebSettings s = webView.getSettings();
                   s.setJavaScriptEnabled(true);
@@ -760,7 +743,8 @@ jobs:
                   webView.setWebViewClient(new WebViewClient() {
                       @Override public void onPageStarted(WebView v, String url, Bitmap f) {
                           progressBar.setVisibility(View.VISIBLE);
-                          ((TextView)findViewById(R.id.txtTitle)).setText(url.replace("https://","").replace("http://","").split("/")[0]);
+                          String domain = url.replace("https://","").replace("http://","").split("/")[0];
+                          ((TextView)findViewById(R.id.txtTitle)).setText(domain);
                       }
                       @Override public void onPageFinished(WebView v, String url) { progressBar.setVisibility(View.GONE); }
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) { h.proceed(); }
@@ -779,6 +763,15 @@ jobs:
                       @Override public boolean onLongClick(View v) { return true; }
                   });
                   webView.loadUrl(currentUrl);
+              }
+              private void scheduleHideTopBar() {
+                  handler.removeCallbacks(hideTopBarRunnable);
+                  handler.postDelayed(hideTopBarRunnable, 5000);
+              }
+              private void showTopBar() {
+                  topBar.setVisibility(View.VISIBLE);
+                  topBarVisible = true;
+                  scheduleHideTopBar();
               }
               private void setupSpeech() {
                   if (!SpeechRecognizer.isRecognitionAvailable(this)) return;
@@ -850,7 +843,12 @@ jobs:
                       if (keyCode == KeyEvent.KEYCODE_BACK) { hideVoiceOverlay(); return true; }
                       return true;
                   }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { webView.scrollBy(0, -300); return true; }
+                  // Cuộn lên → hiện topBar
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                      webView.scrollBy(0, -300);
+                      showTopBar();
+                      return true;
+                  }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { webView.scrollBy(0, 300); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { webView.scrollBy(-200, 0); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { webView.scrollBy(200, 0); return true; }
@@ -874,16 +872,18 @@ jobs:
                       if (webView.canGoBack()) { webView.goBack(); return true; }
                       finish(); return true;
                   }
-                  if (keyCode == KeyEvent.KEYCODE_MENU) {
-                      showVoiceOverlay(); return true;
-                  }
+                  if (keyCode == KeyEvent.KEYCODE_MENU) { showVoiceOverlay(); return true; }
                   return super.onKeyDown(keyCode, event);
               }
               @Override protected void onPause() {
                   super.onPause(); webView.onPause();
+                  handler.removeCallbacks(hideTopBarRunnable);
                   if (voiceOverlay.getVisibility() == View.VISIBLE) hideVoiceOverlay();
               }
-              @Override protected void onResume() { super.onResume(); webView.onResume(); }
+              @Override protected void onResume() {
+                  super.onResume(); webView.onResume();
+                  showTopBar();
+              }
               @Override protected void onDestroy() {
                   handler.removeCallbacksAndMessages(null);
                   if (speechRecognizer != null) speechRecognizer.destroy();
@@ -905,26 +905,26 @@ jobs:
           javac -source 8 -target 8 \
             -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
-            build/gen/com/haitv/app/R.java \
-            src/com/haitv/app/HomeActivity.java \
-            src/com/haitv/app/SettingsActivity.java \
-            src/com/haitv/app/MainActivity.java
+            build/gen/com/allinone/app/R.java \
+            src/com/allinone/app/HomeActivity.java \
+            src/com/allinone/app/SettingsActivity.java \
+            src/com/allinone/app/MainActivity.java
           $ANDROID_HOME/build-tools/28.0.3/dx \
             --dex --output=build/classes.dex \
             build/classes
-          cp build/resources.ap_ build/haitv.apk
-          cd build && zip -u haitv.apk classes.dex && cd ..
-          $ANDROID_HOME/build-tools/28.0.3/zipalign -f 4 build/haitv.apk build/aligned.apk
+          cp build/resources.ap_ build/allinone.apk
+          cd build && zip -u allinone.apk classes.dex && cd ..
+          $ANDROID_HOME/build-tools/28.0.3/zipalign -f 4 build/allinone.apk build/aligned.apk
           keytool -genkey -v -keystore key.jks -alias key -keyalg RSA \
             -keysize 2048 -validity 10000 -storepass android -keypass android \
-            -dname "CN=HaiTV,O=HaiTV,C=VN"
+            -dname "CN=AllInOne,O=AllInOne,C=VN"
           $ANDROID_HOME/build-tools/28.0.3/apksigner sign \
             --ks key.jks --ks-pass pass:android --key-pass pass:android \
-            --out HAITV.apk build/aligned.apk
+            --out ALLINONE.apk build/aligned.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HAITV
-          path: HAITV.apk
+          name: ALLINONE
+          path: ALLINONE.apk
           retention-days: 30
