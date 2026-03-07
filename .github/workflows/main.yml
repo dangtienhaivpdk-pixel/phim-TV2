@@ -29,7 +29,7 @@ jobs:
           mkdir -p src/com/allinone/app res/layout res/values res/drawable
 
           python3 -c "
-          import struct, zlib, math
+          import struct, zlib
           def make_png(w, h, get_pixel):
               def chunk(name, data):
                   c = zlib.crc32(name + data) & 0xffffffff
@@ -410,7 +410,6 @@ jobs:
           import android.content.SharedPreferences;
           import android.graphics.Bitmap;
           import android.graphics.BitmapFactory;
-          import android.graphics.Color;
           import android.os.AsyncTask;
           import android.os.Bundle;
           import android.view.KeyEvent;
@@ -420,7 +419,6 @@ jobs:
           import android.widget.ImageView;
           import android.widget.LinearLayout;
           import android.widget.TextView;
-          import java.io.InputStream;
           import java.net.HttpURLConnection;
           import java.net.URL;
           import java.util.ArrayList;
@@ -509,7 +507,8 @@ jobs:
                       String domain = url.replace("https://","").replace("http://","").split("/")[0];
                       label.setText(domain);
                       label.setTextColor(url.equals(activeUrl) ? 0xffE50914 : 0xffcccccc);
-                      label.setTextSize(13); label.setGravity(android.view.Gravity.CENTER);
+                      label.setTextSize(13);
+                      label.setGravity(android.view.Gravity.CENTER);
                       label.setMaxLines(1);
                       LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -518,7 +517,8 @@ jobs:
                       if (url.equals(activeUrl)) {
                           TextView active = new TextView(this);
                           active.setText("▶ Dang xem");
-                          active.setTextColor(0xffE50914); active.setTextSize(11);
+                          active.setTextColor(0xffE50914);
+                          active.setTextSize(11);
                           active.setGravity(android.view.Gravity.CENTER);
                           card.addView(active);
                       }
@@ -712,6 +712,7 @@ jobs:
           import android.view.WindowManager;
           import android.webkit.WebChromeClient;
           import android.webkit.WebSettings;
+          import android.webkit.WebView;
           import android.webkit.WebViewClient;
           import android.widget.LinearLayout;
           import android.widget.ProgressBar;
@@ -748,7 +749,6 @@ jobs:
                   topBar = (LinearLayout) findViewById(R.id.topBar);
                   voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
                   voiceResult = (TextView) findViewById(R.id.voiceResult);
-                  // Bắt scroll từ WebView → hiện/ẩn topBar
                   webView.setOnScrollChangedCallback(new ScrollWebView.OnScrollChangedCallback() {
                       @Override public void onScrollUp() { showTopBar(); }
                       @Override public void onScrollDown() { scheduleHideTopBar(); }
@@ -777,23 +777,23 @@ jobs:
                   s.setDisplayZoomControls(false);
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setWebViewClient(new WebViewClient() {
-                      @Override public void onPageStarted(ScrollWebView v, String url, Bitmap f) {
+                      @Override public void onPageStarted(WebView v, String url, Bitmap f) {
                           progressBar.setVisibility(View.VISIBLE);
                           String domain = url.replace("https://","").replace("http://","").split("/")[0];
                           ((TextView)findViewById(R.id.txtTitle)).setText(domain);
                       }
-                      @Override public void onPageFinished(ScrollWebView v, String url) {
+                      @Override public void onPageFinished(WebView v, String url) {
                           progressBar.setVisibility(View.GONE);
                       }
-                      @Override public void onReceivedSslError(ScrollWebView v, SslErrorHandler h, SslError e) {
+                      @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
                           h.proceed();
                       }
-                      @Override public boolean shouldOverrideUrlLoading(ScrollWebView v, String url) {
+                      @Override public boolean shouldOverrideUrlLoading(WebView v, String url) {
                           v.loadUrl(url); return true;
                       }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
-                      @Override public void onProgressChanged(ScrollWebView v, int p) {
+                      @Override public void onProgressChanged(WebView v, int p) {
                           progressBar.setProgress(p);
                           progressBar.setVisibility(p < 100 ? View.VISIBLE : View.GONE);
                       }
