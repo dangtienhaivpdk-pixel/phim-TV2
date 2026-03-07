@@ -95,8 +95,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.allinone.app"
-              android:versionCode="1"
-              android:versionName="1.0">
+              android:versionCode="2"
+              android:versionName="2.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -109,7 +109,8 @@ jobs:
                   android:banner="@drawable/banner"
                   android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                   android:usesCleartextTraffic="true"
-                  android:hardwareAccelerated="true">
+                  android:hardwareAccelerated="true"
+                  android:largeHeap="true">
                   <activity android:name=".HomeActivity" android:exported="true"
                       android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:configChanges="orientation|screenSize|keyboardHidden">
@@ -121,6 +122,7 @@ jobs:
                   </activity>
                   <activity android:name=".MainActivity" android:exported="false"
                       android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+                      android:hardwareAccelerated="true"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
                       android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
@@ -185,17 +187,17 @@ jobs:
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
                   android:layout_width="match_parent"
-                  android:layout_height="5dp"
+                  android:layout_height="4dp"
                   android:layout_alignParentTop="true"
                   android:max="100"
                   android:progressTint="#E50914"
                   android:visibility="gone" />
               <LinearLayout android:id="@+id/topBar"
                   android:layout_width="match_parent"
-                  android:layout_height="56dp"
+                  android:layout_height="52dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
-                  android:background="#dd111122"
+                  android:background="#ee111122"
                   android:paddingLeft="16dp"
                   android:paddingRight="8dp"
                   android:layout_alignParentTop="true"
@@ -231,6 +233,11 @@ jobs:
                       android:textColor="#88ffffff"
                       android:padding="10dp"/>
               </LinearLayout>
+              <com.allinone.app.CursorView android:id="@+id/cursor"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:clickable="false"
+                  android:focusable="false"/>
               <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
@@ -377,6 +384,51 @@ jobs:
           </resources>
           ENDOFFILE
 
+          cat > src/com/allinone/app/CursorView.java << 'ENDOFFILE'
+          package com.allinone.app;
+          import android.content.Context;
+          import android.graphics.Canvas;
+          import android.graphics.Color;
+          import android.graphics.Paint;
+          import android.util.AttributeSet;
+          import android.view.View;
+          public class CursorView extends View {
+              private Paint paintOuter, paintInner, paintLine;
+              private float cx = 640, cy = 360;
+              public CursorView(Context context) { super(context); init(); }
+              public CursorView(Context context, AttributeSet attrs) { super(context, attrs); init(); }
+              private void init() {
+                  setLayerType(LAYER_TYPE_HARDWARE, null);
+                  paintOuter = new Paint(Paint.ANTI_ALIAS_FLAG);
+                  paintOuter.setColor(Color.WHITE);
+                  paintOuter.setStyle(Paint.Style.STROKE);
+                  paintOuter.setStrokeWidth(3f);
+                  paintInner = new Paint(Paint.ANTI_ALIAS_FLAG);
+                  paintInner.setColor(0xccE50914);
+                  paintInner.setStyle(Paint.Style.FILL);
+                  paintLine = new Paint(Paint.ANTI_ALIAS_FLAG);
+                  paintLine.setColor(Color.WHITE);
+                  paintLine.setStrokeWidth(2f);
+              }
+              public void setPosition(float x, float y) { cx = x; cy = y; invalidate(); }
+              public float getCursorX() { return cx; }
+              public float getCursorY() { return cy; }
+              @Override
+              protected void onDraw(Canvas canvas) {
+                  Paint shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
+                  shadow.setColor(0x44000000);
+                  shadow.setStyle(Paint.Style.FILL);
+                  canvas.drawCircle(cx+2, cy+2, 12, shadow);
+                  canvas.drawCircle(cx, cy, 12, paintOuter);
+                  canvas.drawCircle(cx, cy, 5, paintInner);
+                  canvas.drawLine(cx-18, cy, cx-14, cy, paintLine);
+                  canvas.drawLine(cx+14, cy, cx+18, cy, paintLine);
+                  canvas.drawLine(cx, cy-18, cx, cy-14, paintLine);
+                  canvas.drawLine(cx, cy+14, cx, cy+18, paintLine);
+              }
+          }
+          ENDOFFILE
+
           cat > src/com/allinone/app/ScrollWebView.java << 'ENDOFFILE'
           package com.allinone.app;
           import android.content.Context;
@@ -501,8 +553,14 @@ jobs:
                       favicon.setLayoutParams(new LinearLayout.LayoutParams(72,72));
                       favicon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                       card.addView(favicon);
-                      new LoadFaviconTask(favicon).execute(
-                          "https://www.google.com/s2/favicons?domain=" + url + "&sz=64");
+                      // Load favicon tuần tự để không quá tải
+                      final int idx = i;
+                      handler.postDelayed(new Runnable() {
+                          @Override public void run() {
+                              new LoadFaviconTask(favicon).execute(
+                                  "https://www.google.com/s2/favicons?domain=" + url + "&sz=64");
+                          }
+                      }, idx * 200L);
                       TextView label = new TextView(this);
                       String domain = url.replace("https://","").replace("http://","").split("/")[0];
                       label.setText(domain);
@@ -542,6 +600,7 @@ jobs:
                       }
                   }
               }
+              private android.os.Handler handler = new android.os.Handler();
               private void openUrl(String url) {
                   prefs.edit().putString(KEY_URL, url).apply();
                   Intent i = new Intent(this, MainActivity.class);
@@ -553,7 +612,7 @@ jobs:
                   @Override protected Bitmap doInBackground(String... urls) {
                       try {
                           HttpURLConnection conn = (HttpURLConnection) new URL(urls[0]).openConnection();
-                          conn.setConnectTimeout(5000); conn.setReadTimeout(5000);
+                          conn.setConnectTimeout(4000); conn.setReadTimeout(4000);
                           conn.setInstanceFollowRedirects(true);
                           return BitmapFactory.decodeStream(conn.getInputStream());
                       } catch (Exception e) { return null; }
@@ -708,6 +767,7 @@ jobs:
           import android.speech.RecognizerIntent;
           import android.speech.SpeechRecognizer;
           import android.view.KeyEvent;
+          import android.view.MotionEvent;
           import android.view.View;
           import android.view.WindowManager;
           import android.webkit.WebChromeClient;
@@ -727,12 +787,17 @@ jobs:
               private LinearLayout topBar;
               private RelativeLayout voiceOverlay;
               private TextView voiceResult;
+              private CursorView cursorView;
               private SpeechRecognizer speechRecognizer;
               private static final String PREF_NAME = "aio_prefs";
               private static final String KEY_URL = "custom_url";
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private String currentUrl;
               private Handler handler = new Handler();
+              private float curX, curY;
+              private float screenW = 1280, screenH = 720;
+              private static final float STEP_NORMAL = 35f;
+              private static final float STEP_FAST = 100f;
               private Runnable hideTopBarRunnable = new Runnable() {
                   @Override public void run() { topBar.setVisibility(View.GONE); }
               };
@@ -749,6 +814,14 @@ jobs:
                   topBar = (LinearLayout) findViewById(R.id.topBar);
                   voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
                   voiceResult = (TextView) findViewById(R.id.voiceResult);
+                  cursorView = (CursorView) findViewById(R.id.cursor);
+                  android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                  getWindowManager().getDefaultDisplay().getMetrics(dm);
+                  screenW = dm.widthPixels;
+                  screenH = dm.heightPixels;
+                  curX = screenW / 2f;
+                  curY = screenH / 2f;
+                  cursorView.setPosition(curX, curY);
                   webView.setOnScrollChangedCallback(new ScrollWebView.OnScrollChangedCallback() {
                       @Override public void onScrollUp() { showTopBar(); }
                       @Override public void onScrollDown() { scheduleHideTopBar(); }
@@ -775,7 +848,14 @@ jobs:
                   s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                   s.setBuiltInZoomControls(false);
                   s.setDisplayZoomControls(false);
+                  // Tối ưu cache & render
+                  s.setAppCacheEnabled(true);
+                  s.setCacheMode(android.webkit.WebSettings.LOAD_DEFAULT);
+                  s.setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH);
+                  s.setEnableSmoothTransition(true);
+                  // TV màn hình lớn: dùng desktop UA
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                  webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
                   webView.setWebViewClient(new WebViewClient() {
                       @Override public void onPageStarted(WebView v, String url, Bitmap f) {
                           progressBar.setVisibility(View.VISIBLE);
@@ -784,6 +864,11 @@ jobs:
                       }
                       @Override public void onPageFinished(WebView v, String url) {
                           progressBar.setVisibility(View.GONE);
+                          // Inject CSS tối ưu scroll mượt cho TV
+                          v.evaluateJavascript(
+                              "document.documentElement.style.scrollBehavior='auto';" +
+                              "document.body.style.overscrollBehavior='none';",
+                              null);
                       }
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
                           h.proceed();
@@ -805,6 +890,33 @@ jobs:
                       @Override public boolean onLongClick(View v) { return true; }
                   });
                   webView.loadUrl(currentUrl);
+              }
+              private void sendClick(float x, float y) {
+                  // Kiểm tra click vào topBar
+                  if (topBar.getVisibility() == View.VISIBLE && y <= topBar.getBottom()) {
+                      int[] ids = { R.id.btnBack, R.id.btnVoice, R.id.btnSettingsWeb };
+                      for (int id : ids) {
+                          View btn = findViewById(id);
+                          int[] loc = new int[2];
+                          btn.getLocationOnScreen(loc);
+                          if (x >= loc[0] && x <= loc[0]+btn.getWidth() &&
+                              y >= loc[1] && y <= loc[1]+btn.getHeight()) {
+                              btn.performClick(); return;
+                          }
+                      }
+                      return;
+                  }
+                  long now = android.os.SystemClock.uptimeMillis();
+                  MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
+                  MotionEvent up = MotionEvent.obtain(now, now+100, MotionEvent.ACTION_UP, x, y, 0);
+                  webView.dispatchTouchEvent(down);
+                  webView.dispatchTouchEvent(up);
+                  down.recycle(); up.recycle();
+              }
+              private void moveCursor(float dx, float dy) {
+                  curX = Math.max(0, Math.min(screenW - 1, curX + dx));
+                  curY = Math.max(0, Math.min(screenH - 1, curY + dy));
+                  cursorView.setPosition(curX, curY);
               }
               private void scheduleHideTopBar() {
                   handler.removeCallbacks(hideTopBarRunnable);
@@ -892,15 +1004,17 @@ jobs:
                       if (keyCode == KeyEvent.KEYCODE_BACK) { hideVoiceOverlay(); return true; }
                       return true;
                   }
+                  float step = (event.getRepeatCount() > 5) ? STEP_FAST : STEP_NORMAL;
                   if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                      webView.scrollBy(0, -300); showTopBar(); return true;
-                  }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { webView.scrollBy(0, 300); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { webView.scrollBy(-200, 0); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { webView.scrollBy(200, 0); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-                      webView.evaluateJavascript("document.activeElement&&document.activeElement.click();", null);
+                      moveCursor(0, -step);
+                      if (curY < 60) showTopBar();
                       return true;
+                  }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, step); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-step, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(step, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+                      sendClick(curX, curY); return true;
                   }
                   if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
                       webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}", null);
@@ -951,6 +1065,7 @@ jobs:
             -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
             build/gen/com/allinone/app/R.java \
+            src/com/allinone/app/CursorView.java \
             src/com/allinone/app/ScrollWebView.java \
             src/com/allinone/app/HomeActivity.java \
             src/com/allinone/app/SettingsActivity.java \
