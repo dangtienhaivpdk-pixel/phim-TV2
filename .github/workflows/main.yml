@@ -30,7 +30,6 @@ jobs:
 
           python3 -c "
           import struct, zlib, math
-
           def make_png(w, h, get_pixel):
               def chunk(name, data):
                   c = zlib.crc32(name + data) & 0xffffffff
@@ -46,98 +45,74 @@ jobs:
               png += chunk(b'IDAT', zlib.compress(raw, 9))
               png += chunk(b'IEND', b'')
               return png
-
           def icon_pixel(x, y):
               w, h = 96, 96
               cx, cy, r = 48, 48, 46
-              dx, dy = x - cx, y - cy
-              if dx*dx + dy*dy > r*r:
-                  return [0, 0, 0, 0]
-              if dx*dx + dy*dy > 40*40:
-                  return [180, 150, 80, 255]
-              film_top = 8
-              film_bot = h - 8
-              strip_h = 14
-              in_top_strip = (film_top <= y <= film_top + strip_h)
-              in_bot_strip = (film_bot - strip_h <= y <= film_bot)
-              if in_top_strip or in_bot_strip:
-                  sx = (x - 4) % 16
-                  if in_top_strip:
-                      sy = y - film_top - 3
-                  else:
-                      sy = y - (film_bot - strip_h) - 3
-                  if 2 <= sx <= 10 and 2 <= sy <= 8:
-                      return [220, 210, 180, 255]
-                  return [60, 40, 20, 255]
-              rel_y = y - (film_top + strip_h + 1)
-              scene_h = (film_bot - strip_h) - (film_top + strip_h + 1)
+              dx, dy = x-cx, y-cy
+              if dx*dx + dy*dy > r*r: return [0,0,0,0]
+              if dx*dx + dy*dy > 40*40: return [180,150,80,255]
+              film_top = 8; film_bot = h-8; strip_h = 14
+              in_top = (film_top <= y <= film_top+strip_h)
+              in_bot = (film_bot-strip_h <= y <= film_bot)
+              if in_top or in_bot:
+                  sx = (x-4) % 16
+                  sy = y-film_top-3 if in_top else y-(film_bot-strip_h)-3
+                  if 2<=sx<=10 and 2<=sy<=8: return [220,210,180,255]
+                  return [60,40,20,255]
+              rel_y = y-(film_top+strip_h+1)
+              scene_h = (film_bot-strip_h)-(film_top+strip_h+1)
               if scene_h > 0:
-                  t = rel_y / scene_h
-                  noise = ((x * 13 + y * 7) % 20) - 10
-                  if t < 0.45:
-                      base_r = int(200 + noise); base_g = int(170 + noise); base_b = int(120 + noise//2)
-                  elif t < 0.55:
-                      base_r = int(140 + noise); base_g = int(100 + noise); base_b = int(60 + noise//2)
-                  else:
-                      base_r = int(120 + noise); base_g = int(85 + noise); base_b = int(45 + noise//2)
+                  t = rel_y/scene_h
+                  noise = ((x*13+y*7) % 20)-10
+                  if t < 0.45: base_r,base_g,base_b = int(200+noise),int(170+noise),int(120+noise//2)
+                  elif t < 0.55: base_r,base_g,base_b = int(140+noise),int(100+noise),int(60+noise//2)
+                  else: base_r,base_g,base_b = int(120+noise),int(85+noise),int(45+noise//2)
                   px = 48
-                  if 0.30 <= t <= 0.42 and abs(x - px) <= 5: return [30, 20, 10, 255]
-                  if 0.42 <= t <= 0.65 and abs(x - px) <= 3: return [30, 20, 10, 255]
-                  if 0.65 <= t <= 0.80:
-                      if abs(x-(px-3)) <= 2 or abs(x-(px+3)) <= 2: return [30, 20, 10, 255]
-                  return [max(0,min(255,base_r)), max(0,min(255,base_g)), max(0,min(255,base_b)), 255]
-              return [20, 20, 20, 255]
-
+                  if 0.30<=t<=0.42 and abs(x-px)<=5: return [30,20,10,255]
+                  if 0.42<=t<=0.65 and abs(x-px)<=3: return [30,20,10,255]
+                  if 0.65<=t<=0.80 and (abs(x-(px-3))<=2 or abs(x-(px+3))<=2): return [30,20,10,255]
+                  return [max(0,min(255,base_r)),max(0,min(255,base_g)),max(0,min(255,base_b)),255]
+              return [20,20,20,255]
           with open('res/drawable/ic_launcher.png','wb') as f:
               f.write(make_png(96, 96, icon_pixel))
-
           def banner_pixel(x, y):
-              w, h = 320, 180
-              noise = ((x * 13 + y * 7) % 20) - 10
-              t_y = y / h
-              if t_y < 0.4:
-                  base_r = int(180 + noise); base_g = int(150 + noise); base_b = int(100 + noise//2)
-              elif t_y < 0.55:
-                  base_r = int(120 + noise); base_g = int(90 + noise); base_b = int(50 + noise//2)
-              else:
-                  base_r = int(100 + noise); base_g = int(70 + noise); base_b = int(35 + noise//2)
-              strip_h = 20
-              in_top = y <= strip_h
-              in_bot = y >= h - strip_h
-              if in_top or in_bot:
-                  sx = (x - 4) % 24
-                  sy = y - 3 if in_top else y - (h - strip_h) - 3
-                  if 3 <= sx <= 16 and 3 <= sy <= 12:
-                      return [220, 210, 180, 255]
-                  return [40, 25, 10, 255]
-              px = 160
-              if 0.30 <= t_y <= 0.42 and abs(x-px) <= 6: return [20, 12, 5, 255]
-              if 0.42 <= t_y <= 0.65 and abs(x-px) <= 4: return [20, 12, 5, 255]
-              if 0.65 <= t_y <= 0.82:
-                  if abs(x-(px-5)) <= 3 or abs(x-(px+5)) <= 3: return [20, 12, 5, 255]
-              # Chữ HAI TV sepia trắng
-              lx, ly = x - 20, y - 75
+              w2,h2 = 320,180
+              noise = ((x*13+y*7)%20)-10
+              t_y = y/h2
+              if t_y<0.4: base_r,base_g,base_b = int(180+noise),int(150+noise),int(100+noise//2)
+              elif t_y<0.55: base_r,base_g,base_b = int(120+noise),int(90+noise),int(50+noise//2)
+              else: base_r,base_g,base_b = int(100+noise),int(70+noise),int(35+noise//2)
+              strip_h2=20
+              in_top2 = y<=strip_h2; in_bot2 = y>=h2-strip_h2
+              if in_top2 or in_bot2:
+                  sx=(x-4)%24; sy=y-3 if in_top2 else y-(h2-strip_h2)-3
+                  if 3<=sx<=16 and 3<=sy<=12: return [220,210,180,255]
+                  return [40,25,10,255]
+              px2=160; t_y2=y/h2
+              if 0.30<=t_y2<=0.42 and abs(x-px2)<=6: return [20,12,5,255]
+              if 0.42<=t_y2<=0.65 and abs(x-px2)<=4: return [20,12,5,255]
+              if 0.65<=t_y2<=0.82 and (abs(x-(px2-5))<=3 or abs(x-(px2+5))<=3): return [20,12,5,255]
+              lx,ly=x-20,y-75
               if 0<=lx<=6 and 0<=ly<=30: return [255,245,220,255]
               if 0<=lx<=22 and 13<=ly<=17: return [255,245,220,255]
               if 16<=lx<=22 and 0<=ly<=30: return [255,245,220,255]
-              lx2 = lx - 32
+              lx2=lx-32
               if 0<=lx2<=3 and 8<=ly<=30: return [255,245,220,255]
               if 19<=lx2<=22 and 8<=ly<=30: return [255,245,220,255]
               if 0<=lx2<=22 and 5<=ly<=9: return [255,245,220,255]
               if 0<=lx2<=22 and 18<=ly<=22: return [255,245,220,255]
-              lx3 = lx - 62
+              lx3=lx-62
               if 0<=lx3<=16 and 0<=ly<=4: return [255,245,220,255]
               if 6<=lx3<=10 and 0<=ly<=30: return [255,245,220,255]
               if 0<=lx3<=16 and 26<=ly<=30: return [255,245,220,255]
-              lx4, ly4 = x - 110, y - 75
+              lx4,ly4=x-110,y-75
               if 0<=lx4<=22 and 0<=ly4<=4: return [229,9,20,255]
               if 9<=lx4<=13 and 0<=ly4<=30: return [229,9,20,255]
-              lx5 = lx4 - 32
+              lx5=lx4-32
               if 0<=lx5<=3 and 0<=ly4<=30: return [229,9,20,255]
               if 0<=lx5<=22 and 13<=ly4<=17: return [229,9,20,255]
               if 19<=lx5<=22 and 0<=ly4<=30: return [229,9,20,255]
-              return [max(0,min(255,base_r)), max(0,min(255,base_g)), max(0,min(255,base_b)), 255]
-
+              return [max(0,min(255,base_r)),max(0,min(255,base_g)),max(0,min(255,base_b)),255]
           with open('res/drawable/banner.png','wb') as f:
               f.write(make_png(320, 180, banner_pixel))
           print('Icons OK')
@@ -147,8 +122,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.haitv.app"
-              android:versionCode="1"
-              android:versionName="1.0">
+              android:versionCode="2"
+              android:versionName="2.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -161,7 +136,7 @@ jobs:
                   android:banner="@drawable/banner"
                   android:usesCleartextTraffic="true"
                   android:hardwareAccelerated="true">
-                  <activity android:name=".MainActivity" android:exported="true"
+                  <activity android:name=".HomeActivity" android:exported="true"
                       android:configChanges="orientation|screenSize|keyboardHidden">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -169,84 +144,161 @@ jobs:
                           <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                       </intent-filter>
                   </activity>
+                  <activity android:name=".MainActivity" android:exported="false"
+                      android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
           ENDOFFILE
 
-          cat > res/layout/main.xml << 'ENDOFFILE'
+          cat > res/layout/home.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:background="#000000">
-              <WebView android:id="@+id/webview"
+              android:orientation="vertical"
+              android:background="#0a0a0f">
+              <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="match_parent" />
-              <ProgressBar android:id="@+id/progress"
-                  style="?android:attr/progressBarStyleHorizontal"
-                  android:layout_width="match_parent"
-                  android:layout_height="5dp"
-                  android:layout_alignParentTop="true"
-                  android:max="100"
-                  android:progressTint="#E50914"
-                  android:visibility="gone" />
-              <TextView android:id="@+id/btnSettings"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:layout_alignParentTop="true"
-                  android:layout_alignParentRight="true"
-                  android:text="⚙"
-                  android:textSize="28sp"
-                  android:textColor="#88ffffff"
-                  android:padding="12dp" />
-              <View android:id="@+id/cursor"
-                  android:layout_width="24dp"
-                  android:layout_height="24dp"
-                  android:background="#ccE50914"
-                  android:elevation="10dp" />
-              <RelativeLayout android:id="@+id/voiceOverlay"
+                  android:layout_height="80dp"
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  android:background="#111122"
+                  android:paddingLeft="40dp"
+                  android:paddingRight="40dp">
+                  <TextView
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="HAI TV"
+                      android:textSize="32sp"
+                      android:textColor="#E50914"
+                      android:textStyle="bold"/>
+                  <Button android:id="@+id/btnSettings"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="⚙ Cai dat"
+                      android:textSize="16sp"
+                      android:textColor="#ffffff"
+                      android:background="#333355"
+                      android:padding="12dp"/>
+              </LinearLayout>
+              <ScrollView
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
-                  android:background="#cc000000"
-                  android:visibility="gone">
-                  <LinearLayout
-                      android:layout_width="600dp"
+                  android:padding="40dp">
+                  <LinearLayout android:id="@+id/gridLinks"
+                      android:layout_width="match_parent"
                       android:layout_height="wrap_content"
-                      android:layout_centerInParent="true"
-                      android:orientation="vertical"
-                      android:background="#1a1a2e"
-                      android:padding="40dp"
-                      xmlns:android="http://schemas.android.com/apk/res/android">
-                      <TextView
-                          android:layout_width="wrap_content"
+                      android:orientation="vertical"/>
+              </ScrollView>
+          </LinearLayout>
+          ENDOFFILE
+
+          cat > res/layout/main.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:background="#000000">
+              <LinearLayout
+                  android:id="@+id/topBar"
+                  android:layout_width="match_parent"
+                  android:layout_height="50dp"
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  android:background="#cc111122"
+                  android:paddingLeft="20dp"
+                  android:paddingRight="10dp">
+                  <TextView android:id="@+id/btnBack"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="◀ Home"
+                      android:textSize="16sp"
+                      android:textColor="#aaaaaa"
+                      android:padding="8dp"/>
+                  <TextView android:id="@+id/txtTitle"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="HAI TV"
+                      android:textSize="18sp"
+                      android:textColor="#E50914"
+                      android:textStyle="bold"
+                      android:gravity="center"
+                      android:padding="8dp"/>
+                  <TextView android:id="@+id/btnVoice"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="🎤"
+                      android:textSize="22sp"
+                      android:padding="8dp"/>
+                  <TextView android:id="@+id/btnSettingsWeb"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="⚙"
+                      android:textSize="22sp"
+                      android:textColor="#88ffffff"
+                      android:padding="8dp"/>
+              </LinearLayout>
+              <FrameLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="0dp"
+                  android:layout_weight="1">
+                  <WebView android:id="@+id/webview"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent" />
+                  <ProgressBar android:id="@+id/progress"
+                      style="?android:attr/progressBarStyleHorizontal"
+                      android:layout_width="match_parent"
+                      android:layout_height="5dp"
+                      android:max="100"
+                      android:progressTint="#E50914"
+                      android:visibility="gone" />
+                  <RelativeLayout android:id="@+id/voiceOverlay"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      android:background="#cc000000"
+                      android:visibility="gone">
+                      <LinearLayout
+                          android:layout_width="600dp"
                           android:layout_height="wrap_content"
-                          android:layout_gravity="center"
-                          android:text="🎤 Dang nghe..."
-                          android:textSize="28sp"
-                          android:textColor="#ffffff"
-                          android:layout_marginBottom="16dp"/>
-                      <TextView
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_gravity="center"
-                          android:text="Noi ten phim hoac lenh:\nphat / dung / tua toi / tua lui"
-                          android:textSize="16sp"
-                          android:textColor="#aaaaaa"
-                          android:gravity="center"
-                          android:layout_marginBottom="20dp"/>
-                      <TextView android:id="@+id/voiceResult"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_gravity="center"
-                          android:text=""
-                          android:textSize="22sp"
-                          android:textColor="#E50914"
-                          android:gravity="center"/>
-                  </LinearLayout>
-              </RelativeLayout>
-          </RelativeLayout>
+                          android:layout_centerInParent="true"
+                          android:orientation="vertical"
+                          android:background="#1a1a2e"
+                          android:padding="40dp"
+                          xmlns:android="http://schemas.android.com/apk/res/android">
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_gravity="center"
+                              android:text="🎤 Dang nghe..."
+                              android:textSize="28sp"
+                              android:textColor="#ffffff"
+                              android:layout_marginBottom="16dp"/>
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_gravity="center"
+                              android:text="Noi ten phim hoac lenh:\nphat / dung / tua toi / tua lui"
+                              android:textSize="16sp"
+                              android:textColor="#aaaaaa"
+                              android:gravity="center"
+                              android:layout_marginBottom="20dp"/>
+                          <TextView android:id="@+id/voiceResult"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_gravity="center"
+                              android:text=""
+                              android:textSize="22sp"
+                              android:textColor="#E50914"
+                              android:gravity="center"/>
+                      </LinearLayout>
+                  </RelativeLayout>
+              </FrameLayout>
+          </LinearLayout>
           ENDOFFILE
 
           cat > res/layout/settings.xml << 'ENDOFFILE'
@@ -255,63 +307,89 @@ jobs:
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:background="#0d0d1a"
-              android:padding="60dp">
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="HAI TV - Cai dat"
-                  android:textSize="36sp"
-                  android:textColor="#ffffff"
-                  android:textStyle="bold"
-                  android:layout_marginBottom="30dp"/>
-              <EditText android:id="@+id/editUrl"
+              android:background="#0d0d1a">
+              <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:hint="Nhap duong dan web moi..."
-                  android:textSize="20sp"
-                  android:textColor="#ffffff"
-                  android:textColorHint="#555555"
-                  android:background="#1a1a2e"
-                  android:padding="18dp"
-                  android:inputType="textUri"
-                  android:layout_marginBottom="16dp"/>
+                  android:layout_height="70dp"
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  android:background="#111122"
+                  android:paddingLeft="30dp"
+                  android:paddingRight="30dp">
+                  <Button android:id="@+id/btnBack"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="◀ Back"
+                      android:textSize="16sp"
+                      android:textColor="#ffffff"
+                      android:background="#333355"
+                      android:padding="12dp"
+                      android:layout_marginRight="20dp"/>
+                  <TextView
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="HAI TV - Cai dat"
+                      android:textSize="28sp"
+                      android:textColor="#ffffff"
+                      android:textStyle="bold"/>
+              </LinearLayout>
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:orientation="horizontal"
-                  android:layout_marginBottom="30dp">
-                  <Button android:id="@+id/btnSave"
-                      android:layout_width="0dp"
+                  android:orientation="vertical"
+                  android:padding="40dp">
+                  <EditText android:id="@+id/editUrl"
+                      android:layout_width="match_parent"
                       android:layout_height="wrap_content"
-                      android:layout_weight="1"
-                      android:text="THEM VA MO"
-                      android:textSize="18sp"
+                      android:hint="Nhap duong dan web moi..."
+                      android:textSize="20sp"
                       android:textColor="#ffffff"
-                      android:background="#E50914"
-                      android:padding="14dp"
-                      android:layout_marginRight="10dp"/>
-                  <Button android:id="@+id/btnReset"
-                      android:layout_width="0dp"
-                      android:layout_height="wrap_content"
-                      android:layout_weight="1"
-                      android:text="RESET MAC DINH"
-                      android:textSize="18sp"
-                      android:textColor="#aaaaaa"
+                      android:textColorHint="#555555"
                       android:background="#1a1a2e"
-                      android:padding="14dp"/>
+                      android:padding="18dp"
+                      android:inputType="textUri"
+                      android:layout_marginBottom="16dp"/>
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:layout_marginBottom="20dp">
+                      <Button android:id="@+id/btnSave"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:text="THEM VA MO"
+                          android:textSize="18sp"
+                          android:textColor="#ffffff"
+                          android:background="#E50914"
+                          android:padding="14dp"
+                          android:layout_marginRight="10dp"/>
+                      <Button android:id="@+id/btnReset"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:text="RESET MAC DINH"
+                          android:textSize="18sp"
+                          android:textColor="#aaaaaa"
+                          android:background="#1a1a2e"
+                          android:padding="14dp"/>
+                  </LinearLayout>
               </LinearLayout>
               <TextView
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:text="Lich su duong dan (nhan de chon):"
-                  android:textSize="16sp"
+                  android:text="Danh sach kenh (nhan de chon):"
+                  android:textSize="18sp"
                   android:textColor="#888888"
+                  android:layout_marginLeft="40dp"
                   android:layout_marginBottom="12dp"/>
               <ScrollView
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
-                  android:layout_weight="1">
+                  android:layout_weight="1"
+                  android:paddingLeft="40dp"
+                  android:paddingRight="40dp">
                   <LinearLayout android:id="@+id/listUrls"
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
@@ -327,6 +405,166 @@ jobs:
           </resources>
           ENDOFFILE
 
+          cat > src/com/haitv/app/HomeActivity.java << 'ENDOFFILE'
+          package com.haitv.app;
+          import android.app.Activity;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.graphics.Bitmap;
+          import android.graphics.BitmapFactory;
+          import android.graphics.Color;
+          import android.os.AsyncTask;
+          import android.os.Bundle;
+          import android.view.KeyEvent;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.widget.Button;
+          import android.widget.ImageView;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+          import java.io.InputStream;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
+          import java.util.ArrayList;
+          import java.util.Arrays;
+          import java.util.List;
+          public class HomeActivity extends Activity {
+              private static final String PREF_NAME = "haitv_prefs";
+              private static final String KEY_URL = "custom_url";
+              private static final String KEY_HISTORY = "url_history";
+              private static final String DEFAULT_URL = "https://pointnorth.io";
+              private static final String SEP = "|||";
+              private LinearLayout gridLinks;
+              private SharedPreferences prefs;
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.home);
+                  prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                  gridLinks = (LinearLayout) findViewById(R.id.gridLinks);
+                  ((Button) findViewById(R.id.btnSettings)).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) {
+                          startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+                      }
+                  });
+                  renderLinks();
+              }
+              @Override
+              protected void onResume() {
+                  super.onResume();
+                  renderLinks();
+              }
+              public List<String> getHistory() {
+                  String raw = prefs.getString(KEY_HISTORY, DEFAULT_URL);
+                  return new ArrayList<String>(Arrays.asList(raw.split("\\|\\|\\|")));
+              }
+              private void renderLinks() {
+                  gridLinks.removeAllViews();
+                  List<String> history = getHistory();
+                  String activeUrl = prefs.getString(KEY_URL, DEFAULT_URL);
+                  // 3 cột mỗi hàng
+                  int cols = 3;
+                  LinearLayout row = null;
+                  for (int i = 0; i < history.size(); i++) {
+                      if (i % cols == 0) {
+                          row = new LinearLayout(this);
+                          row.setOrientation(LinearLayout.HORIZONTAL);
+                          row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                          ((LinearLayout.LayoutParams)row.getLayoutParams()).setMargins(0,0,0,20);
+                          gridLinks.addView(row);
+                      }
+                      final String url = history.get(i);
+                      LinearLayout card = new LinearLayout(this);
+                      card.setOrientation(LinearLayout.VERTICAL);
+                      card.setGravity(android.view.Gravity.CENTER);
+                      card.setPadding(20, 24, 20, 24);
+                      card.setBackgroundColor(url.equals(activeUrl) ? 0xff1a1a3e : 0xff1a1a2e);
+                      LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, 180, 1f);
+                      cp.setMargins(0,0,16,0);
+                      card.setLayoutParams(cp);
+                      card.setFocusable(true);
+                      card.setClickable(true);
+                      // Favicon
+                      ImageView favicon = new ImageView(this);
+                      favicon.setLayoutParams(new LinearLayout.LayoutParams(64, 64));
+                      favicon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                      card.addView(favicon);
+                      // Load favicon async
+                      String faviconUrl = "https://www.google.com/s2/favicons?domain=" + url + "&sz=64";
+                      new LoadFaviconTask(favicon).execute(faviconUrl);
+                      // URL label
+                      TextView label = new TextView(this);
+                      String domain = url.replace("https://","").replace("http://","").split("/")[0];
+                      label.setText(domain);
+                      label.setTextColor(url.equals(activeUrl) ? 0xffE50914 : 0xffcccccc);
+                      label.setTextSize(13);
+                      label.setGravity(android.view.Gravity.CENTER);
+                      label.setMaxLines(1);
+                      LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      lp.setMargins(0,8,0,0);
+                      label.setLayoutParams(lp);
+                      card.addView(label);
+                      if (url.equals(activeUrl)) {
+                          TextView active = new TextView(this);
+                          active.setText("▶ Dang xem");
+                          active.setTextColor(0xffE50914);
+                          active.setTextSize(11);
+                          active.setGravity(android.view.Gravity.CENTER);
+                          card.addView(active);
+                      }
+                      card.setOnClickListener(new View.OnClickListener() {
+                          @Override public void onClick(View v) { openUrl(url); }
+                      });
+                      card.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                          @Override public void onFocusChange(View v, boolean focused) {
+                              v.setBackgroundColor(focused ? 0xff2a2a5e : (url.equals(prefs.getString(KEY_URL, DEFAULT_URL)) ? 0xff1a1a3e : 0xff1a1a2e));
+                          }
+                      });
+                      row.addView(card);
+                  }
+                  // Padding cuối
+                  if (row != null && history.size() % cols != 0) {
+                      int remaining = cols - (history.size() % cols);
+                      for (int j = 0; j < remaining; j++) {
+                          View empty = new View(this);
+                          LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(0, 180, 1f);
+                          ep.setMargins(0,0,16,0);
+                          empty.setLayoutParams(ep);
+                          row.addView(empty);
+                      }
+                  }
+              }
+              private void openUrl(String url) {
+                  prefs.edit().putString(KEY_URL, url).apply();
+                  Intent i = new Intent(this, MainActivity.class);
+                  i.putExtra("url", url);
+                  startActivity(i);
+              }
+              private static class LoadFaviconTask extends AsyncTask<String, Void, Bitmap> {
+                  private ImageView imageView;
+                  LoadFaviconTask(ImageView iv) { this.imageView = iv; }
+                  @Override protected Bitmap doInBackground(String... urls) {
+                      try {
+                          HttpURLConnection conn = (HttpURLConnection) new URL(urls[0]).openConnection();
+                          conn.setConnectTimeout(5000); conn.setReadTimeout(5000);
+                          conn.setInstanceFollowRedirects(true);
+                          InputStream is = conn.getInputStream();
+                          return BitmapFactory.decodeStream(is);
+                      } catch (Exception e) { return null; }
+                  }
+                  @Override protected void onPostExecute(Bitmap bmp) {
+                      if (bmp != null && imageView != null) imageView.setImageBitmap(bmp);
+                  }
+              }
+              @Override
+              public boolean onKeyDown(int keyCode, KeyEvent event) {
+                  if (keyCode == KeyEvent.KEYCODE_BACK) { finish(); return true; }
+                  return super.onKeyDown(keyCode, event);
+              }
+          }
+          ENDOFFILE
+
           cat > src/com/haitv/app/SettingsActivity.java << 'ENDOFFILE'
           package com.haitv.app;
           import android.app.Activity;
@@ -335,6 +573,7 @@ jobs:
           import android.content.SharedPreferences;
           import android.graphics.Color;
           import android.os.Bundle;
+          import android.view.KeyEvent;
           import android.view.View;
           import android.view.ViewGroup;
           import android.widget.Button;
@@ -362,16 +601,20 @@ jobs:
                   listUrls = (LinearLayout) findViewById(R.id.listUrls);
                   editUrl.setText(prefs.getString(KEY_URL, DEFAULT_URL));
                   renderHistory();
+                  ((Button) findViewById(R.id.btnBack)).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { finish(); }
+                  });
                   ((Button) findViewById(R.id.btnSave)).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) {
                           String newUrl = editUrl.getText().toString().trim();
                           if (newUrl.isEmpty()) return;
                           if (!newUrl.startsWith("http")) newUrl = "https://" + newUrl;
-                          saveAndOpen(newUrl);
+                          saveUrl(newUrl);
+                          openUrl(newUrl);
                       }
                   });
                   ((Button) findViewById(R.id.btnReset)).setOnClickListener(new View.OnClickListener() {
-                      @Override public void onClick(View v) { saveAndOpen(DEFAULT_URL); }
+                      @Override public void onClick(View v) { saveUrl(DEFAULT_URL); openUrl(DEFAULT_URL); }
                   });
               }
               private List<String> getHistory() {
@@ -380,12 +623,22 @@ jobs:
               }
               private void addToHistory(String url) {
                   List<String> list = getHistory();
-                  list.remove(url);
-                  list.add(0, url);
+                  list.remove(url); list.add(0, url);
                   if (list.size() > 20) list = list.subList(0, 20);
                   StringBuilder sb = new StringBuilder();
-                  for (int i = 0; i < list.size(); i++) { if (i > 0) sb.append(SEP); sb.append(list.get(i)); }
+                  for (int i=0; i<list.size(); i++) { if (i>0) sb.append(SEP); sb.append(list.get(i)); }
                   prefs.edit().putString(KEY_HISTORY, sb.toString()).apply();
+              }
+              private void saveUrl(String url) {
+                  prefs.edit().putString(KEY_URL, url).apply();
+                  addToHistory(url);
+                  renderHistory();
+              }
+              private void openUrl(String url) {
+                  Intent i = new Intent(this, MainActivity.class);
+                  i.putExtra("url", url);
+                  i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                  startActivity(i); finish();
               }
               private void renderHistory() {
                   listUrls.removeAllViews();
@@ -394,7 +647,7 @@ jobs:
                   for (final String url : history) {
                       LinearLayout row = new LinearLayout(this);
                       row.setOrientation(LinearLayout.HORIZONTAL);
-                      row.setPadding(16, 12, 16, 12);
+                      row.setPadding(16,12,16,12);
                       row.setBackgroundColor(url.equals(activeUrl) ? 0xff1a1a2e : 0xff111111);
                       LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8); row.setLayoutParams(rp);
@@ -408,7 +661,7 @@ jobs:
                       btnUse.setText("Chon"); btnUse.setTextColor(Color.WHITE);
                       btnUse.setBackgroundColor(0xff333355); btnUse.setTextSize(13); btnUse.setPadding(16,8,16,8);
                       btnUse.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                      btnUse.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { saveAndOpen(url); } });
+                      btnUse.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { saveUrl(url); openUrl(url); } });
                       Button btnDel = new Button(this);
                       btnDel.setText("X"); btnDel.setTextColor(Color.WHITE);
                       btnDel.setBackgroundColor(0xff660000); btnDel.setTextSize(13); btnDel.setPadding(16,8,16,8);
@@ -427,13 +680,9 @@ jobs:
                       listUrls.addView(row);
                   }
               }
-              private void saveAndOpen(String url) {
-                  prefs.edit().putString(KEY_URL, url).apply();
-                  addToHistory(url);
-                  Intent i = new Intent(this, MainActivity.class);
-                  i.putExtra("url", url);
-                  i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                  startActivity(i); finish();
+              @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
+                  if (keyCode == KeyEvent.KEYCODE_BACK) { finish(); return true; }
+                  return super.onKeyDown(keyCode, event);
               }
           }
           ENDOFFILE
@@ -451,7 +700,6 @@ jobs:
           import android.speech.RecognizerIntent;
           import android.speech.SpeechRecognizer;
           import android.view.KeyEvent;
-          import android.view.MotionEvent;
           import android.view.View;
           import android.view.WindowManager;
           import android.webkit.WebChromeClient;
@@ -467,7 +715,6 @@ jobs:
           public class MainActivity extends Activity {
               private WebView webView;
               private ProgressBar progressBar;
-              private View cursor;
               private RelativeLayout voiceOverlay;
               private TextView voiceResult;
               private SpeechRecognizer speechRecognizer;
@@ -475,16 +722,10 @@ jobs:
               private static final String KEY_URL = "custom_url";
               private static final String DEFAULT_URL = "https://pointnorth.io";
               private String currentUrl;
-              private float cursorX = 640, cursorY = 360;
-              private float STEP = 40f;
               private Handler handler = new Handler();
-              private Runnable hideCursorRunnable = new Runnable() {
-                  @Override public void run() { cursor.setVisibility(View.INVISIBLE); }
-              };
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                   setContentView(R.layout.main);
                   SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -492,19 +733,17 @@ jobs:
                   if (getIntent().hasExtra("url")) currentUrl = getIntent().getStringExtra("url");
                   webView = (WebView) findViewById(R.id.webview);
                   progressBar = (ProgressBar) findViewById(R.id.progress);
-                  cursor = (View) findViewById(R.id.cursor);
                   voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
                   voiceResult = (TextView) findViewById(R.id.voiceResult);
-                  ((TextView) findViewById(R.id.btnSettings)).setOnClickListener(new View.OnClickListener() {
+                  ((TextView) findViewById(R.id.btnBack)).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { finish(); }
+                  });
+                  ((TextView) findViewById(R.id.btnVoice)).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { showVoiceOverlay(); }
+                  });
+                  ((TextView) findViewById(R.id.btnSettingsWeb)).setOnClickListener(new View.OnClickListener() {
                       @Override public void onClick(View v) {
                           startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-                      }
-                  });
-                  cursor.post(new Runnable() {
-                      @Override public void run() {
-                          cursorX = webView.getWidth() / 2f;
-                          cursorY = webView.getHeight() / 2f;
-                          moveCursor(0, 0);
                       }
                   });
                   setupSpeech();
@@ -519,7 +758,10 @@ jobs:
                   s.setDisplayZoomControls(false);
                   s.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setWebViewClient(new WebViewClient() {
-                      @Override public void onPageStarted(WebView v, String url, Bitmap f) { progressBar.setVisibility(View.VISIBLE); }
+                      @Override public void onPageStarted(WebView v, String url, Bitmap f) {
+                          progressBar.setVisibility(View.VISIBLE);
+                          ((TextView)findViewById(R.id.txtTitle)).setText(url.replace("https://","").replace("http://","").split("/")[0]);
+                      }
                       @Override public void onPageFinished(WebView v, String url) { progressBar.setVisibility(View.GONE); }
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) { h.proceed(); }
                       @Override public boolean shouldOverrideUrlLoading(WebView v, String url) { v.loadUrl(url); return true; }
@@ -539,6 +781,7 @@ jobs:
                   webView.loadUrl(currentUrl);
               }
               private void setupSpeech() {
+                  if (!SpeechRecognizer.isRecognitionAvailable(this)) return;
                   speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
                   speechRecognizer.setRecognitionListener(new RecognitionListener() {
                       @Override public void onReadyForSpeech(Bundle p) { voiceResult.setText("Dang nghe..."); }
@@ -549,7 +792,7 @@ jobs:
                               voiceResult.setText(matches.get(0));
                               handler.postDelayed(new Runnable() { @Override public void run() { hideVoiceOverlay(); } }, 800);
                               handleVoiceCommand(text);
-                          } else { hideVoiceOverlay(); }
+                          } else hideVoiceOverlay();
                       }
                       @Override public void onError(int error) {
                           voiceResult.setText("Khong nghe duoc, thu lai!");
@@ -573,20 +816,21 @@ jobs:
                   } else if (text.contains("tua lui") || text.contains("rewind") || text.contains("quay lai")) {
                       webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
                   } else if (text.contains("trang chu") || text.contains("home")) {
-                      webView.loadUrl(currentUrl);
+                      finish();
                   } else if (text.contains("cai dat") || text.contains("settings")) {
                       startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                   } else {
                       String encoded = text.replace(" ", "+");
                       String searchUrl = currentUrl + "/search?q=" + encoded + "&s=" + encoded;
                       webView.evaluateJavascript(
-                          "var inp=document.querySelector('input[type=search],input[name=keyword],input[name=q],input[placeholder*=tim],input[placeholder*=search]');" +
+                          "var inp=document.querySelector('input[type=search],input[name=keyword],input[name=q]');" +
                           "if(inp){inp.value='" + text + "';inp.dispatchEvent(new Event('input'));inp.form&&inp.form.submit();}" +
                           "else{window.location='" + searchUrl + "';}",
                           null);
                   }
               }
               private void showVoiceOverlay() {
+                  if (speechRecognizer == null) return;
                   voiceOverlay.setVisibility(View.VISIBLE);
                   voiceResult.setText("");
                   Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -597,29 +841,8 @@ jobs:
                   speechRecognizer.startListening(intent);
               }
               private void hideVoiceOverlay() {
-                  speechRecognizer.stopListening();
+                  if (speechRecognizer != null) speechRecognizer.stopListening();
                   voiceOverlay.setVisibility(View.GONE);
-              }
-              private void moveCursor(float dx, float dy) {
-                  int w = webView.getWidth();
-                  int h = webView.getHeight();
-                  cursorX = Math.max(0, Math.min(w-24, cursorX+dx));
-                  cursorY = Math.max(0, Math.min(h-24, cursorY+dy));
-                  RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(48, 48);
-                  p.leftMargin = (int) cursorX;
-                  p.topMargin = (int) cursorY;
-                  cursor.setLayoutParams(p);
-                  cursor.setVisibility(View.VISIBLE);
-                  handler.removeCallbacks(hideCursorRunnable);
-                  handler.postDelayed(hideCursorRunnable, 3000);
-              }
-              private void doClick() {
-                  long now = android.os.SystemClock.uptimeMillis();
-                  MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, cursorX, cursorY, 0);
-                  MotionEvent up = MotionEvent.obtain(now, now+100, MotionEvent.ACTION_UP, cursorX, cursorY, 0);
-                  webView.dispatchTouchEvent(down);
-                  webView.dispatchTouchEvent(up);
-                  down.recycle(); up.recycle();
               }
               @Override
               public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -627,12 +850,13 @@ jobs:
                       if (keyCode == KeyEvent.KEYCODE_BACK) { hideVoiceOverlay(); return true; }
                       return true;
                   }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { moveCursor(0, -STEP); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, STEP); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-STEP, 0); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(STEP, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { webView.scrollBy(0, -300); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { webView.scrollBy(0, 300); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { webView.scrollBy(-200, 0); return true; }
+                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { webView.scrollBy(200, 0); return true; }
                   if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-                      doClick(); return true;
+                      webView.evaluateJavascript("document.activeElement&&document.activeElement.click();", null);
+                      return true;
                   }
                   if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
                       webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}", null);
@@ -648,23 +872,12 @@ jobs:
                   }
                   if (keyCode == KeyEvent.KEYCODE_BACK) {
                       if (webView.canGoBack()) { webView.goBack(); return true; }
+                      finish(); return true;
                   }
                   if (keyCode == KeyEvent.KEYCODE_MENU) {
-                      startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-                      return true;
-                  }
-                  return super.onKeyDown(keyCode, event);
-              }
-              @Override
-              public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
                       showVoiceOverlay(); return true;
                   }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_UP) { moveCursor(0, -STEP*3); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) { moveCursor(0, STEP*3); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { moveCursor(-STEP*3, 0); return true; }
-                  if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { moveCursor(STEP*3, 0); return true; }
-                  return super.onKeyLongPress(keyCode, event);
+                  return super.onKeyDown(keyCode, event);
               }
               @Override protected void onPause() {
                   super.onPause(); webView.onPause();
@@ -673,7 +886,7 @@ jobs:
               @Override protected void onResume() { super.onResume(); webView.onResume(); }
               @Override protected void onDestroy() {
                   handler.removeCallbacksAndMessages(null);
-                  speechRecognizer.destroy();
+                  if (speechRecognizer != null) speechRecognizer.destroy();
                   webView.destroy();
                   super.onDestroy();
               }
@@ -693,6 +906,7 @@ jobs:
             -classpath $ANDROID_HOME/platforms/android-28/android.jar \
             -d build/classes \
             build/gen/com/haitv/app/R.java \
+            src/com/haitv/app/HomeActivity.java \
             src/com/haitv/app/SettingsActivity.java \
             src/com/haitv/app/MainActivity.java
           $ANDROID_HOME/build-tools/28.0.3/dx \
