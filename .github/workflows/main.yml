@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="17" android:versionName="17.0">
+              package="com.allinone.app" android:versionCode="18" android:versionName="18.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -106,7 +106,7 @@ jobs:
                       android:hardwareAccelerated="true"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
-                      android:windowSoftInputMode="stateVisible|adjustResize"
+                      android:windowSoftInputMode="stateAlwaysVisible|adjustResize"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
@@ -143,6 +143,7 @@ jobs:
           </LinearLayout>
           XMLEOF
 
+          # ── main.xml: 3 nút nhỏ lại, nền trong suốt cao hơn ─────────────────────────
           cat > res/layout/main.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -153,33 +154,36 @@ jobs:
                   android:focusable="false" android:focusableInTouchMode="false"/>
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
-                  android:layout_width="match_parent" android:layout_height="4dp"
+                  android:layout_width="match_parent" android:layout_height="3dp"
                   android:layout_gravity="top" android:max="100"
                   android:progressTint="#E50914" android:visibility="gone"/>
+              <!-- Bottom bar: 3 nút nhỏ, nền rất trong suốt, góc dưới trái -->
               <LinearLayout android:id="@+id/bottomBar"
                   android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:layout_gravity="bottom|start" android:orientation="horizontal"
-                  android:layout_margin="16dp" android:visibility="gone" android:focusable="false">
+                  android:layout_marginLeft="12dp" android:layout_marginBottom="12dp"
+                  android:visibility="gone" android:focusable="false"
+                  android:background="#55000000">
                   <TextView android:id="@+id/btnHome"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:text="⌂" android:textSize="26sp" android:textColor="#ffffff"
-                      android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
-                      android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#ee111122" android:clickable="true"
-                      android:focusable="false" android:layout_marginRight="8dp"/>
+                      android:layout_width="44dp" android:layout_height="44dp"
+                      android:text="⌂" android:textSize="18sp" android:textColor="#ddffffff"
+                      android:gravity="center"
+                      android:background="#00000000"
+                      android:clickable="true" android:focusable="false"
+                      android:layout_marginRight="2dp"/>
                   <TextView android:id="@+id/btnWebBack"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:text="◀" android:textSize="26sp" android:textColor="#ffffff"
-                      android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
-                      android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#ee111122" android:clickable="true"
-                      android:focusable="false" android:layout_marginRight="8dp"/>
+                      android:layout_width="44dp" android:layout_height="44dp"
+                      android:text="◀" android:textSize="18sp" android:textColor="#ddffffff"
+                      android:gravity="center"
+                      android:background="#00000000"
+                      android:clickable="true" android:focusable="false"
+                      android:layout_marginRight="2dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:text="⚙" android:textSize="26sp" android:textColor="#ffffff"
-                      android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
-                      android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#ee111122" android:clickable="true" android:focusable="false"/>
+                      android:layout_width="44dp" android:layout_height="44dp"
+                      android:text="⚙" android:textSize="18sp" android:textColor="#ddffffff"
+                      android:gravity="center"
+                      android:background="#00000000"
+                      android:clickable="true" android:focusable="false"/>
               </LinearLayout>
               <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent" android:layout_height="match_parent"
@@ -393,8 +397,7 @@ jobs:
                   for(int i=0;i<h.size();i++){
                       if(i%COLS==0){
                           row=new LinearLayout(this);
-                          row.setOrientation(LinearLayout.HORIZONTAL);
-                          row.setFocusable(false);
+                          row.setOrientation(LinearLayout.HORIZONTAL);row.setFocusable(false);
                           LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                           rp.setMargins(0,0,0,20);row.setLayoutParams(rp);grid.addView(row);
@@ -538,6 +541,7 @@ jobs:
           }
           JEOF
 
+          # ── SettingsActivity: fix D-pad xuống URL rows + bàn phím ảo ──────────────
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -563,17 +567,21 @@ jobs:
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
                   DEF="https://pointnorth.io",SEP="|||";
-              private static final int CLR_FOCUS=0xffE50914,CLR_BACK=0xff333355;
-              private static final int CLR_SAVE=0xff9900cc,CLR_RESET=0xff1a1a2e;
-              private static final int CLR_EDIT=0xff222233,CLR_ROW_N=0xff111122,CLR_ROW_A=0xff1e1e35;
+              private static final int CLR_FOCUS=0xffE50914;
+              private static final int CLR_BACK=0xff333355,CLR_SAVE=0xff9900cc;
+              private static final int CLR_RESET=0xff1a1a2e,CLR_EDIT=0xff222233;
+              private static final int CLR_ROW_N=0xff111122,CLR_ROW_A=0xff1e1e35;
+
               private EditText editUrl;
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private SharedPreferences prefs;
               private InputMethodManager imm;
               private Handler handler=new Handler();
+              // items: 0=Back, 1=EditText, 2=Save, 3=Reset, 4+=url rows
               private List<View> items=new ArrayList<View>();
               private int cur=0;
+              private boolean kbdShown=false;
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.settings);
@@ -603,11 +611,22 @@ jobs:
                               doSave();return true;}return false;}});
                   items.clear();
                   items.add(vBack);    // 0
-                  items.add(editUrl);  // 1
+                  items.add(editUrl);  // 1 ← EditText
                   items.add(vSave);    // 2
                   items.add(vReset);   // 3
+                  // 4+ = url rows thêm vào trong renderHistory()
                   renderHistory();
-                  focusTo(1);
+                  // KHÔNG gọi focusTo(1) ở đây vì window chưa attached
+                  // → gọi trong onWindowFocusChanged
+              }
+
+              // Gọi khi window thực sự có focus → bàn phím ảo mới hiện được
+              @Override public void onWindowFocusChanged(boolean hasFocus){
+                  super.onWindowFocusChanged(hasFocus);
+                  if(hasFocus&&cur==0){
+                      // Lần đầu tiên window có focus → set focus vào EditText
+                      focusTo(1);
+                  }
               }
 
               private void doSave(){
@@ -616,16 +635,26 @@ jobs:
                   if(!u.startsWith("http"))u="https://"+u;
                   hideKbd();saveUrl(u);openUrl(u);
               }
+
               private void hideKbd(){
-                  imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);
-                  editUrl.clearFocus();
+                  if(kbdShown){
+                      imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);
+                      editUrl.clearFocus();kbdShown=false;
+                  }
               }
+
               private void showKbd(){
                   editUrl.requestFocus();
                   editUrl.setCursorVisible(true);
                   handler.postDelayed(new Runnable(){@Override public void run(){
-                      imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);}},200);
+                      boolean ok=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
+                      kbdShown=ok;
+                      // Retry nếu lần đầu thất bại
+                      if(!ok){handler.postDelayed(new Runnable(){@Override public void run(){
+                          kbdShown=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);}},300);}
+                  }},150);
               }
+
               private List<String> getHist(){
                   return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
               }
@@ -636,18 +665,23 @@ jobs:
                   for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
                   prefs.edit().putString(KEY_HIST,sb.toString()).apply();
               }
-              private void saveUrl(String url){prefs.edit().putString(KEY_URL,url).apply();addHist(url);renderHistory();}
+              private void saveUrl(String url){
+                  prefs.edit().putString(KEY_URL,url).apply();addHist(url);renderHistory();}
               private void openUrl(String url){
                   startActivity(new Intent(this,MainActivity.class).putExtra("url",url)
                       .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish();
               }
+
               private void renderHistory(){
                   listUrls.removeAllViews();
+                  // Giữ lại 4 items cố định (Back/Edit/Save/Reset), xoá url rows cũ
                   while(items.size()>4)items.remove(4);
-                  List<String>hist=getHist();String active=prefs.getString(KEY_URL,DEF);
+                  List<String>hist=getHist();
+                  final String active=prefs.getString(KEY_URL,DEF);
                   for(final String url:hist){
                       final LinearLayout row=new LinearLayout(this);
-                      row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(20,16,20,16);
+                      row.setOrientation(LinearLayout.HORIZONTAL);
+                      row.setPadding(20,16,20,16);
                       row.setBackgroundColor(url.equals(active)?CLR_ROW_A:CLR_ROW_N);
                       row.setFocusable(false);row.setClickable(true);
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
@@ -659,16 +693,20 @@ jobs:
                       tv.setTextSize(15);tv.setFocusable(false);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
                       row.addView(tv);
-                      TextView bu=new TextView(this);bu.setText(" Chon ");bu.setTextColor(Color.WHITE);
-                      bu.setBackgroundColor(0xff2233aa);bu.setTextSize(13);bu.setPadding(18,10,18,10);
-                      bu.setGravity(android.view.Gravity.CENTER);bu.setFocusable(false);bu.setClickable(true);
+                      TextView bu=new TextView(this);
+                      bu.setText(" Chon ");bu.setTextColor(Color.WHITE);
+                      bu.setBackgroundColor(0xff2233aa);bu.setTextSize(13);
+                      bu.setPadding(18,10,18,10);bu.setGravity(android.view.Gravity.CENTER);
+                      bu.setFocusable(false);bu.setClickable(true);
                       bu.setLayoutParams(new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
                       bu.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
-                      TextView bd=new TextView(this);bd.setText("  X  ");bd.setTextColor(Color.WHITE);
-                      bd.setBackgroundColor(0xff770000);bd.setTextSize(13);bd.setPadding(18,10,18,10);
-                      bd.setGravity(android.view.Gravity.CENTER);bd.setFocusable(false);bd.setClickable(true);
+                      TextView bd=new TextView(this);
+                      bd.setText("  X  ");bd.setTextColor(Color.WHITE);
+                      bd.setBackgroundColor(0xff770000);bd.setTextSize(13);
+                      bd.setPadding(18,10,18,10);bd.setGravity(android.view.Gravity.CENTER);
+                      bd.setFocusable(false);bd.setClickable(true);
                       LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
@@ -678,30 +716,52 @@ jobs:
                               StringBuilder sb=new StringBuilder();
                               for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
                               prefs.edit().putString(KEY_HIST,sb.toString()).apply();
-                              if(cur>=items.size()-1)cur=Math.max(0,items.size()-2);
-                              renderHistory();focusTo(cur);}});
+                              // Adjust cur nếu cần
+                              if(cur>=items.size()-1)cur=Math.max(3,items.size()-2);
+                              renderHistory();
+                              applyHighlight(cur);}});
                       row.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
                       row.addView(bu);row.addView(bd);
-                      listUrls.addView(row);items.add(row);
+                      listUrls.addView(row);
+                      items.add(row); // index 4, 5, 6, ...
                   }
-                  if(cur<items.size())items.get(cur).setBackgroundColor(CLR_FOCUS);
+                  // Tô màu item hiện tại
+                  applyHighlight(cur);
               }
+
+              // Màu nền mặc định (không focus)
               private int normalBg(int idx){
-                  if(idx==0)return CLR_BACK;if(idx==1)return CLR_EDIT;
-                  if(idx==2)return CLR_SAVE;if(idx==3)return CLR_RESET;
-                  int ri=idx-4;List<String>h=getHist();
-                  if(ri<h.size()){String act=prefs.getString(KEY_URL,DEF);
-                      return h.get(ri).equals(act)?CLR_ROW_A:CLR_ROW_N;}
+                  if(idx==0)return CLR_BACK;
+                  if(idx==1)return CLR_EDIT;
+                  if(idx==2)return CLR_SAVE;
+                  if(idx==3)return CLR_RESET;
+                  if(idx>=4&&idx<items.size()){
+                      int ri=idx-4;List<String>h=getHist();
+                      if(ri<h.size()){String act=prefs.getString(KEY_URL,DEF);
+                          return h.get(ri).equals(act)?CLR_ROW_A:CLR_ROW_N;}
+                  }
                   return CLR_ROW_N;
               }
+
+              // Chỉ tô màu không thay đổi focus/kbd
+              private void applyHighlight(int idx){
+                  if(idx>=0&&idx<items.size())
+                      items.get(idx).setBackgroundColor(CLR_FOCUS);
+              }
+
               private void focusTo(int idx){
-                  if(cur>=0&&cur<items.size())items.get(cur).setBackgroundColor(normalBg(cur));
+                  // Xoá highlight cũ
+                  if(cur>=0&&cur<items.size())
+                      items.get(cur).setBackgroundColor(normalBg(cur));
+                  // Ẩn bàn phím khi rời EditText
                   if(cur==1&&idx!=1)hideKbd();
                   cur=Math.max(0,Math.min(idx,items.size()-1));
                   if(cur>=items.size())return;
                   items.get(cur).setBackgroundColor(CLR_FOCUS);
+                  // Hiện bàn phím khi vào EditText
                   if(cur==1)showKbd();
+                  // Scroll xuống nếu là url row
                   if(cur>=4){
                       final View v=items.get(cur);
                       scrollView.post(new Runnable(){@Override public void run(){
@@ -709,23 +769,36 @@ jobs:
                           scrollView.requestChildRectangleOnScreen(listUrls,r,false);}});
                   }
               }
+
               @Override public boolean onKeyDown(int key,KeyEvent e){
+                  // Khi EditText đang focus: Up/Down/Back đặc biệt
                   if(cur==1){
                       if(key==KeyEvent.KEYCODE_DPAD_UP){focusTo(0);return true;}
                       if(key==KeyEvent.KEYCODE_DPAD_DOWN){focusTo(2);return true;}
                       if(key==KeyEvent.KEYCODE_BACK){hideKbd();focusTo(0);return true;}
-                      return false;
+                      return false; // ký tự khác → EditText tự xử lý
                   }
                   switch(key){
-                      case KeyEvent.KEYCODE_DPAD_UP:if(cur>0)focusTo(cur-1);return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN:if(cur<items.size()-1)focusTo(cur+1);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
-                          if(e.getRepeatCount()==0)items.get(cur).performClick();return true;
-                      case KeyEvent.KEYCODE_BACK:finish();return true;
+                      case KeyEvent.KEYCODE_DPAD_UP:
+                          if(cur>0)focusTo(cur-1);
+                          return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:
+                          // Cho phép xuống hết các url rows (cur tối đa = items.size()-1)
+                          if(cur<items.size()-1)focusTo(cur+1);
+                          return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          if(e.getRepeatCount()==0&&cur<items.size())
+                              items.get(cur).performClick();
+                          return true;
+                      case KeyEvent.KEYCODE_BACK:
+                          finish();return true;
                   }
                   return super.onKeyDown(key,e);
               }
-              @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);super.onDestroy();}
+
+              @Override protected void onDestroy(){
+                  handler.removeCallbacksAndMessages(null);super.onDestroy();}
           }
           JEOF
 
@@ -778,7 +851,7 @@ jobs:
               private static final float STEP_MIN=15f,STEP_MAX=90f;
               private static final int ACCEL_TICKS=12;
               private static final float SCROLL_AXIS=3f;
-              private static final int BAR_ZONE_W=200,BAR_ZONE_H=120;
+              private static final int BAR_ZONE_W=160,BAR_ZONE_H=100;
               private static final int EDGE_ZONE=80,EDGE_INTERVAL=100;
               private static final int EDGE_SCROLL_MIN=60,EDGE_SCROLL_MAX=350;
               private static final long HIDE_DELAY=3000;
