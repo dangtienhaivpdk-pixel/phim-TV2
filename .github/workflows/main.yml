@@ -29,7 +29,7 @@ jobs:
           mkdir -p src/com/allinone/app res/layout res/values res/drawable
 
           python3 -c "
-          import struct, zlib
+          import struct,zlib
           def make_png(w,h,gp):
               def chunk(n,d):
                   c=zlib.crc32(n+d)&0xffffffff
@@ -51,9 +51,9 @@ jobs:
                   sx=(x-4)%16;sy=y-ft-3 if it else y-(fb-sh)-3
                   if 2<=sx<=10 and 2<=sy<=8:return[220,210,180,255]
                   return[60,40,20,255]
-              ry=y-(ft+sh+1);sc=(fb-sh)-(ft+sh+1)
+              ry2=y-(ft+sh+1);sc=(fb-sh)-(ft+sh+1)
               if sc>0:
-                  t=ry/sc;n=((x*13+y*7)%20)-10
+                  t=ry2/sc;n=((x*13+y*7)%20)-10
                   if t<0.45:br,bg,bb=int(200+n),int(170+n),int(120+n//2)
                   elif t<0.55:br,bg,bb=int(140+n),int(100+n),int(60+n//2)
                   else:br,bg,bb=int(120+n),int(85+n),int(45+n//2)
@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="13" android:versionName="13.0">
+              package="com.allinone.app" android:versionCode="14" android:versionName="14.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -106,48 +106,45 @@ jobs:
                       android:hardwareAccelerated="true"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
+                      android:windowSoftInputMode="adjustResize"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
           XMLEOF
 
+          # ── home.xml ─ KHÔNG dùng descendantFocusability blocksDescendants ────────────
           cat > res/layout/home.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:background="#0a0a0f"
-              android:focusable="false" android:descendantFocusability="blocksDescendants">
+              android:orientation="vertical" android:background="#0a0a0f">
               <LinearLayout android:layout_width="match_parent" android:layout_height="80dp"
                   android:orientation="horizontal" android:gravity="center_vertical"
-                  android:background="#111122" android:paddingLeft="40dp" android:paddingRight="40dp"
-                  android:focusable="false">
+                  android:background="#111122" android:paddingLeft="40dp" android:paddingRight="40dp">
                   <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                       android:layout_weight="1" android:text="ALL IN ONE"
-                      android:textSize="32sp" android:textColor="#E50914" android:textStyle="bold"
-                      android:focusable="false"/>
+                      android:textSize="32sp" android:textColor="#E50914" android:textStyle="bold"/>
                   <TextView android:id="@+id/btnSettings"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⚙ Cai dat" android:textSize="16sp" android:textColor="#ffffff"
-                      android:background="#333355" android:padding="12dp"
-                      android:focusable="false" android:clickable="true"/>
+                      android:background="#333355" android:padding="12dp" android:clickable="true"/>
               </LinearLayout>
               <ScrollView android:id="@+id/scrollView"
                   android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:padding="40dp" android:focusable="false"
-                  android:descendantFocusability="blocksDescendants">
+                  android:padding="40dp">
                   <LinearLayout android:id="@+id/gridLinks"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="vertical" android:focusable="false"/>
+                      android:orientation="vertical"/>
               </ScrollView>
           </LinearLayout>
           XMLEOF
 
+          # ── main.xml ──────────────────────────────────────────────────────────────────
           cat > res/layout/main.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:background="#000000" android:focusable="false"
-              android:descendantFocusability="blocksDescendants">
+              android:background="#000000">
               <com.allinone.app.ScrollWebView android:id="@+id/webview"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:focusable="false" android:focusableInTouchMode="false"/>
@@ -159,44 +156,42 @@ jobs:
               <LinearLayout android:id="@+id/bottomBar"
                   android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:layout_gravity="bottom|start" android:orientation="horizontal"
-                  android:layout_margin="16dp" android:visibility="gone" android:focusable="false">
+                  android:layout_margin="16dp" android:visibility="gone">
                   <TextView android:id="@+id/btnHome"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⌂" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
                       android:background="#ee111122" android:clickable="true"
-                      android:focusable="false" android:layout_marginRight="8dp"/>
+                      android:layout_marginRight="8dp"/>
                   <TextView android:id="@+id/btnWebBack"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="◀" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
                       android:background="#ee111122" android:clickable="true"
-                      android:focusable="false" android:layout_marginRight="8dp"/>
+                      android:layout_marginRight="8dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⚙" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#ee111122" android:clickable="true" android:focusable="false"/>
+                      android:background="#ee111122" android:clickable="true"/>
               </LinearLayout>
               <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:background="#cc000000" android:visibility="gone" android:focusable="false">
+                  android:background="#cc000000" android:visibility="gone">
                   <LinearLayout android:layout_width="600dp" android:layout_height="wrap_content"
                       android:layout_centerInParent="true" android:orientation="vertical"
-                      android:background="#1a1a2e" android:padding="40dp" android:focusable="false"
+                      android:background="#1a1a2e" android:padding="40dp"
                       xmlns:android="http://schemas.android.com/apk/res/android">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:layout_gravity="center" android:text="🎤 Dang nghe..."
-                          android:textSize="28sp" android:textColor="#ffffff"
-                          android:layout_marginBottom="12dp" android:focusable="false"/>
+                          android:textSize="28sp" android:textColor="#ffffff" android:layout_marginBottom="12dp"/>
                       <TextView android:id="@+id/voiceResult"
                           android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:layout_gravity="center" android:text=""
-                          android:textSize="22sp" android:textColor="#E50914"
-                          android:gravity="center" android:focusable="false"/>
+                          android:textSize="22sp" android:textColor="#E50914" android:gravity="center"/>
                   </LinearLayout>
               </RelativeLayout>
               <com.allinone.app.CursorView android:id="@+id/cursor"
@@ -205,62 +200,60 @@ jobs:
           </FrameLayout>
           XMLEOF
 
+          # ── settings.xml ─ EditText focusable=true để nhập được ──────────────────────
           cat > res/layout/settings.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:background="#0d0d1a"
-              android:focusable="false" android:descendantFocusability="blocksDescendants">
+              android:orientation="vertical" android:background="#0d0d1a">
               <LinearLayout android:layout_width="match_parent" android:layout_height="70dp"
                   android:orientation="horizontal" android:gravity="center_vertical"
-                  android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp"
-                  android:focusable="false">
+                  android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp">
                   <TextView android:id="@+id/btnBack"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="◀ Back" android:textSize="16sp" android:textColor="#ffffff"
                       android:background="#333355" android:padding="12dp"
-                      android:layout_marginRight="20dp" android:focusable="false" android:clickable="true"/>
+                      android:layout_marginRight="20dp" android:clickable="true"/>
                   <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                       android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
-                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"
-                      android:focusable="false"/>
+                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"/>
               </LinearLayout>
               <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:orientation="vertical" android:padding="40dp" android:focusable="false">
+                  android:orientation="vertical" android:padding="40dp">
                   <EditText android:id="@+id/editUrl"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:hint="Nhap duong dan web moi..." android:textSize="20sp"
                       android:textColor="#ffffff" android:textColorHint="#555555"
                       android:background="#1a1a2e" android:padding="18dp"
-                      android:inputType="textUri" android:layout_marginBottom="16dp"/>
+                      android:inputType="textUri" android:layout_marginBottom="16dp"
+                      android:focusable="true" android:focusableInTouchMode="true"
+                      android:imeOptions="actionGo" android:singleLine="true"/>
                   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="horizontal" android:focusable="false">
+                      android:orientation="horizontal">
                       <TextView android:id="@+id/btnSave"
                           android:layout_width="0dp" android:layout_height="wrap_content"
                           android:layout_weight="1" android:text="THEM VA MO"
                           android:textSize="18sp" android:textColor="#ffffff"
                           android:background="#E50914" android:padding="14dp"
                           android:gravity="center" android:layout_marginRight="10dp"
-                          android:focusable="false" android:clickable="true"/>
+                          android:clickable="true"/>
                       <TextView android:id="@+id/btnReset"
                           android:layout_width="0dp" android:layout_height="wrap_content"
                           android:layout_weight="1" android:text="RESET MAC DINH"
                           android:textSize="18sp" android:textColor="#aaaaaa"
                           android:background="#1a1a2e" android:padding="14dp"
-                          android:gravity="center" android:focusable="false" android:clickable="true"/>
+                          android:gravity="center" android:clickable="true"/>
                   </LinearLayout>
               </LinearLayout>
               <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:text="Danh sach kenh:" android:textSize="18sp" android:textColor="#888888"
-                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"
-                  android:focusable="false"/>
+                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"/>
               <ScrollView android:id="@+id/settingsScroll"
                   android:layout_width="match_parent" android:layout_height="0dp"
-                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp"
-                  android:focusable="false" android:descendantFocusability="blocksDescendants">
+                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp">
                   <LinearLayout android:id="@+id/listUrls"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="vertical" android:focusable="false"/>
+                      android:orientation="vertical"/>
               </ScrollView>
           </LinearLayout>
           XMLEOF
@@ -270,6 +263,7 @@ jobs:
           <resources><string name="app_name">ALL IN ONE</string></resources>
           XMLEOF
 
+          # ── CursorView ────────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/CursorView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -301,6 +295,7 @@ jobs:
           }
           JEOF
 
+          # ── ScrollWebView ─────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/ScrollWebView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -319,6 +314,7 @@ jobs:
           }
           JEOF
 
+          # ── HomeActivity ──────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/HomeActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -357,9 +353,9 @@ jobs:
               private List<LinearLayout> cards=new ArrayList<LinearLayout>();
               private List<String> urls=new ArrayList<String>();
               private int focusIdx=0;
+
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.home);
-                  getWindow().getDecorView().setFocusable(false);
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   if(!prefs.getBoolean(KEY_INIT,false)){
                       StringBuilder sb=new StringBuilder();
@@ -369,13 +365,20 @@ jobs:
                   }
                   grid=(LinearLayout)findViewById(R.id.gridLinks);
                   scrollView=(ScrollView)findViewById(R.id.scrollView);
+                  // FIX: dùng OnClickListener trực tiếp thay vì blocksDescendants
                   findViewById(R.id.btnSettings).setOnClickListener(
                       new View.OnClickListener(){@Override public void onClick(View v){
                           startActivity(new Intent(HomeActivity.this,SettingsActivity.class));
                       }});
               }
+
               @Override protected void onResume(){super.onResume();renderLinks();}
-              private List<String> hist(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
+
+              private List<String> hist(){
+                  return new ArrayList<String>(Arrays.asList(
+                      prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
+              }
+
               private void renderLinks(){
                   grid.removeAllViews();cards.clear();urls.clear();focusIdx=0;
                   List<String>h=hist();String act=prefs.getString(KEY_URL,DEF);
@@ -383,14 +386,13 @@ jobs:
                   for(int i=0;i<h.size();i++){
                       if(i%COLS==0){
                           row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
-                          row.setFocusable(false);
                           LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                           rp.setMargins(0,0,0,20);row.setLayoutParams(rp);grid.addView(row);
                       }
                       final String url=h.get(i);urls.add(url);
                       final LinearLayout wrap=new LinearLayout(this);
-                      wrap.setOrientation(LinearLayout.VERTICAL);wrap.setFocusable(false);
+                      wrap.setOrientation(LinearLayout.VERTICAL);
                       LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f);
                       wp.setMargins(0,0,16,0);wrap.setLayoutParams(wp);
                       wrap.setBackgroundColor(0x00000000);wrap.setPadding(3,3,3,3);
@@ -398,56 +400,70 @@ jobs:
                       card.setOrientation(LinearLayout.VERTICAL);
                       card.setGravity(android.view.Gravity.CENTER);
                       card.setPadding(18,22,18,22);
-                      card.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,196));
+                      card.setLayoutParams(new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,196));
                       card.setBackgroundColor(url.equals(act)?0xff1f1f40:0xff141428);
                       card.setClickable(true);card.setFocusable(false);
                       if(android.os.Build.VERSION.SDK_INT>=21)card.setStateListAnimator(null);
                       ImageView fav=new ImageView(this);
                       fav.setLayoutParams(new LinearLayout.LayoutParams(68,68));
-                      fav.setScaleType(ImageView.ScaleType.FIT_CENTER);fav.setFocusable(false);card.addView(fav);
+                      fav.setScaleType(ImageView.ScaleType.FIT_CENTER);card.addView(fav);
                       final int idx=i;final ImageView fv=fav;
                       handler.postDelayed(new Runnable(){@Override public void run(){
                           new AsyncTask<String,Void,Bitmap>(){
                               @Override protected Bitmap doInBackground(String...u){
                                   try{HttpURLConnection c=(HttpURLConnection)new URL(u[0]).openConnection();
-                                  c.setConnectTimeout(4000);c.setReadTimeout(4000);c.setInstanceFollowRedirects(true);
-                                  return BitmapFactory.decodeStream(c.getInputStream());}catch(Exception e){return null;}}
-                              @Override protected void onPostExecute(Bitmap b){if(b!=null&&fv!=null)fv.setImageBitmap(b);}
+                                  c.setConnectTimeout(4000);c.setReadTimeout(4000);
+                                  c.setInstanceFollowRedirects(true);
+                                  return BitmapFactory.decodeStream(c.getInputStream());}
+                                  catch(Exception e){return null;}}
+                              @Override protected void onPostExecute(Bitmap b){
+                                  if(b!=null&&fv!=null)fv.setImageBitmap(b);}
                           }.execute("https://www.google.com/s2/favicons?domain="+url+"&sz=64");
                       }},idx*180L);
                       TextView lbl=new TextView(this);
                       lbl.setText(url.replace("https://","").replace("http://","").split("/")[0]);
                       lbl.setTextColor(url.equals(act)?0xffE50914:0xffaaaaaa);
-                      lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);
-                      lbl.setMaxLines(1);lbl.setFocusable(false);
-                      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+                      lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);lbl.setMaxLines(1);
+                      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       lp.setMargins(0,8,0,0);lbl.setLayoutParams(lp);card.addView(lbl);
                       if(url.equals(act)){
                           TextView t=new TextView(this);t.setText("▶ Dang xem");
                           t.setTextColor(0xffE50914);t.setTextSize(11);
-                          t.setGravity(android.view.Gravity.CENTER);t.setFocusable(false);card.addView(t);}
+                          t.setGravity(android.view.Gravity.CENTER);card.addView(t);
+                      }
                       final int fi=i;
-                      card.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){openUrl(urls.get(fi));}});
+                      card.setOnClickListener(new View.OnClickListener(){
+                          @Override public void onClick(View v){openUrl(urls.get(fi));}
+                      });
                       wrap.addView(card);cards.add(wrap);row.addView(wrap);
                   }
                   if(row!=null&&h.size()%COLS!=0){
                       int rem=COLS-(h.size()%COLS);
                       for(int j=0;j<rem;j++){
-                          View e=new View(this);e.setFocusable(false);
+                          View e=new View(this);
                           LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(0,196,1f);
-                          ep.setMargins(0,0,16,0);e.setLayoutParams(ep);row.addView(e);}}
+                          ep.setMargins(0,0,16,0);e.setLayoutParams(ep);row.addView(e);
+                      }
+                  }
                   if(!cards.isEmpty())applyFocus(0);
               }
+
               private void openUrl(String url){
                   prefs.edit().putString(KEY_URL,url).apply();
-                  startActivity(new Intent(HomeActivity.this,MainActivity.class).putExtra("url",url));}
+                  startActivity(new Intent(HomeActivity.this,MainActivity.class).putExtra("url",url));
+              }
+
               private void applyFocus(int idx){
                   if(focusIdx>=0&&focusIdx<cards.size()){
                       LinearLayout old=cards.get(focusIdx);
                       old.setBackgroundColor(0x00000000);old.setPadding(3,3,3,3);
                       if(old.getChildCount()>0){
                           String ou=urls.get(focusIdx);String act=prefs.getString(KEY_URL,DEF);
-                          old.getChildAt(0).setBackgroundColor(ou.equals(act)?0xff1f1f40:0xff141428);}}
+                          old.getChildAt(0).setBackgroundColor(ou.equals(act)?0xff1f1f40:0xff141428);
+                      }
+                  }
                   focusIdx=idx;
                   if(focusIdx<0||focusIdx>=cards.size())return;
                   LinearLayout cur=cards.get(focusIdx);
@@ -456,17 +472,32 @@ jobs:
                   final LinearLayout fc=cur;
                   scrollView.post(new Runnable(){@Override public void run(){
                       Rect r=new Rect();fc.getDrawingRect(r);
-                      scrollView.requestChildRectangleOnScreen(grid,r,false);}});
+                      scrollView.requestChildRectangleOnScreen(grid,r,false);
+                  }});
               }
+
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  int total=cards.size();if(total==0)return super.onKeyDown(key,e);
+                  int total=cards.size();
+                  // Phím bất kỳ → chuyển vào Settings nếu không phải D-pad/Enter/Back
                   switch(key){
-                      case KeyEvent.KEYCODE_DPAD_RIGHT:if(focusIdx+1<total)applyFocus(focusIdx+1);return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT:if(focusIdx-1>=0)applyFocus(focusIdx-1);return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN:if(focusIdx+COLS<total)applyFocus(focusIdx+COLS);return true;
-                      case KeyEvent.KEYCODE_DPAD_UP:if(focusIdx-COLS>=0)applyFocus(focusIdx-COLS);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
-                          if(e.getRepeatCount()==0)openUrl(urls.get(focusIdx));return true;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT:
+                          if(focusIdx+1<total)applyFocus(focusIdx+1);return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:
+                          if(focusIdx-1>=0)applyFocus(focusIdx-1);return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:
+                          if(focusIdx+COLS<total)applyFocus(focusIdx+COLS);
+                          return true;
+                      case KeyEvent.KEYCODE_DPAD_UP:
+                          if(focusIdx-COLS>=0)applyFocus(focusIdx-COLS);
+                          else{// Lên tới header → mở Settings
+                              startActivity(new Intent(this,SettingsActivity.class));}
+                          return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          if(e.getRepeatCount()==0&&!urls.isEmpty())openUrl(urls.get(focusIdx));
+                          return true;
+                      case KeyEvent.KEYCODE_MENU:
+                          startActivity(new Intent(this,SettingsActivity.class));return true;
                       case KeyEvent.KEYCODE_BACK:finish();return true;
                   }
                   return super.onKeyDown(key,e);
@@ -474,6 +505,7 @@ jobs:
           }
           JEOF
 
+          # ── SettingsActivity ─ D-pad nav + EditText nhập được ────────────────────────
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -486,6 +518,8 @@ jobs:
           import android.view.KeyEvent;
           import android.view.View;
           import android.view.ViewGroup;
+          import android.view.inputmethod.EditorInfo;
+          import android.view.inputmethod.InputMethodManager;
           import android.widget.EditText;
           import android.widget.LinearLayout;
           import android.widget.ScrollView;
@@ -500,72 +534,102 @@ jobs:
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private SharedPreferences prefs;
-              // focusItems: 0=Back, 1=Save, 2=Reset, 3+=url rows
+              private InputMethodManager imm;
+              // focusItems: 0=Back,1=EditText,2=Save,3=Reset,4+=rows
               private List<View> focusItems=new ArrayList<View>();
               private int focusIdx=0;
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.settings);
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
+                  imm=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
                   editUrl=(EditText)findViewById(R.id.editUrl);
                   listUrls=(LinearLayout)findViewById(R.id.listUrls);
                   scrollView=(ScrollView)findViewById(R.id.settingsScroll);
                   editUrl.setText(prefs.getString(KEY_URL,DEF));
+
+                  // Nhấn Go/Enter trên bàn phím ảo → lưu và mở
+                  editUrl.setOnEditorActionListener(new TextView.OnEditorActionListener(){
+                      @Override public boolean onEditorAction(TextView v,int actionId,KeyEvent e){
+                          if(actionId==EditorInfo.IME_ACTION_GO||actionId==EditorInfo.IME_ACTION_DONE){
+                              doSave();return true;}
+                          return false;}
+                  });
+
                   View vBack=findViewById(R.id.btnBack);
                   View vSave=findViewById(R.id.btnSave);
                   View vReset=findViewById(R.id.btnReset);
                   vBack.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){finish();}});
-                  vSave.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
-                      String u=editUrl.getText().toString().trim();
-                      if(u.isEmpty())return;if(!u.startsWith("http"))u="https://"+u;
-                      saveUrl(u);openUrl(u);}});
+                  vSave.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){doSave();}});
                   vReset.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(DEF);openUrl(DEF);}});
+
                   focusItems.clear();
-                  focusItems.add(vBack);focusItems.add(vSave);focusItems.add(vReset);
+                  focusItems.add(vBack);    // 0
+                  focusItems.add(editUrl);  // 1
+                  focusItems.add(vSave);    // 2
+                  focusItems.add(vReset);   // 3
                   renderHistory();
                   applyFocus(0);
               }
 
-              private List<String> getHist(){return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));}
+              private void doSave(){
+                  String u=editUrl.getText().toString().trim();
+                  if(u.isEmpty())return;
+                  if(!u.startsWith("http"))u="https://"+u;
+                  hideKeyboard();saveUrl(u);openUrl(u);
+              }
+
+              private void hideKeyboard(){
+                  imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);}
+
+              private void showKeyboard(){
+                  editUrl.requestFocus();
+                  imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);}
+
+              private List<String> getHist(){
+                  return new ArrayList<String>(Arrays.asList(
+                      prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
+              }
               private void addHist(String url){
                   List<String>list=getHist();list.remove(url);list.add(0,url);
                   if(list.size()>30)list=list.subList(0,30);
                   StringBuilder sb=new StringBuilder();
                   for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
-                  prefs.edit().putString(KEY_HIST,sb.toString()).apply();}
-              private void saveUrl(String url){prefs.edit().putString(KEY_URL,url).apply();addHist(url);renderHistory();}
+                  prefs.edit().putString(KEY_HIST,sb.toString()).apply();
+              }
+              private void saveUrl(String url){
+                  prefs.edit().putString(KEY_URL,url).apply();addHist(url);renderHistory();}
               private void openUrl(String url){
                   startActivity(new Intent(this,MainActivity.class).putExtra("url",url)
                       .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish();}
 
               private void renderHistory(){
                   listUrls.removeAllViews();
-                  // Giữ lại 3 item đầu (Back/Save/Reset), xoá url rows cũ
-                  while(focusItems.size()>3)focusItems.remove(3);
+                  while(focusItems.size()>4)focusItems.remove(4);
                   List<String>hist=getHist();String active=prefs.getString(KEY_URL,DEF);
                   for(final String url:hist){
                       final LinearLayout row=new LinearLayout(this);
                       row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(20,16,20,16);
                       row.setBackgroundColor(url.equals(active)?0xff1e1e35:0xff111122);
-                      row.setClickable(true);row.setFocusable(false);
+                      row.setClickable(true);
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
                       tv.setText((url.equals(active)?"▶  ":"     ")+url);
-                      tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
-                      tv.setTextSize(15);tv.setFocusable(false);
+                      tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);tv.setTextSize(15);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
                       row.addView(tv);
                       TextView bu=new TextView(this);bu.setText(" Chon ");bu.setTextColor(Color.WHITE);
                       bu.setBackgroundColor(0xff2233aa);bu.setTextSize(13);bu.setPadding(18,10,18,10);
-                      bu.setGravity(android.view.Gravity.CENTER);bu.setFocusable(false);bu.setClickable(true);
+                      bu.setGravity(android.view.Gravity.CENTER);bu.setClickable(true);
                       bu.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
                       bu.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
                       TextView bd=new TextView(this);bd.setText("  X  ");bd.setTextColor(Color.WHITE);
                       bd.setBackgroundColor(0xff770000);bd.setTextSize(13);bd.setPadding(18,10,18,10);
-                      bd.setGravity(android.view.Gravity.CENTER);bd.setFocusable(false);bd.setClickable(true);
-                      LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+                      bd.setGravity(android.view.Gravity.CENTER);bd.setClickable(true);
+                      LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
                       bd.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
                           List<String>list=getHist();list.remove(url);
@@ -581,50 +645,62 @@ jobs:
                   }
               }
 
-              // Màu nền mặc định theo loại item
               private int defaultBg(int idx){
-                  if(idx==0)return 0xff333355; // Back
-                  if(idx==1)return 0xffE50914; // Save
-                  if(idx==2)return 0xff1a1a2e; // Reset
-                  // url row
-                  int ri=idx-3;List<String>h=getHist();
+                  if(idx==0)return 0xff333355;
+                  if(idx==1)return 0xff1a1a2e;
+                  if(idx==2)return 0xffcc0000;
+                  if(idx==3)return 0xff1a1a2e;
+                  int ri=idx-4;List<String>h=getHist();
                   if(ri<h.size()){String act=prefs.getString(KEY_URL,DEF);
                       return h.get(ri).equals(act)?0xff1e1e35:0xff111122;}
                   return 0xff111122;
               }
 
               private void applyFocus(int idx){
-                  // Xoá highlight cũ
-                  if(focusIdx>=0&&focusIdx<focusItems.size())
+                  if(focusIdx>=0&&focusIdx<focusItems.size()){
                       focusItems.get(focusIdx).setBackgroundColor(defaultBg(focusIdx));
+                      if(focusIdx==1)hideKeyboard();
+                  }
                   focusIdx=Math.max(0,Math.min(idx,focusItems.size()-1));
                   if(focusIdx>=focusItems.size())return;
                   focusItems.get(focusIdx).setBackgroundColor(0xffE50914);
+                  // Nếu focus vào EditText → mở bàn phím
+                  if(focusIdx==1)showKeyboard();
                   // Auto-scroll
-                  if(focusIdx>=3){
+                  if(focusIdx>=4){
                       final View fc=focusItems.get(focusIdx);
                       scrollView.post(new Runnable(){@Override public void run(){
                           Rect r=new Rect();fc.getDrawingRect(r);
-                          scrollView.requestChildRectangleOnScreen(listUrls,r,false);}});}
+                          scrollView.requestChildRectangleOnScreen(listUrls,r,false);}});
+                  }
               }
 
               @Override public boolean onKeyDown(int key,KeyEvent e){
+                  // Nếu EditText đang focus → để EditText xử lý input
+                  if(focusIdx==1&&key!=KeyEvent.KEYCODE_DPAD_UP
+                      &&key!=KeyEvent.KEYCODE_DPAD_DOWN&&key!=KeyEvent.KEYCODE_BACK){
+                      return false; // cho EditText nhận ký tự
+                  }
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:
                           if(focusIdx>0)applyFocus(focusIdx-1);return true;
                       case KeyEvent.KEYCODE_DPAD_DOWN:
                           if(focusIdx<focusItems.size()-1)applyFocus(focusIdx+1);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
                           if(e.getRepeatCount()==0&&focusIdx<focusItems.size())
                               focusItems.get(focusIdx).performClick();
                           return true;
-                      case KeyEvent.KEYCODE_BACK:finish();return true;
+                      case KeyEvent.KEYCODE_BACK:
+                          if(focusIdx==1){hideKeyboard();applyFocus(0);return true;}
+                          finish();return true;
                   }
                   return super.onKeyDown(key,e);
               }
           }
           JEOF
 
+          # ── MainActivity ─ cursor acceleration + edge scroll + auto-hide 3s ──────────
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -670,28 +746,39 @@ jobs:
               private static float savedCX=-1,savedCY=-1;
 
               // ═══ THÔNG SỐ TUỲ CHỈNH ════════════════════════════════════════════════════
-              private static final float CURSOR_STEP       = 22f;
-              private static final float CURSOR_STEP_FAST  = 75f;
-              private static final int   SCROLL_PX         = 500;
-              private static final float SCROLL_AXIS       = 3f;
-              private static final int   SCROLL_HOLD       = 2;
-              private static final int   BAR_ZONE_W        = 200;
-              private static final int   BAR_ZONE_H        = 120;
-              private static final int   EDGE_ZONE         = 80;   // px vùng mép trên/dưới
-              private static final int   EDGE_INTERVAL     = 120;  // ms giữa mỗi nhịp cuộn
+              private static final float STEP_MIN      = 15f;   // bước nhỏ nhất (px)
+              private static final float STEP_MAX      = 90f;   // bước lớn nhất khi giữ lâu
+              private static final int   ACCEL_TICKS   = 12;    // số lần nhấn để đạt tốc độ max
+              private static final float SCROLL_AXIS   = 3f;
+              private static final int   BAR_ZONE_W    = 200;
+              private static final int   BAR_ZONE_H    = 120;
+              private static final int   EDGE_ZONE     = 80;    // px mép trên/dưới để edge-scroll
+              private static final int   EDGE_INTERVAL = 100;   // ms giữa các nhịp edge-scroll
+              private static final int   EDGE_SCROLL_MIN = 80;  // px cuộn nhỏ nhất khi chạm mép
+              private static final int   EDGE_SCROLL_MAX = 400; // px cuộn lớn nhất khi ở mép xa
+              private static final long  HIDE_DELAY    = 3000;  // ms đứng yên thì ẩn cursor
               // ════════════════════════════════════════════════════════════════════════════
 
               private boolean barVisible=false;
+              private boolean cursorVisible=true;
+              // Edge scroll state
               private int autoScrollDir=0;
-              private Runnable autoScrollRunnable=new Runnable(){
+              private int edgeTicks=0;
+              private Runnable edgeScrollRunnable=new Runnable(){
                   @Override public void run(){
                       if(autoScrollDir==0)return;
-                      scrollPage(autoScrollDir*SCROLL_PX);
+                      edgeTicks=Math.min(edgeTicks+1,10);
+                      // Cuộn dần dần: tỉ lệ với edgeTicks
+                      int px=EDGE_SCROLL_MIN+(EDGE_SCROLL_MAX-EDGE_SCROLL_MIN)*edgeTicks/10;
+                      scrollPage(autoScrollDir*px);
                       handler.postDelayed(this,EDGE_INTERVAL);
                   }
               };
               private Runnable hideBarRunnable=new Runnable(){@Override public void run(){
                   bottomBar.setVisibility(View.GONE);barVisible=false;}};
+              // Auto-hide cursor sau 3s đứng yên
+              private Runnable hideCursorRunnable=new Runnable(){@Override public void run(){
+                  cursorView.setVisibility(View.GONE);cursorVisible=false;}};
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
@@ -700,19 +787,25 @@ jobs:
                   DisplayMetrics dm=new DisplayMetrics();
                   getWindowManager().getDefaultDisplay().getMetrics(dm);
                   screenW=dm.widthPixels;screenH=dm.heightPixels;
+
                   cursorView=(CursorView)findViewById(R.id.cursor);
                   float ix=savedCX>0?savedCX:screenW/2f;
                   float iy=savedCY>0?savedCY:screenH/2f;
                   cursorView.setPos(ix,iy);savedCX=ix;savedCY=iy;
+                  scheduleCursorHide();
+
                   SharedPreferences prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   currentUrl=prefs.getString(KEY_URL,DEF);
                   if(getIntent().hasExtra("url"))currentUrl=getIntent().getStringExtra("url");
+
                   webView=(ScrollWebView)findViewById(R.id.webview);
                   progressBar=(ProgressBar)findViewById(R.id.progress);
                   bottomBar=(LinearLayout)findViewById(R.id.bottomBar);
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
+
                   webView.setFocusable(false);webView.setFocusableInTouchMode(false);
+
                   findViewById(R.id.btnHome).setOnClickListener(
                       new View.OnClickListener(){@Override public void onClick(View v){finish();}});
                   findViewById(R.id.btnWebBack).setOnClickListener(
@@ -722,8 +815,21 @@ jobs:
                       new View.OnClickListener(){@Override public void onClick(View v){
                           savedCX=cursorView.getCX();savedCY=cursorView.getCY();
                           startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
+
                   setupSpeech();setupWebView();
                   webView.loadUrl(currentUrl);
+              }
+
+              // Hiện cursor + reset timer 3s
+              private void showCursorAndResetTimer(){
+                  if(!cursorVisible){
+                      cursorView.setVisibility(View.VISIBLE);cursorVisible=true;}
+                  handler.removeCallbacks(hideCursorRunnable);
+                  handler.postDelayed(hideCursorRunnable,HIDE_DELAY);
+              }
+              private void scheduleCursorHide(){
+                  handler.removeCallbacks(hideCursorRunnable);
+                  handler.postDelayed(hideCursorRunnable,HIDE_DELAY);
               }
 
               private void setupWebView(){
@@ -758,19 +864,26 @@ jobs:
                   });
               }
 
-              private void moveCursor(float dx,float dy){
-                  float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx));
-                  float ny=Math.max(0,Math.min(screenH-2,cursorView.getCY()+dy));
+              // ── Di chuyển cursor với acceleration ────────────────────────────────────
+              private void moveCursor(float dx,float dy,int repeatCount){
+                  showCursorAndResetTimer();
+                  // Tốc độ tăng dần theo repeatCount
+                  float t=Math.min(1f,(float)repeatCount/ACCEL_TICKS);
+                  float step=STEP_MIN+(STEP_MAX-STEP_MIN)*t;
+                  float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
+                  float ny=Math.max(0,Math.min(screenH-2,cursorView.getCY()+dy*step));
                   cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
-                  // ── Edge auto-scroll ──
+
+                  // ── Edge auto-scroll: chạm mép trên/dưới ──
                   int newDir=0;
                   if(ny>=screenH-EDGE_ZONE)newDir=1;
                   else if(ny<=EDGE_ZONE)newDir=-1;
                   if(newDir!=autoScrollDir){
-                      autoScrollDir=newDir;
-                      handler.removeCallbacks(autoScrollRunnable);
-                      if(newDir!=0)handler.post(autoScrollRunnable);
+                      autoScrollDir=newDir;edgeTicks=0;
+                      handler.removeCallbacks(edgeScrollRunnable);
+                      if(newDir!=0)handler.post(edgeScrollRunnable);
                   }
+
                   // ── Bottom bar ──
                   boolean inZone=(nx<=BAR_ZONE_W&&ny>=screenH-BAR_ZONE_H);
                   if(inZone&&!barVisible){
@@ -782,16 +895,17 @@ jobs:
                   }
               }
 
-              private void stopAutoScroll(){
-                  autoScrollDir=0;handler.removeCallbacks(autoScrollRunnable);}
+              private void stopEdgeScroll(){
+                  autoScrollDir=0;edgeTicks=0;handler.removeCallbacks(edgeScrollRunnable);}
 
               private void clickAtCursor(){
-                  stopAutoScroll();
+                  showCursorAndResetTimer();
+                  stopEdgeScroll();
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
                   if(barVisible){
                       int[]ids={R.id.btnHome,R.id.btnWebBack,R.id.btnSettingsWeb};
-                      for(int id:ids){View btn=findViewById(id);int[]loc=new int[2];
-                          btn.getLocationOnScreen(loc);
+                      for(int id:ids){
+                          View btn=findViewById(id);int[]loc=new int[2];btn.getLocationOnScreen(loc);
                           if(sx>=loc[0]&&sx<loc[0]+btn.getWidth()&&sy>=loc[1]&&sy<loc[1]+btn.getHeight()){
                               btn.performClick();return;}}
                   }
@@ -824,22 +938,27 @@ jobs:
               }
 
               @Override public boolean onKeyDown(int key,KeyEvent e){
+                  // Bất kỳ phím nào → hiện cursor
+                  showCursorAndResetTimer();
+
                   if(voiceOverlay.getVisibility()==View.VISIBLE){
                       if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
+
                   int rep=e.getRepeatCount();
-                  float step=rep>5?CURSOR_STEP_FAST:CURSOR_STEP;
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:
-                          if(rep>=SCROLL_HOLD)scrollPage(-SCROLL_PX);
-                          else moveCursor(0,-step);return true;
+                          moveCursor(0,-1,rep);return true;
                       case KeyEvent.KEYCODE_DPAD_DOWN:
-                          if(rep>=SCROLL_HOLD)scrollPage(SCROLL_PX);
-                          else moveCursor(0,step);return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT:moveCursor(-step,0);return true;
-                      case KeyEvent.KEYCODE_DPAD_RIGHT:moveCursor(step,0);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
+                          moveCursor(0,1,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:
+                          moveCursor(-1,0,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT:
+                          moveCursor(1,0,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
                           if(rep==0)clickAtCursor();return true;
-                      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:case KeyEvent.KEYCODE_MEDIA_PLAY:
+                      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                      case KeyEvent.KEYCODE_MEDIA_PLAY:
                           webView.evaluateJavascript(
                               "var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);
                           return true;
@@ -853,6 +972,15 @@ jobs:
                           finish();return true;
                   }
                   return super.onKeyDown(key,e);
+              }
+
+              @Override public boolean onKeyUp(int key,KeyEvent e){
+                  // Nhả D-pad → dừng edge scroll
+                  if(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
+                      ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT){
+                      stopEdgeScroll();
+                  }
+                  return super.onKeyUp(key,e);
               }
 
               private void setupSpeech(){
@@ -900,8 +1028,10 @@ jobs:
               @Override protected void onPause(){
                   super.onPause();webView.onPause();
                   savedCX=cursorView.getCX();savedCY=cursorView.getCY();
-                  stopAutoScroll();handler.removeCallbacksAndMessages(null);}
-              @Override protected void onResume(){super.onResume();webView.onResume();}
+                  stopEdgeScroll();handler.removeCallbacksAndMessages(null);}
+              @Override protected void onResume(){
+                  super.onResume();webView.onResume();
+                  showCursorAndResetTimer();}
               @Override protected void onDestroy(){
                   handler.removeCallbacksAndMessages(null);
                   if(speechRecognizer!=null)speechRecognizer.destroy();
