@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="16" android:versionName="16.0">
+              package="com.allinone.app" android:versionCode="17" android:versionName="17.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -106,47 +106,49 @@ jobs:
                       android:hardwareAccelerated="true"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
-                      android:windowSoftInputMode="adjustResize"
+                      android:windowSoftInputMode="stateVisible|adjustResize"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
           </manifest>
           XMLEOF
 
-          # ── home.xml ──────────────────────────────────────────────────────────────────
           cat > res/layout/home.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:background="#0a0a0f">
-              <!-- HEADER: id=header để HomeActivity biết đây là zone Settings -->
+              android:orientation="vertical" android:background="#0a0a0f"
+              android:focusable="false" android:focusableInTouchMode="false">
               <LinearLayout android:id="@+id/header"
                   android:layout_width="match_parent" android:layout_height="80dp"
                   android:orientation="horizontal" android:gravity="center_vertical"
-                  android:background="#111122" android:paddingLeft="40dp" android:paddingRight="40dp">
+                  android:background="#111122" android:paddingLeft="40dp" android:paddingRight="40dp"
+                  android:focusable="false" android:focusableInTouchMode="false">
                   <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                       android:layout_weight="1" android:text="ALL IN ONE"
-                      android:textSize="32sp" android:textColor="#E50914" android:textStyle="bold"/>
+                      android:textSize="32sp" android:textColor="#E50914" android:textStyle="bold"
+                      android:focusable="false"/>
                   <TextView android:id="@+id/btnSettings"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⚙ Cai dat" android:textSize="16sp" android:textColor="#ffffff"
-                      android:background="#333355" android:padding="12dp" android:clickable="true"/>
+                      android:padding="12dp"
+                      android:focusable="false" android:focusableInTouchMode="false"
+                      android:clickable="true"/>
               </LinearLayout>
               <ScrollView android:id="@+id/scrollView"
                   android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:padding="40dp">
+                  android:padding="40dp" android:focusable="false">
                   <LinearLayout android:id="@+id/gridLinks"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="vertical"/>
+                      android:orientation="vertical" android:focusable="false"/>
               </ScrollView>
           </LinearLayout>
           XMLEOF
 
-          # ── main.xml ──────────────────────────────────────────────────────────────────
           cat > res/layout/main.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:background="#000000">
+              android:background="#000000" android:focusable="false">
               <com.allinone.app.ScrollWebView android:id="@+id/webview"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:focusable="false" android:focusableInTouchMode="false"/>
@@ -158,40 +160,44 @@ jobs:
               <LinearLayout android:id="@+id/bottomBar"
                   android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:layout_gravity="bottom|start" android:orientation="horizontal"
-                  android:layout_margin="16dp" android:visibility="gone">
+                  android:layout_margin="16dp" android:visibility="gone" android:focusable="false">
                   <TextView android:id="@+id/btnHome"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⌂" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#ee111122" android:clickable="true" android:layout_marginRight="8dp"/>
+                      android:background="#ee111122" android:clickable="true"
+                      android:focusable="false" android:layout_marginRight="8dp"/>
                   <TextView android:id="@+id/btnWebBack"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="◀" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#ee111122" android:clickable="true" android:layout_marginRight="8dp"/>
+                      android:background="#ee111122" android:clickable="true"
+                      android:focusable="false" android:layout_marginRight="8dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="⚙" android:textSize="26sp" android:textColor="#ffffff"
                       android:gravity="center" android:paddingLeft="22dp" android:paddingRight="22dp"
                       android:paddingTop="14dp" android:paddingBottom="14dp"
-                      android:background="#ee111122" android:clickable="true"/>
+                      android:background="#ee111122" android:clickable="true" android:focusable="false"/>
               </LinearLayout>
               <RelativeLayout android:id="@+id/voiceOverlay"
                   android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:background="#cc000000" android:visibility="gone">
+                  android:background="#cc000000" android:visibility="gone" android:focusable="false">
                   <LinearLayout android:layout_width="600dp" android:layout_height="wrap_content"
                       android:layout_centerInParent="true" android:orientation="vertical"
-                      android:background="#1a1a2e" android:padding="40dp"
+                      android:background="#1a1a2e" android:padding="40dp" android:focusable="false"
                       xmlns:android="http://schemas.android.com/apk/res/android">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:layout_gravity="center" android:text="🎤 Dang nghe..."
-                          android:textSize="28sp" android:textColor="#ffffff" android:layout_marginBottom="12dp"/>
+                          android:textSize="28sp" android:textColor="#ffffff"
+                          android:layout_marginBottom="12dp" android:focusable="false"/>
                       <TextView android:id="@+id/voiceResult"
                           android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:layout_gravity="center" android:text=""
-                          android:textSize="22sp" android:textColor="#E50914" android:gravity="center"/>
+                          android:textSize="22sp" android:textColor="#E50914"
+                          android:gravity="center" android:focusable="false"/>
                   </LinearLayout>
               </RelativeLayout>
               <com.allinone.app.CursorView android:id="@+id/cursor"
@@ -200,63 +206,65 @@ jobs:
           </FrameLayout>
           XMLEOF
 
-          # ── settings.xml ──────────────────────────────────────────────────────────────
           cat > res/layout/settings.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:background="#0d0d1a">
+              android:orientation="vertical" android:background="#0d0d1a"
+              android:focusable="false">
               <LinearLayout android:layout_width="match_parent" android:layout_height="70dp"
                   android:orientation="horizontal" android:gravity="center_vertical"
-                  android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp">
+                  android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp"
+                  android:focusable="false">
                   <TextView android:id="@+id/btnBack"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"
                       android:text="◀ Back" android:textSize="16sp" android:textColor="#ffffff"
-                      android:background="#333355" android:padding="12dp"
-                      android:layout_marginRight="20dp" android:clickable="true"/>
+                      android:padding="12dp" android:layout_marginRight="20dp"
+                      android:clickable="true" android:focusable="false"/>
                   <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                       android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
-                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"/>
+                      android:textSize="28sp" android:textColor="#ffffff" android:textStyle="bold"
+                      android:focusable="false"/>
               </LinearLayout>
               <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:orientation="vertical" android:padding="40dp">
-                  <!-- EditText: cursor nhấp nháy khi focus, bàn phím ảo hiện -->
+                  android:orientation="vertical" android:padding="40dp" android:focusable="false">
                   <EditText android:id="@+id/editUrl"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:hint="Nhap duong dan web moi..." android:textSize="20sp"
-                      android:textColor="#ffffff" android:textColorHint="#555555"
-                      android:background="#1a1a2e" android:padding="18dp"
+                      android:textColor="#ffffff" android:textColorHint="#666666"
+                      android:background="#222233" android:padding="18dp"
                       android:inputType="textUri" android:layout_marginBottom="16dp"
                       android:focusable="true" android:focusableInTouchMode="true"
-                      android:cursorVisible="true"
-                      android:textCursorDrawable="@null"
-                      android:imeOptions="actionGo" android:singleLine="true"/>
+                      android:cursorVisible="true" android:imeOptions="actionGo"
+                      android:singleLine="true"/>
                   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="horizontal">
+                      android:orientation="horizontal" android:focusable="false">
                       <TextView android:id="@+id/btnSave"
                           android:layout_width="0dp" android:layout_height="wrap_content"
                           android:layout_weight="1" android:text="THEM VA MO"
                           android:textSize="18sp" android:textColor="#ffffff"
-                          android:background="#E50914" android:padding="14dp"
-                          android:gravity="center" android:layout_marginRight="10dp"
-                          android:clickable="true"/>
+                          android:padding="14dp" android:gravity="center"
+                          android:layout_marginRight="10dp"
+                          android:clickable="true" android:focusable="false"/>
                       <TextView android:id="@+id/btnReset"
                           android:layout_width="0dp" android:layout_height="wrap_content"
                           android:layout_weight="1" android:text="RESET MAC DINH"
                           android:textSize="18sp" android:textColor="#aaaaaa"
-                          android:background="#1a1a2e" android:padding="14dp"
-                          android:gravity="center" android:clickable="true"/>
+                          android:padding="14dp" android:gravity="center"
+                          android:clickable="true" android:focusable="false"/>
                   </LinearLayout>
               </LinearLayout>
               <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:text="Danh sach kenh:" android:textSize="18sp" android:textColor="#888888"
-                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"/>
+                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"
+                  android:focusable="false"/>
               <ScrollView android:id="@+id/settingsScroll"
                   android:layout_width="match_parent" android:layout_height="0dp"
-                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp">
+                  android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp"
+                  android:focusable="false">
                   <LinearLayout android:id="@+id/listUrls"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="vertical"/>
+                      android:orientation="vertical" android:focusable="false"/>
               </ScrollView>
           </LinearLayout>
           XMLEOF
@@ -266,7 +274,6 @@ jobs:
           <resources><string name="app_name">ALL IN ONE</string></resources>
           XMLEOF
 
-          # ── CursorView ────────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/CursorView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -298,26 +305,18 @@ jobs:
           }
           JEOF
 
-          # ── ScrollWebView ─────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/ScrollWebView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
           import android.util.AttributeSet;
           import android.webkit.WebView;
           public class ScrollWebView extends WebView {
-              public interface ScrollCb{void onUp();void onDown();}
-              private ScrollCb cb;
               public ScrollWebView(Context c){super(c);}
-              public ScrollWebView(Context c,AttributeSet a){super(c,a);}
-              public void setScrollCb(ScrollCb c){cb=c;}
-              @Override protected void onScrollChanged(int l,int t,int ol,int ot){
-                  super.onScrollChanged(l,t,ol,ot);
-                  if(cb!=null){if(t<ot)cb.onUp();else if(t>ot)cb.onDown();}
-              }
+              public ScrollWebView(Context c,android.util.AttributeSet a){super(c,a);}
           }
           JEOF
 
-          # ── HomeActivity ─ 2 zone focus: HEADER(Settings) và GRID(cards) ───────────
+          # ── HomeActivity ─ TẮT HOÀN TOÀN Android focus system ───────────────────────
           cat > src/com/allinone/app/HomeActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -345,24 +344,35 @@ jobs:
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
                   KEY_INIT="inited",DEF="https://pointnorth.io",SEP="|||";
-              static final String[]DEFS={
-                  "https://pointnorth.io","https://www.youtube.com","https://www.google.com",
-                  "https://tv360.vn/tv/vtv1-hd?ch=2&c=0","https://tinnhac.com","https://vnexpress.net"};
+              static final String[]DEFS={"https://pointnorth.io","https://www.youtube.com",
+                  "https://www.google.com","https://tv360.vn/tv/vtv1-hd?ch=2&c=0",
+                  "https://tinnhac.com","https://vnexpress.net"};
               private static final int COLS=3;
+              // Màu nền
+              private static final int CLR_CARD_NORM   =0xff141428;
+              private static final int CLR_CARD_ACTIVE =0xff1f1f40;
+              private static final int CLR_CARD_FOCUS  =0xff2a1020;
+              private static final int CLR_BORDER_FOCUS=0xffE50914;
+              private static final int CLR_BORDER_NONE =0x00000000;
+              private static final int CLR_BTN_NORM    =0xff333355;
+              private static final int CLR_BTN_FOCUS   =0xffE50914;
+
               private LinearLayout grid;
               private ScrollView scrollView;
               private TextView btnSettings;
               private SharedPreferences prefs;
               private Handler handler=new Handler();
-              private List<LinearLayout> cards=new ArrayList<LinearLayout>();
-              private List<String> urls=new ArrayList<String>();
-
-              // Zone: 0=HEADER(Settings button), 1=GRID
+              private List<LinearLayout> cardWrappers=new ArrayList<>();
+              private List<String> urls=new ArrayList<>();
+              // zone: 0=header(Settings) 1=grid
               private int zone=1;
-              private int focusIdx=0;
+              private int gridIdx=0;
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.home);
+                  // TẮT hoàn toàn focus traversal của Android TV
+                  getWindow().getDecorView().setFocusable(false);
+                  getWindow().getDecorView().setFocusableInTouchMode(false);
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   if(!prefs.getBoolean(KEY_INIT,false)){
                       StringBuilder sb=new StringBuilder();
@@ -373,128 +383,141 @@ jobs:
                   grid=(LinearLayout)findViewById(R.id.gridLinks);
                   scrollView=(ScrollView)findViewById(R.id.scrollView);
                   btnSettings=(TextView)findViewById(R.id.btnSettings);
-                  btnSettings.setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){
-                          startActivity(new Intent(HomeActivity.this,SettingsActivity.class));}});
+                  // Đặt màu nền ban đầu cho btnSettings (không dùng selector)
+                  btnSettings.setBackgroundColor(CLR_BTN_NORM);
+                  btnSettings.setOnClickListener(v->startActivity(new Intent(this,SettingsActivity.class)));
               }
 
               @Override protected void onResume(){super.onResume();renderLinks();}
 
               private List<String> hist(){
-                  return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
+                  return new ArrayList<>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
               }
 
               private void renderLinks(){
-                  grid.removeAllViews();cards.clear();urls.clear();
-                  zone=1;focusIdx=0;
+                  grid.removeAllViews();cardWrappers.clear();urls.clear();
+                  // Reset về grid zone, không highlight header
+                  zone=1;gridIdx=0;
+                  btnSettings.setBackgroundColor(CLR_BTN_NORM); // xoá highlight header
                   List<String>h=hist();String act=prefs.getString(KEY_URL,DEF);
                   LinearLayout row=null;
                   for(int i=0;i<h.size();i++){
                       if(i%COLS==0){
-                          row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
+                          row=new LinearLayout(this);
+                          row.setOrientation(LinearLayout.HORIZONTAL);
+                          row.setFocusable(false);
                           LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                           rp.setMargins(0,0,0,20);row.setLayoutParams(rp);grid.addView(row);
                       }
                       final String url=h.get(i);urls.add(url);
+                      // Wrapper = viền border
                       final LinearLayout wrap=new LinearLayout(this);
                       wrap.setOrientation(LinearLayout.VERTICAL);
+                      wrap.setFocusable(false);
                       LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f);
                       wp.setMargins(0,0,16,0);wrap.setLayoutParams(wp);
-                      wrap.setBackgroundColor(0x00000000);wrap.setPadding(3,3,3,3);
+                      wrap.setBackgroundColor(CLR_BORDER_NONE);
+                      wrap.setPadding(3,3,3,3);
+                      // Card bên trong
                       final LinearLayout card=new LinearLayout(this);
-                      card.setOrientation(LinearLayout.VERTICAL);card.setGravity(android.view.Gravity.CENTER);
+                      card.setOrientation(LinearLayout.VERTICAL);
+                      card.setGravity(android.view.Gravity.CENTER);
                       card.setPadding(18,22,18,22);
-                      card.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,196));
-                      card.setBackgroundColor(url.equals(act)?0xff1f1f40:0xff141428);
-                      card.setClickable(true);card.setFocusable(false);
+                      card.setLayoutParams(new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,196));
+                      card.setBackgroundColor(url.equals(act)?CLR_CARD_ACTIVE:CLR_CARD_NORM);
+                      card.setFocusable(false);card.setClickable(true);
                       if(android.os.Build.VERSION.SDK_INT>=21)card.setStateListAnimator(null);
-                      ImageView fav=new ImageView(this);fav.setLayoutParams(new LinearLayout.LayoutParams(68,68));
-                      fav.setScaleType(ImageView.ScaleType.FIT_CENTER);card.addView(fav);
-                      final int idx=i;final ImageView fv=fav;
-                      handler.postDelayed(new Runnable(){@Override public void run(){
+                      // Favicon
+                      ImageView fav=new ImageView(this);
+                      fav.setLayoutParams(new LinearLayout.LayoutParams(68,68));
+                      fav.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                      fav.setFocusable(false);card.addView(fav);
+                      final int fi=i;final ImageView fv=fav;
+                      handler.postDelayed(()->{
                           new AsyncTask<String,Void,Bitmap>(){
                               @Override protected Bitmap doInBackground(String...u){
                                   try{HttpURLConnection c=(HttpURLConnection)new URL(u[0]).openConnection();
                                   c.setConnectTimeout(4000);c.setReadTimeout(4000);c.setInstanceFollowRedirects(true);
                                   return BitmapFactory.decodeStream(c.getInputStream());}catch(Exception e){return null;}}
-                              @Override protected void onPostExecute(Bitmap b){if(b!=null&&fv!=null)fv.setImageBitmap(b);}
+                              @Override protected void onPostExecute(Bitmap b){if(b!=null)fv.setImageBitmap(b);}
                           }.execute("https://www.google.com/s2/favicons?domain="+url+"&sz=64");
-                      }},idx*180L);
+                      },fi*180L);
+                      // Label
                       TextView lbl=new TextView(this);
                       lbl.setText(url.replace("https://","").replace("http://","").split("/")[0]);
-                      lbl.setTextColor(url.equals(act)?0xffE50914:0xffaaaaaa);
-                      lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);lbl.setMaxLines(1);
-                      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+                      lbl.setTextColor(url.equals(act)?CLR_BORDER_FOCUS:0xffaaaaaa);
+                      lbl.setTextSize(13);lbl.setGravity(android.view.Gravity.CENTER);
+                      lbl.setMaxLines(1);lbl.setFocusable(false);
+                      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       lp.setMargins(0,8,0,0);lbl.setLayoutParams(lp);card.addView(lbl);
                       if(url.equals(act)){
                           TextView t=new TextView(this);t.setText("▶ Dang xem");
-                          t.setTextColor(0xffE50914);t.setTextSize(11);
-                          t.setGravity(android.view.Gravity.CENTER);card.addView(t);
+                          t.setTextColor(CLR_BORDER_FOCUS);t.setTextSize(11);
+                          t.setGravity(android.view.Gravity.CENTER);t.setFocusable(false);card.addView(t);
                       }
-                      final int fi=i;
-                      card.setOnClickListener(new View.OnClickListener(){
-                          @Override public void onClick(View v){openUrl(urls.get(fi));}});
-                      wrap.addView(card);cards.add(wrap);row.addView(wrap);
+                      card.setOnClickListener(v->openUrl(urls.get(fi)));
+                      wrap.addView(card);cardWrappers.add(wrap);row.addView(wrap);
                   }
-                  // Điền ô trống cuối hàng
                   if(row!=null&&h.size()%COLS!=0){
-                      int rem=COLS-(h.size()%COLS);
-                      for(int j=0;j<rem;j++){
-                          View e=new View(this);
+                      for(int j=0;j<COLS-(h.size()%COLS);j++){
+                          View e=new View(this);e.setFocusable(false);
                           LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(0,196,1f);
                           ep.setMargins(0,0,16,0);e.setLayoutParams(ep);row.addView(e);
                       }
                   }
-                  applyHeaderFocus(false);
-                  if(!cards.isEmpty())applyCardFocus(0);
+                  // Highlight card đầu tiên
+                  if(!cardWrappers.isEmpty())highlightCard(0,true);
               }
 
               private void openUrl(String url){
                   prefs.edit().putString(KEY_URL,url).apply();
-                  startActivity(new Intent(HomeActivity.this,MainActivity.class).putExtra("url",url));
+                  startActivity(new Intent(this,MainActivity.class).putExtra("url",url));
               }
 
-              // Highlight nút Settings ở header
-              private void applyHeaderFocus(boolean focused){
-                  btnSettings.setBackgroundColor(focused?0xffE50914:0xff333355);
-              }
-
-              // Highlight card trong grid
-              private void applyCardFocus(int idx){
-                  // Xoá highlight cũ
-                  if(focusIdx>=0&&focusIdx<cards.size()){
-                      LinearLayout old=cards.get(focusIdx);
-                      old.setBackgroundColor(0x00000000);old.setPadding(3,3,3,3);
-                      if(old.getChildCount()>0){
-                          String ou=urls.get(focusIdx);String act=prefs.getString(KEY_URL,DEF);
-                          old.getChildAt(0).setBackgroundColor(ou.equals(act)?0xff1f1f40:0xff141428);
-                      }
+              // Highlight 1 card, bỏ highlight card cũ
+              private void highlightCard(int idx,boolean on){
+                  if(idx<0||idx>=cardWrappers.size())return;
+                  LinearLayout wrap=cardWrappers.get(idx);
+                  String url=urls.get(idx);
+                  String act=prefs.getString(KEY_URL,DEF);
+                  if(on){
+                      wrap.setBackgroundColor(CLR_BORDER_FOCUS);
+                      wrap.setPadding(4,4,4,4);
+                      if(wrap.getChildCount()>0)wrap.getChildAt(0).setBackgroundColor(CLR_CARD_FOCUS);
+                  } else {
+                      wrap.setBackgroundColor(CLR_BORDER_NONE);
+                      wrap.setPadding(3,3,3,3);
+                      if(wrap.getChildCount()>0)
+                          wrap.getChildAt(0).setBackgroundColor(url.equals(act)?CLR_CARD_ACTIVE:CLR_CARD_NORM);
                   }
-                  focusIdx=Math.max(0,Math.min(idx,cards.size()-1));
-                  if(cards.isEmpty())return;
-                  LinearLayout cur=cards.get(focusIdx);
-                  cur.setBackgroundColor(0xffE50914);cur.setPadding(3,3,3,3);
-                  if(cur.getChildCount()>0)cur.getChildAt(0).setBackgroundColor(0xff2a1020);
-                  final LinearLayout fc=cur;
-                  scrollView.post(new Runnable(){@Override public void run(){
-                      Rect r=new Rect();fc.getDrawingRect(r);
-                      scrollView.requestChildRectangleOnScreen(grid,r,false);}});
+              }
+
+              private void scrollToCard(int idx){
+                  if(idx<0||idx>=cardWrappers.size())return;
+                  final LinearLayout w=cardWrappers.get(idx);
+                  scrollView.post(()->{Rect r=new Rect();w.getDrawingRect(r);
+                      scrollView.requestChildRectangleOnScreen(grid,r,false);});
               }
 
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  int total=cards.size();
+                  int total=cardWrappers.size();
                   if(zone==0){
-                      // ── ZONE HEADER: chỉ có nút Settings ──
+                      // ── HEADER zone: chỉ có nút Settings ──
                       switch(key){
                           case KeyEvent.KEYCODE_DPAD_DOWN:
-                              // Xuống → về grid, hàng đầu
-                              applyHeaderFocus(false);
-                              zone=1;applyCardFocus(0);
+                              // Xuống → về grid
+                              btnSettings.setBackgroundColor(CLR_BTN_NORM);
+                              zone=1;
+                              highlightCard(gridIdx,true);
+                              scrollToCard(gridIdx);
                               return true;
+                          case KeyEvent.KEYCODE_DPAD_UP:
                           case KeyEvent.KEYCODE_DPAD_LEFT:
                           case KeyEvent.KEYCODE_DPAD_RIGHT:
-                              return true; // không làm gì, chỉ có 1 nút
+                              return true; // chặn, không làm gì
                           case KeyEvent.KEYCODE_DPAD_CENTER:
                           case KeyEvent.KEYCODE_ENTER:
                               if(e.getRepeatCount()==0)
@@ -503,38 +526,48 @@ jobs:
                           case KeyEvent.KEYCODE_BACK:finish();return true;
                       }
                   } else {
-                      // ── ZONE GRID ──
+                      // ── GRID zone ──
                       switch(key){
-                          case KeyEvent.KEYCODE_DPAD_RIGHT:
-                              if(focusIdx+1<total)applyCardFocus(focusIdx+1);
-                              return true;
-                          case KeyEvent.KEYCODE_DPAD_LEFT:
-                              if(focusIdx-1>=0)applyCardFocus(focusIdx-1);
+                          case KeyEvent.KEYCODE_DPAD_UP:
+                              if(gridIdx-COLS>=0){
+                                  highlightCard(gridIdx,false);
+                                  gridIdx-=COLS;
+                                  highlightCard(gridIdx,true);
+                                  scrollToCard(gridIdx);
+                              } else {
+                                  // Lên từ hàng đầu → chuyển sang HEADER
+                                  highlightCard(gridIdx,false);
+                                  zone=0;
+                                  btnSettings.setBackgroundColor(CLR_BTN_FOCUS);
+                              }
                               return true;
                           case KeyEvent.KEYCODE_DPAD_DOWN:
-                              if(focusIdx+COLS<total)applyCardFocus(focusIdx+COLS);
+                              if(gridIdx+COLS<total){
+                                  highlightCard(gridIdx,false);
+                                  gridIdx+=COLS;
+                                  highlightCard(gridIdx,true);
+                                  scrollToCard(gridIdx);
+                              }
                               return true;
-                          case KeyEvent.KEYCODE_DPAD_UP:
-                              if(focusIdx-COLS>=0){
-                                  applyCardFocus(focusIdx-COLS);
-                              } else {
-                                  // Lên từ hàng đầu → chuyển sang HEADER, highlight Settings
-                                  applyCardFocus(focusIdx); // giữ highlight card hiện tại mờ
-                                  // Xoá highlight card
-                                  if(focusIdx>=0&&focusIdx<cards.size()){
-                                      LinearLayout old=cards.get(focusIdx);
-                                      old.setBackgroundColor(0x00000000);old.setPadding(3,3,3,3);
-                                      if(old.getChildCount()>0){
-                                          String ou=urls.get(focusIdx);String act=prefs.getString(KEY_URL,DEF);
-                                          old.getChildAt(0).setBackgroundColor(ou.equals(act)?0xff1f1f40:0xff141428);
-                                      }
-                                  }
-                                  zone=0;applyHeaderFocus(true);
+                          case KeyEvent.KEYCODE_DPAD_LEFT:
+                              if(gridIdx-1>=0){
+                                  highlightCard(gridIdx,false);
+                                  gridIdx--;
+                                  highlightCard(gridIdx,true);
+                                  scrollToCard(gridIdx);
+                              }
+                              return true;
+                          case KeyEvent.KEYCODE_DPAD_RIGHT:
+                              if(gridIdx+1<total){
+                                  highlightCard(gridIdx,false);
+                                  gridIdx++;
+                                  highlightCard(gridIdx,true);
+                                  scrollToCard(gridIdx);
                               }
                               return true;
                           case KeyEvent.KEYCODE_DPAD_CENTER:
                           case KeyEvent.KEYCODE_ENTER:
-                              if(e.getRepeatCount()==0&&!urls.isEmpty())openUrl(urls.get(focusIdx));
+                              if(e.getRepeatCount()==0&&!urls.isEmpty())openUrl(urls.get(gridIdx));
                               return true;
                           case KeyEvent.KEYCODE_MENU:
                               startActivity(new Intent(this,SettingsActivity.class));return true;
@@ -546,7 +579,7 @@ jobs:
           }
           JEOF
 
-          # ── SettingsActivity ─ EditText cursor nhấp nháy + bàn phím ảo ──────────────
+          # ── SettingsActivity ─ focus từng mục + bàn phím ảo thật sự ─────────────────
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -572,67 +605,82 @@ jobs:
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
                   DEF="https://pointnorth.io",SEP="|||";
+              // Màu
+              private static final int CLR_FOCUS =0xffE50914;
+              private static final int CLR_BACK  =0xff333355;
+              private static final int CLR_SAVE  =0xff9900cc;
+              private static final int CLR_RESET =0xff1a1a2e;
+              private static final int CLR_EDIT  =0xff222233;
+              private static final int CLR_ROW_N =0xff111122;
+              private static final int CLR_ROW_A =0xff1e1e35;
+
               private EditText editUrl;
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private SharedPreferences prefs;
               private InputMethodManager imm;
               private Handler handler=new Handler();
-              // focusItems: 0=Back, 1=EditUrl, 2=Save, 3=Reset, 4+=url rows
-              private List<View> focusItems=new ArrayList<View>();
-              private int focusIdx=0;
+              // focusItems: 0=Back, 1=EditText, 2=Save, 3=Reset, 4+=url rows
+              private List<View> items=new ArrayList<>();
+              private int cur=0;
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.settings);
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
-                  imm=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                  imm=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
                   editUrl=(EditText)findViewById(R.id.editUrl);
                   listUrls=(LinearLayout)findViewById(R.id.listUrls);
                   scrollView=(ScrollView)findViewById(R.id.settingsScroll);
-                  editUrl.setText(prefs.getString(KEY_URL,DEF));
-                  // Đặt cursor ở cuối text
-                  editUrl.setSelection(editUrl.getText().length());
-                  editUrl.setOnEditorActionListener(new TextView.OnEditorActionListener(){
-                      @Override public boolean onEditorAction(TextView v,int actionId,KeyEvent e){
-                          if(actionId==EditorInfo.IME_ACTION_GO||actionId==EditorInfo.IME_ACTION_DONE){
-                              doSave();return true;}
-                          return false;}});
+
+                  // Đặt màu nền mặc định trước
                   View vBack=findViewById(R.id.btnBack);
                   View vSave=findViewById(R.id.btnSave);
                   View vReset=findViewById(R.id.btnReset);
-                  vBack.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){finish();}});
-                  vSave.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){doSave();}});
-                  vReset.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(DEF);openUrl(DEF);}});
-                  focusItems.clear();
-                  focusItems.add(vBack);   // 0
-                  focusItems.add(editUrl); // 1 ← EditText
-                  focusItems.add(vSave);   // 2
-                  focusItems.add(vReset);  // 3
+                  vBack.setBackgroundColor(CLR_BACK);
+                  vSave.setBackgroundColor(CLR_SAVE);
+                  vReset.setBackgroundColor(CLR_RESET);
+                  editUrl.setBackgroundColor(CLR_EDIT);
+                  editUrl.setText(prefs.getString(KEY_URL,DEF));
+                  editUrl.setSelection(editUrl.getText().length());
+
+                  vBack.setOnClickListener(v->finish());
+                  vSave.setOnClickListener(v->doSave());
+                  vReset.setOnClickListener(v->{saveUrl(DEF);openUrl(DEF);});
+                  editUrl.setOnEditorActionListener((v,actionId,ev)->{
+                      if(actionId==EditorInfo.IME_ACTION_GO||actionId==EditorInfo.IME_ACTION_DONE){
+                          doSave();return true;}return false;});
+
+                  items.clear();
+                  items.add(vBack);    // 0
+                  items.add(editUrl);  // 1 ← EditText
+                  items.add(vSave);    // 2
+                  items.add(vReset);   // 3
                   renderHistory();
-                  applyFocus(1); // Mặc định focus vào EditText luôn → cursor nhấp nháy + bàn phím
+                  // Focus EditText ngay khi mở
+                  focusTo(1);
               }
 
               private void doSave(){
                   String u=editUrl.getText().toString().trim();
                   if(u.isEmpty())return;
                   if(!u.startsWith("http"))u="https://"+u;
-                  hideKeyboard();saveUrl(u);openUrl(u);
+                  hideKbd();saveUrl(u);openUrl(u);
               }
 
-              private void hideKeyboard(){
+              private void hideKbd(){
                   imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);
+                  editUrl.clearFocus();
               }
 
-              private void showKeyboard(){
+              private void showKbd(){
                   editUrl.requestFocus();
                   editUrl.setCursorVisible(true);
-                  // Delay nhỏ để đảm bảo view đã layout xong
-                  handler.postDelayed(new Runnable(){@Override public void run(){
-                      imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);}},150);
+                  handler.postDelayed(()->
+                      imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED),200);
               }
 
               private List<String> getHist(){
-                  return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
+                  return new ArrayList<>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
               }
               private void addHist(String url){
                   List<String>list=getHist();list.remove(url);list.add(0,url);
@@ -649,91 +697,106 @@ jobs:
 
               private void renderHistory(){
                   listUrls.removeAllViews();
-                  while(focusItems.size()>4)focusItems.remove(4);
+                  while(items.size()>4)items.remove(4);
                   List<String>hist=getHist();String active=prefs.getString(KEY_URL,DEF);
                   for(final String url:hist){
                       final LinearLayout row=new LinearLayout(this);
                       row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(20,16,20,16);
-                      row.setBackgroundColor(url.equals(active)?0xff1e1e35:0xff111122);
-                      row.setClickable(true);
+                      row.setBackgroundColor(url.equals(active)?CLR_ROW_A:CLR_ROW_N);
+                      row.setFocusable(false);row.setClickable(true);
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
-                      tv.setText((url.equals(active)?"▶  ":"     ")+url);
-                      tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);tv.setTextSize(15);
+                      tv.setText((url.equals(active)?"▶  ":"      ")+url);
+                      tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
+                      tv.setTextSize(15);tv.setFocusable(false);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
                       row.addView(tv);
                       TextView bu=new TextView(this);bu.setText(" Chon ");bu.setTextColor(Color.WHITE);
                       bu.setBackgroundColor(0xff2233aa);bu.setTextSize(13);bu.setPadding(18,10,18,10);
-                      bu.setGravity(android.view.Gravity.CENTER);bu.setClickable(true);
-                      bu.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-                      bu.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
+                      bu.setGravity(android.view.Gravity.CENTER);bu.setFocusable(false);bu.setClickable(true);
+                      bu.setLayoutParams(new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
+                      bu.setOnClickListener(v->{saveUrl(url);openUrl(url);});
                       TextView bd=new TextView(this);bd.setText("  X  ");bd.setTextColor(Color.WHITE);
                       bd.setBackgroundColor(0xff770000);bd.setTextSize(13);bd.setPadding(18,10,18,10);
-                      bd.setGravity(android.view.Gravity.CENTER);bd.setClickable(true);
+                      bd.setGravity(android.view.Gravity.CENTER);bd.setFocusable(false);bd.setClickable(true);
                       LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
-                      bd.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
+                      bd.setOnClickListener(v->{
                           List<String>list=getHist();list.remove(url);
                           StringBuilder sb=new StringBuilder();
                           for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
                           prefs.edit().putString(KEY_HIST,sb.toString()).apply();
-                          if(focusIdx>=focusItems.size()-1)focusIdx=Math.max(0,focusItems.size()-2);
-                          renderHistory();applyFocus(focusIdx);}});
-                      row.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
+                          if(cur>=items.size()-1)cur=Math.max(0,items.size()-2);
+                          renderHistory();focusTo(cur);
+                      });
+                      row.setOnClickListener(v->{saveUrl(url);openUrl(url);});
                       row.addView(bu);row.addView(bd);
                       listUrls.addView(row);
-                      focusItems.add(row);
+                      items.add(row);
                   }
+                  // Refresh highlight nếu cur đang hợp lệ
+                  if(cur<items.size())refreshHighlight(cur);
               }
 
-              private int defaultBg(int idx){
-                  if(idx==0)return 0xff333355;
-                  if(idx==1)return 0xff1a1a2e;
-                  if(idx==2)return 0xffcc0000;
-                  if(idx==3)return 0xff1a1a2e;
+              // Màu nền mặc định (không highlight)
+              private int normalBg(int idx){
+                  if(idx==0)return CLR_BACK;
+                  if(idx==1)return CLR_EDIT;
+                  if(idx==2)return CLR_SAVE;
+                  if(idx==3)return CLR_RESET;
                   int ri=idx-4;List<String>h=getHist();
                   if(ri<h.size()){String act=prefs.getString(KEY_URL,DEF);
-                      return h.get(ri).equals(act)?0xff1e1e35:0xff111122;}
-                  return 0xff111122;
+                      return h.get(ri).equals(act)?CLR_ROW_A:CLR_ROW_N;}
+                  return CLR_ROW_N;
               }
 
-              private void applyFocus(int idx){
-                  // Ẩn bàn phím khi rời EditText
-                  if(focusIdx==1&&idx!=1)hideKeyboard();
+              private void refreshHighlight(int idx){
+                  if(idx<0||idx>=items.size())return;
+                  items.get(idx).setBackgroundColor(CLR_FOCUS);
+              }
+
+              private void focusTo(int idx){
                   // Xoá highlight cũ
-                  if(focusIdx>=0&&focusIdx<focusItems.size())
-                      focusItems.get(focusIdx).setBackgroundColor(defaultBg(focusIdx));
-                  focusIdx=Math.max(0,Math.min(idx,focusItems.size()-1));
-                  if(focusIdx>=focusItems.size())return;
-                  focusItems.get(focusIdx).setBackgroundColor(0xffE50914);
-                  // Nếu focus vào EditText → cursor nhấp nháy + bàn phím ảo
-                  if(focusIdx==1)showKeyboard();
-                  // Auto-scroll danh sách
-                  if(focusIdx>=4){
-                      final View fc=focusItems.get(focusIdx);
-                      scrollView.post(new Runnable(){@Override public void run(){
-                          Rect r=new Rect();fc.getDrawingRect(r);
-                          scrollView.requestChildRectangleOnScreen(listUrls,r,false);}});
+                  if(cur>=0&&cur<items.size())
+                      items.get(cur).setBackgroundColor(normalBg(cur));
+                  // Ẩn bàn phím khi rời EditText
+                  if(cur==1&&idx!=1)hideKbd();
+                  cur=Math.max(0,Math.min(idx,items.size()-1));
+                  if(cur>=items.size())return;
+                  // Highlight mới
+                  items.get(cur).setBackgroundColor(CLR_FOCUS);
+                  // Nếu focus vào EditText → bàn phím ảo
+                  if(cur==1)showKbd();
+                  // Scroll nếu là url row
+                  if(cur>=4){
+                      final View v=items.get(cur);
+                      scrollView.post(()->{
+                          Rect r=new Rect();v.getDrawingRect(r);
+                          scrollView.requestChildRectangleOnScreen(listUrls,r,false);
+                      });
                   }
               }
 
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  // Khi EditText đang focus: chỉ bắt Up/Down/Back, còn lại cho EditText tự xử lý
-                  if(focusIdx==1){
-                      if(key==KeyEvent.KEYCODE_DPAD_UP){applyFocus(0);return true;}
-                      if(key==KeyEvent.KEYCODE_DPAD_DOWN){applyFocus(2);return true;}
-                      if(key==KeyEvent.KEYCODE_BACK){hideKeyboard();applyFocus(0);return true;}
-                      return false; // EditText nhận tất cả ký tự khác
+                  // EditText đang active: chỉ bắt Up/Down/Back
+                  if(cur==1){
+                      if(key==KeyEvent.KEYCODE_DPAD_UP){focusTo(0);return true;}
+                      if(key==KeyEvent.KEYCODE_DPAD_DOWN){focusTo(2);return true;}
+                      if(key==KeyEvent.KEYCODE_BACK){hideKbd();focusTo(0);return true;}
+                      return false; // EditText tự xử lý ký tự
                   }
                   switch(key){
-                      case KeyEvent.KEYCODE_DPAD_UP:if(focusIdx>0)applyFocus(focusIdx-1);return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN:if(focusIdx<focusItems.size()-1)applyFocus(focusIdx+1);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
-                          if(e.getRepeatCount()==0&&focusIdx<focusItems.size())
-                              focusItems.get(focusIdx).performClick();
+                      case KeyEvent.KEYCODE_DPAD_UP:
+                          if(cur>0)focusTo(cur-1);return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:
+                          if(cur<items.size()-1)focusTo(cur+1);return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          if(e.getRepeatCount()==0)items.get(cur).performClick();
                           return true;
                       case KeyEvent.KEYCODE_BACK:finish();return true;
                   }
@@ -745,7 +808,7 @@ jobs:
           }
           JEOF
 
-          # ── MainActivity ─ CURSOR ĐỨNG YÊN khi edge-scroll (như chuột thật) ─────────
+          # ── MainActivity ─ (giữ nguyên phần cursor/scroll đã ok) ────────────────────
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.annotation.TargetApi;
@@ -792,44 +855,22 @@ jobs:
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
               private static float savedCX=-1,savedCY=-1;
-
-              // ═══ THÔNG SỐ TUỲ CHỈNH ════════════════════════════════════════════════════
-              private static final float STEP_MIN        = 15f;
-              private static final float STEP_MAX        = 90f;
-              private static final int   ACCEL_TICKS     = 12;
-              private static final float SCROLL_AXIS     = 3f;
-              private static final int   BAR_ZONE_W      = 200;
-              private static final int   BAR_ZONE_H      = 120;
-              // Edge zone: vùng mép trên/dưới (px). Cursor DỪNG tại đây, trang cuộn tiếp
-              private static final int   EDGE_ZONE       = 80;
-              private static final int   EDGE_INTERVAL   = 100;   // ms/nhịp
-              private static final int   EDGE_SCROLL_MIN = 60;    // px cuộn nhỏ nhất
-              private static final int   EDGE_SCROLL_MAX = 350;   // px cuộn lớn nhất
-              private static final long  HIDE_DELAY      = 3000;
-              // ════════════════════════════════════════════════════════════════════════════
-
-              private boolean barVisible=false;
-              private boolean cursorVisible=true;
-
-              // Edge scroll state — cursor KHÔNG di chuyển khi đang edge-scroll
-              private int edgeDir=0;      // -1=lên 0=dừng 1=xuống
-              private int edgeTicks=0;
-              private boolean inEdgeMode=false; // true khi cursor đang ở mép và trang đang cuộn
-
-              private Runnable edgeScrollRunnable=new Runnable(){
-                  @Override public void run(){
-                      if(edgeDir==0)return;
-                      edgeTicks=Math.min(edgeTicks+1,10);
-                      // Cuộn dần dần theo edgeTicks (như gia tốc chuột thật)
-                      int px=EDGE_SCROLL_MIN+(EDGE_SCROLL_MAX-EDGE_SCROLL_MIN)*edgeTicks/10;
-                      scrollPage(edgeDir*px);
-                      handler.postDelayed(this,EDGE_INTERVAL);
-                  }
-              };
-              private Runnable hideBarRunnable=new Runnable(){@Override public void run(){
-                  bottomBar.setVisibility(View.GONE);barVisible=false;}};
-              private Runnable hideCursorRunnable=new Runnable(){@Override public void run(){
-                  cursorView.setVisibility(View.GONE);cursorVisible=false;}};
+              private static final float STEP_MIN=15f,STEP_MAX=90f;
+              private static final int ACCEL_TICKS=12;
+              private static final float SCROLL_AXIS=3f;
+              private static final int BAR_ZONE_W=200,BAR_ZONE_H=120;
+              private static final int EDGE_ZONE=80,EDGE_INTERVAL=100;
+              private static final int EDGE_SCROLL_MIN=60,EDGE_SCROLL_MAX=350;
+              private static final long HIDE_DELAY=3000;
+              private boolean barVisible=false,cursorVisible=true;
+              private int edgeDir=0,edgeTicks=0;
+              private Runnable edgeScroll=new Runnable(){@Override public void run(){
+                  if(edgeDir==0)return;
+                  edgeTicks=Math.min(edgeTicks+1,10);
+                  scrollPage(edgeDir*(EDGE_SCROLL_MIN+(EDGE_SCROLL_MAX-EDGE_SCROLL_MIN)*edgeTicks/10));
+                  handler.postDelayed(this,EDGE_INTERVAL);}};
+              private Runnable hideBar=new Runnable(){@Override public void run(){bottomBar.setVisibility(View.GONE);barVisible=false;}};
+              private Runnable hideCursor=new Runnable(){@Override public void run(){cursorView.setVisibility(View.GONE);cursorVisible=false;}};
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
@@ -839,10 +880,9 @@ jobs:
                   getWindowManager().getDefaultDisplay().getMetrics(dm);
                   screenW=dm.widthPixels;screenH=dm.heightPixels;
                   cursorView=(CursorView)findViewById(R.id.cursor);
-                  float ix=savedCX>0?savedCX:screenW/2f;
-                  float iy=savedCY>0?savedCY:screenH/2f;
+                  float ix=savedCX>0?savedCX:screenW/2f,iy=savedCY>0?savedCY:screenH/2f;
                   cursorView.setPos(ix,iy);savedCX=ix;savedCY=iy;
-                  scheduleCursorHide();
+                  handler.postDelayed(hideCursor,HIDE_DELAY);
                   SharedPreferences prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   currentUrl=prefs.getString(KEY_URL,DEF);
                   if(getIntent().hasExtra("url"))currentUrl=getIntent().getStringExtra("url");
@@ -852,33 +892,20 @@ jobs:
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
                   webView.setFocusable(false);webView.setFocusableInTouchMode(false);
-                  findViewById(R.id.btnHome).setOnClickListener(
-                      new View.OnClickListener(){@Override public void onClick(View v){finish();}});
-                  findViewById(R.id.btnWebBack).setOnClickListener(
-                      new View.OnClickListener(){@Override public void onClick(View v){
-                          if(webView.canGoBack())webView.goBack();}});
-                  findViewById(R.id.btnSettingsWeb).setOnClickListener(
-                      new View.OnClickListener(){@Override public void onClick(View v){
-                          savedCX=cursorView.getCX();savedCY=cursorView.getCY();
-                          startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
-                  setupSpeech();setupWebView();
-                  webView.loadUrl(currentUrl);
+                  findViewById(R.id.btnHome).setOnClickListener(v->finish());
+                  findViewById(R.id.btnWebBack).setOnClickListener(v->{if(webView.canGoBack())webView.goBack();});
+                  findViewById(R.id.btnSettingsWeb).setOnClickListener(v->{
+                      savedCX=cursorView.getCX();savedCY=cursorView.getCY();
+                      startActivity(new Intent(this,SettingsActivity.class));});
+                  setupSpeech();setupWebView();webView.loadUrl(currentUrl);
               }
 
-              private void showCursorAndResetTimer(){
+              private void wakeC(){
                   if(!cursorVisible){cursorView.setVisibility(View.VISIBLE);cursorVisible=true;}
-                  handler.removeCallbacks(hideCursorRunnable);
-                  handler.postDelayed(hideCursorRunnable,HIDE_DELAY);
-              }
-              private void scheduleCursorHide(){
-                  handler.removeCallbacks(hideCursorRunnable);
-                  handler.postDelayed(hideCursorRunnable,HIDE_DELAY);
+                  handler.removeCallbacks(hideCursor);handler.postDelayed(hideCursor,HIDE_DELAY);
               }
 
-              private boolean isLocalUrl(String url){
-                  if(url==null)return false;
-                  return url.startsWith("http://")||url.startsWith("https://");
-              }
+              private boolean isHttp(String u){return u!=null&&(u.startsWith("http://")||u.startsWith("https://"));}
 
               private void setupWebView(){
                   WebSettings ws=webView.getSettings();
@@ -890,205 +917,115 @@ jobs:
                   ws.setAppCacheEnabled(true);ws.setCacheMode(WebSettings.LOAD_DEFAULT);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   ws.setSupportMultipleWindows(false);
-                  ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                      +"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                  ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.setLongClickable(false);
-                  webView.setOnLongClickListener(new View.OnLongClickListener(){
-                      @Override public boolean onLongClick(View v){return true;}});
+                  webView.setOnLongClickListener(v->true);
                   webView.setWebViewClient(new WebViewClient(){
-                      @Override
-                      public boolean shouldOverrideUrlLoading(WebView view,String url){
-                          if(url==null)return true;
-                          if(!isLocalUrl(url))return true;
-                          view.loadUrl(url);return true;
-                      }
-                      @Override
-                      @TargetApi(Build.VERSION_CODES.N)
-                      public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req){
-                          if(req==null)return true;
-                          String url=req.getUrl().toString();
-                          if(!isLocalUrl(url))return true;
-                          view.loadUrl(url);return true;
-                      }
-                      @Override public void onPageStarted(WebView v,String url,Bitmap f){
-                          progressBar.setVisibility(View.VISIBLE);}
+                      @Override public boolean shouldOverrideUrlLoading(WebView v,String url){
+                          if(!isHttp(url))return true;v.loadUrl(url);return true;}
+                      @Override @TargetApi(Build.VERSION_CODES.N)
+                      public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
+                          String url=r.getUrl().toString();if(!isHttp(url))return true;v.loadUrl(url);return true;}
+                      @Override public void onPageStarted(WebView v,String url,Bitmap f){progressBar.setVisibility(View.VISIBLE);}
                       @Override public void onPageFinished(WebView v,String url){
                           progressBar.setVisibility(View.GONE);
-                          v.evaluateJavascript(
-                              "(function(){"
-                              +"document.documentElement.style.scrollBehavior='auto';"
+                          v.evaluateJavascript("(function(){document.documentElement.style.scrollBehavior='auto';"
                               +"if(document.body)document.body.style.overscrollBehavior='none';"
-                              +"var links=document.querySelectorAll('a[target]');"
-                              +"for(var i=0;i<links.length;i++){"
-                              +"  if(links[i].target===\"_blank\")links[i].target=\"_self\";}"
-                              +"window.open=function(url,t,f){"
-                              +"  if(url)window.location.href=url;return null;};"
-                              +"})();",null);
-                      }
+                              +"document.querySelectorAll('a[target]').forEach(function(a){if(a.target===\"_blank\")a.target=\"_self\";});"
+                              +"window.open=function(u){if(u)location.href=u;return null};})();",null);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
                   });
                   webView.setWebChromeClient(new WebChromeClient(){
                       @Override public void onProgressChanged(WebView v,int p){
                           progressBar.setProgress(p);progressBar.setVisibility(p<100?View.VISIBLE:View.GONE);}
-                      @Override public boolean onCreateWindow(WebView view,boolean isDialog,boolean isUserGesture,android.os.Message resultMsg){
-                          WebView.HitTestResult hr=view.getHitTestResult();
-                          if(hr!=null&&hr.getExtra()!=null){
-                              String url=hr.getExtra();if(isLocalUrl(url))view.loadUrl(url);}
-                          return false;
-                      }
+                      @Override public boolean onCreateWindow(WebView v,boolean d,boolean u,android.os.Message m){
+                          WebView.HitTestResult hr=v.getHitTestResult();
+                          if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
                   });
               }
 
-              // ════════════════════════════════════════════════════════════════════════════
-              // moveCursor: cursor di chuyển bình thường
-              // Khi chạm EDGE_ZONE mép trên/dưới:
-              //   - cursor DỪNG lại tại vị trí mép (không vượt qua)
-              //   - trang bắt đầu cuộn (edgeScrollRunnable)
-              //   - cursor KHÔNG di chuyển thêm nữa trong suốt thời gian giữ phím
-              // ════════════════════════════════════════════════════════════════════════════
-              private void moveCursor(float dx,float dy,int repeatCount){
-                  showCursorAndResetTimer();
-
-                  float curX=cursorView.getCX();
-                  float curY=cursorView.getCY();
-
-                  // Tính tốc độ di chuyển
-                  float t=Math.min(1f,(float)repeatCount/ACCEL_TICKS);
+              private void moveCursor(float dx,float dy,int rep){
+                  wakeC();
+                  float t=Math.min(1f,(float)rep/ACCEL_TICKS);
                   float step=STEP_MIN+(STEP_MAX-STEP_MIN)*t;
-
-                  // Tính vị trí mới nếu di chuyển bình thường
-                  float nx=Math.max(0,Math.min(screenW-2,curX+dx*step));
-                  float ny=curY+dy*step;
-
-                  // ── Kiểm tra chạm mép trên/dưới ──
-                  int newEdgeDir=0;
-                  if(ny>=screenH-EDGE_ZONE){
-                      // Chạm mép dưới: cursor DỪNG tại đây, trang cuộn xuống
-                      ny=screenH-EDGE_ZONE; // ghim cursor tại mép
-                      newEdgeDir=1;
-                  } else if(ny<=EDGE_ZONE){
-                      // Chạm mép trên: cursor DỪNG tại đây, trang cuộn lên
-                      ny=EDGE_ZONE; // ghim cursor tại mép
-                      newEdgeDir=-1;
-                  }
-
-                  // Clamp Y trong giới hạn màn hình
+                  float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
+                  float ny=cursorView.getCY()+dy*step;
+                  int newDir=0;
+                  if(ny>=screenH-EDGE_ZONE){ny=screenH-EDGE_ZONE;newDir=1;}
+                  else if(ny<=EDGE_ZONE){ny=EDGE_ZONE;newDir=-1;}
                   ny=Math.max(0,Math.min(screenH-2,ny));
-
-                  // Chỉ cập nhật vị trí cursor khi không đang edge-scroll
-                  // (hoặc khi di chuyển ngang)
-                  if(newEdgeDir==0||dx!=0){
-                      cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
-                  } else {
-                      // Đang edge: chỉ cập nhật X nếu có di chuyển ngang
-                      cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
+                  cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
+                  if(newDir!=edgeDir){
+                      edgeDir=newDir;edgeTicks=0;
+                      handler.removeCallbacks(edgeScroll);
+                      if(newDir!=0)handler.post(edgeScroll);
                   }
-
-                  // Bắt/dừng edge scroll
-                  if(newEdgeDir!=edgeDir){
-                      edgeDir=newEdgeDir;edgeTicks=0;
-                      handler.removeCallbacks(edgeScrollRunnable);
-                      if(newEdgeDir!=0){
-                          inEdgeMode=true;
-                          handler.post(edgeScrollRunnable);
-                      } else {
-                          inEdgeMode=false;
-                      }
-                  }
-
-                  // Bottom bar zone
-                  boolean inZone=(nx<=BAR_ZONE_W&&ny>=screenH-BAR_ZONE_H);
-                  if(inZone&&!barVisible){
-                      bottomBar.setVisibility(View.VISIBLE);barVisible=true;
-                      handler.removeCallbacks(hideBarRunnable);
-                  } else if(!inZone&&barVisible){
-                      handler.removeCallbacks(hideBarRunnable);
-                      handler.postDelayed(hideBarRunnable,2000);
-                  }
+                  boolean inZ=(nx<=BAR_ZONE_W&&ny>=screenH-BAR_ZONE_H);
+                  if(inZ&&!barVisible){bottomBar.setVisibility(View.VISIBLE);barVisible=true;handler.removeCallbacks(hideBar);}
+                  else if(!inZ&&barVisible){handler.removeCallbacks(hideBar);handler.postDelayed(hideBar,2000);}
               }
 
-              private void stopEdgeScroll(){
-                  edgeDir=0;edgeTicks=0;inEdgeMode=false;
-                  handler.removeCallbacks(edgeScrollRunnable);
-              }
+              private void stopEdge(){edgeDir=0;edgeTicks=0;handler.removeCallbacks(edgeScroll);}
 
-              private void clickAtCursor(){
-                  showCursorAndResetTimer();stopEdgeScroll();
+              private void clickAt(){
+                  wakeC();stopEdge();
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
                   if(barVisible){
-                      int[]ids={R.id.btnHome,R.id.btnWebBack,R.id.btnSettingsWeb};
-                      for(int id:ids){
-                          View btn=findViewById(id);int[]loc=new int[2];btn.getLocationOnScreen(loc);
-                          if(sx>=loc[0]&&sx<loc[0]+btn.getWidth()&&sy>=loc[1]&&sy<loc[1]+btn.getHeight()){
-                              btn.performClick();return;}}
+                      for(int id:new int[]{R.id.btnHome,R.id.btnWebBack,R.id.btnSettingsWeb}){
+                          View b=findViewById(id);int[]loc=new int[2];b.getLocationOnScreen(loc);
+                          if(sx>=loc[0]&&sx<loc[0]+b.getWidth()&&sy>=loc[1]&&sy<loc[1]+b.getHeight()){b.performClick();return;}}
                   }
-                  int[]wloc=new int[2];webView.getLocationOnScreen(wloc);
-                  final float rx=sx-wloc[0],ry=sy-wloc[1];
+                  int[]wl=new int[2];webView.getLocationOnScreen(wl);
+                  final float rx=sx-wl[0],ry=sy-wl[1];
                   final long t0=SystemClock.uptimeMillis();
                   MotionEvent dn=MotionEvent.obtain(t0,t0,MotionEvent.ACTION_DOWN,rx,ry,0);
                   webView.dispatchTouchEvent(dn);dn.recycle();
-                  handler.postDelayed(new Runnable(){@Override public void run(){
-                      long t1=SystemClock.uptimeMillis();
+                  handler.postDelayed(()->{long t1=SystemClock.uptimeMillis();
                       MotionEvent up=MotionEvent.obtain(t0,t1,MotionEvent.ACTION_UP,rx,ry,0);
-                      webView.dispatchTouchEvent(up);up.recycle();}},80);
+                      webView.dispatchTouchEvent(up);up.recycle();},80);
               }
 
               private void scrollPage(int dy){
                   webView.scrollBy(0,dy);
-                  // Dispatch AXIS_VSCROLL tại vị trí cursor hiện tại (cursor đứng yên)
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
-                  int[]wloc=new int[2];webView.getLocationOnScreen(wloc);
-                  float rx=sx-wloc[0],ry=sy-wloc[1];
-                  long t=SystemClock.uptimeMillis();
+                  int[]wl=new int[2];webView.getLocationOnScreen(wl);
+                  float rx=sx-wl[0],ry=sy-wl[1];long t=SystemClock.uptimeMillis();
                   MotionEvent.PointerProperties[]pp=new MotionEvent.PointerProperties[1];
-                  pp[0]=new MotionEvent.PointerProperties();
-                  pp[0].id=0;pp[0].toolType=MotionEvent.TOOL_TYPE_MOUSE;
+                  pp[0]=new MotionEvent.PointerProperties();pp[0].id=0;pp[0].toolType=MotionEvent.TOOL_TYPE_MOUSE;
                   MotionEvent.PointerCoords[]pc=new MotionEvent.PointerCoords[1];
                   pc[0]=new MotionEvent.PointerCoords();pc[0].x=rx;pc[0].y=ry;
                   pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-SCROLL_AXIS:SCROLL_AXIS);
-                  MotionEvent ev=MotionEvent.obtain(t,t,MotionEvent.ACTION_SCROLL,1,pp,pc,
-                      0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
+                  MotionEvent ev=MotionEvent.obtain(t,t,MotionEvent.ACTION_SCROLL,1,pp,pc,0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
               }
 
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  showCursorAndResetTimer();
-                  if(voiceOverlay.getVisibility()==View.VISIBLE){
-                      if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
+                  wakeC();
+                  if(voiceOverlay.getVisibility()==View.VISIBLE){if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
                   int rep=e.getRepeatCount();
                   switch(key){
-                      case KeyEvent.KEYCODE_DPAD_UP:   moveCursor(0,-1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN: moveCursor(0,1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT: moveCursor(-1,0,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_UP:moveCursor(0,-1,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:moveCursor(0,1,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:moveCursor(-1,0,rep);return true;
                       case KeyEvent.KEYCODE_DPAD_RIGHT:moveCursor(1,0,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
-                          if(rep==0)clickAtCursor();return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:if(rep==0)clickAt();return true;
                       case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:case KeyEvent.KEYCODE_MEDIA_PLAY:
-                          webView.evaluateJavascript(
-                              "var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);
-                          return true;
+                          webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);return true;
                       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);return true;
                       case KeyEvent.KEYCODE_MEDIA_REWIND:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;
                       case KeyEvent.KEYCODE_MENU:showVoice();return true;
-                      case KeyEvent.KEYCODE_BACK:
-                          if(webView.canGoBack()){webView.goBack();return true;}
-                          finish();return true;
+                      case KeyEvent.KEYCODE_BACK:if(webView.canGoBack()){webView.goBack();return true;}finish();return true;
                   }
                   return super.onKeyDown(key,e);
               }
-
               @Override public boolean onKeyUp(int key,KeyEvent e){
-                  // Nhả phím → dừng edge scroll ngay
                   if(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
-                      ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT){
-                      stopEdgeScroll();
-                  }
+                      ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT)stopEdge();
                   return super.onKeyUp(key,e);
               }
-
               private void setupSpeech(){
                   if(!SpeechRecognizer.isRecognitionAvailable(this))return;
                   speechRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
@@ -1096,26 +1033,21 @@ jobs:
                       @Override public void onReadyForSpeech(Bundle p){voiceResult.setText("Dang nghe...");}
                       @Override public void onResults(Bundle r){
                           ArrayList<String>m=r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                          if(m!=null&&!m.isEmpty()){final String tt=m.get(0).toLowerCase();
+                          if(m!=null&&!m.isEmpty()){String tt=m.get(0).toLowerCase();
                           voiceResult.setText(m.get(0));
-                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},800);
-                          handleVoice(tt);}else hideVoice();}
+                          handler.postDelayed(()->hideVoice(),800);handleVoice(tt);}else hideVoice();}
                       @Override public void onError(int err){voiceResult.setText("Khong nghe duoc!");
-                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},1500);}
+                          handler.postDelayed(()->hideVoice(),1500);}
                       @Override public void onBeginningOfSpeech(){}@Override public void onRmsChanged(float v){}
                       @Override public void onBufferReceived(byte[]b){}@Override public void onEndOfSpeech(){}
                       @Override public void onPartialResults(Bundle b){}@Override public void onEvent(int t,Bundle b){}
                   });
               }
               private void handleVoice(String t){
-                  if(t.contains("phat")||t.contains("play"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
-                  else if(t.contains("dung")||t.contains("pause"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
-                  else if(t.contains("tua toi"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
-                  else if(t.contains("tua lui")||t.contains("quay lai"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
+                  if(t.contains("phat")||t.contains("play"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
+                  else if(t.contains("dung")||t.contains("pause"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
+                  else if(t.contains("tua toi"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
+                  else if(t.contains("tua lui")||t.contains("quay lai"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
                   else if(t.contains("trang chu")||t.contains("home"))finish();
                   else if(t.contains("cai dat"))startActivity(new Intent(this,SettingsActivity.class));
               }
@@ -1128,18 +1060,13 @@ jobs:
                   i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3);
                   speechRecognizer.startListening(i);
               }
-              private void hideVoice(){
-                  if(speechRecognizer!=null)speechRecognizer.stopListening();
-                  voiceOverlay.setVisibility(View.GONE);}
-              @Override protected void onPause(){
-                  super.onPause();webView.onPause();
+              private void hideVoice(){if(speechRecognizer!=null)speechRecognizer.stopListening();voiceOverlay.setVisibility(View.GONE);}
+              @Override protected void onPause(){super.onPause();webView.onPause();
                   savedCX=cursorView.getCX();savedCY=cursorView.getCY();
-                  stopEdgeScroll();handler.removeCallbacksAndMessages(null);}
-              @Override protected void onResume(){super.onResume();webView.onResume();showCursorAndResetTimer();}
-              @Override protected void onDestroy(){
-                  handler.removeCallbacksAndMessages(null);
-                  if(speechRecognizer!=null)speechRecognizer.destroy();
-                  webView.destroy();super.onDestroy();}
+                  stopEdge();handler.removeCallbacksAndMessages(null);}
+              @Override protected void onResume(){super.onResume();webView.onResume();wakeC();}
+              @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);
+                  if(speechRecognizer!=null)speechRecognizer.destroy();webView.destroy();super.onDestroy();}
           }
           JEOF
 
