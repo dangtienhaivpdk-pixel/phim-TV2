@@ -8,10 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up JDK 17
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
 
       - name: Install Android SDK
@@ -20,12 +20,13 @@ jobs:
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
           unzip -q cmdtools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
-          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-28" "build-tools;28.0.3"
+          export PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin
+          yes | sdkmanager --licenses > /dev/null 2>&1
+          sdkmanager "platforms;android-28" "build-tools;28.0.3"
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "$HOME/android-sdk/build-tools/28.0.3" >> $GITHUB_PATH
 
-      - name: Create Project Folders
+      - name: Create Project Structure
         run: mkdir -p src/com/allinone/app res/layout res/values res/drawable obj bin
 
       - name: Generate Pro Assets (Python)
@@ -67,9 +68,8 @@ jobs:
           XMLEOF
           echo '<resources><string name="app_name">ALL IN ONE Pro</string></resources>' > res/values/strings.xml
 
-      - name: Create Java Source (Cursor & Logic)
+      - name: Create Java Source
         run: |
-          # --- CursorView: Vẽ con trỏ chuột chuyên nghiệp ---
           cat > src/com/allinone/app/CursorView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -85,15 +85,13 @@ jobs:
               }
               @Override protected void onDraw(Canvas c){
                   c.save(); c.translate(x,y);
-                  p.setColor(0x66000000); c.drawPath(m,p); // Shadow
+                  p.setColor(0x66000000); c.drawPath(m,p);
                   c.translate(-2,-2); p.setColor(Color.WHITE); p.setStyle(Paint.Style.FILL); c.drawPath(m,p);
                   p.setColor(Color.BLACK); p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(3); c.drawPath(m,p);
                   c.restore();
               }
           }
           JEOF
-
-          # --- MainActivity: Gia tốc chuột & Tương tác ---
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.app.Activity;
@@ -137,11 +135,16 @@ jobs:
 
       - name: Build and Sign APK
         run: |
+          # Dùng aapt tạo R.java
           aapt package -f -m -J src -M AndroidManifest.xml -S res -I $ANDROID_HOME/platforms/android-28/android.jar
-          javac -d obj -cp $ANDROID_HOME/platforms/android-28/android.jar $(find src -name "*.java")
+          # Biên dịch Java với mục tiêu Java 8 để d8 không bị lỗi
+          javac -source 1.8 -target 1.8 -d obj -cp $ANDROID_HOME/platforms/android-28/android.jar $(find src -name "*.java")
+          # Convert class sang dex
           d8 --output bin/ --lib $ANDROID_HOME/platforms/android-28/android.jar $(find obj -name "*.class")
+          # Đóng gói APK
           aapt package -f -M AndroidManifest.xml -S res -I $ANDROID_HOME/platforms/android-28/android.jar -F bin/allinone-unsigned.apk
           cd bin && aapt add allinone-unsigned.apk classes.dex && cd ..
+          # Ký APK
           keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -storepass android -keypass android
           apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out bin/allinone-pro.apk bin/allinone-unsigned.apk
 
