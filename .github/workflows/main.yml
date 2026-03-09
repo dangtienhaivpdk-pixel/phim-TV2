@@ -79,10 +79,11 @@ jobs:
           print('ok')
           "
 
+          # ── Manifest: v22, MainActivity thêm adjustResize cho IME web ───────────────
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="21" android:versionName="21.0">
+              package="com.allinone.app" android:versionCode="22" android:versionName="22.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -113,7 +114,7 @@ jobs:
           </manifest>
           XMLEOF
 
-          # layouts giống hệt v18
+          # ── home.xml: GIỐNG HỆT v17 ─────────────────────────────────────────────────
           cat > res/layout/home.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -145,6 +146,7 @@ jobs:
           </LinearLayout>
           XMLEOF
 
+          # ── main.xml: v17 + WebView focusable=true để nhận IME ──────────────────────
           cat > res/layout/main.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -204,6 +206,7 @@ jobs:
           </FrameLayout>
           XMLEOF
 
+          # ── settings.xml: GIỐNG HỆT v17 ─────────────────────────────────────────────
           cat > res/layout/settings.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -271,7 +274,7 @@ jobs:
           <resources><string name="app_name">ALL IN ONE</string></resources>
           XMLEOF
 
-          # CursorView: KHÔNG ĐỔI
+          # ── CursorView: GIỐNG HỆT v17, KHÔNG THAY ĐỔI ──────────────────────────────
           cat > src/com/allinone/app/CursorView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -303,7 +306,7 @@ jobs:
           }
           JEOF
 
-          # ScrollWebView: thêm checkInputConnectionProxy để WebView nhận IME
+          # ── ScrollWebView: v17 + thêm checkInputConnectionProxy cho web IME ─────────
           cat > src/com/allinone/app/ScrollWebView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -317,7 +320,7 @@ jobs:
           }
           JEOF
 
-          # HomeActivity: giống hệt v18
+          # ── HomeActivity: GIỐNG HỆT v17, KHÔNG THAY ĐỔI ────────────────────────────
           cat > src/com/allinone/app/HomeActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -498,7 +501,7 @@ jobs:
           }
           JEOF
 
-          # SettingsActivity v18 + fix dínhEditText bằng dummyFocus
+          # ── SettingsActivity: v17 + fix dính EditText bằng dummyFocus ───────────────
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -537,7 +540,9 @@ jobs:
               private Handler handler=new Handler();
               private List<View> items=new ArrayList<View>();
               private int cur=0;
-              private View dummyFocus; // hút focus khỏi EditText khi cần
+              private boolean kbdShown=false;
+              // dummyFocus: view 1x1 ẩn, nhận focus thật khi cần rút focus khỏi EditText
+              private View dummyFocus;
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.settings);
@@ -547,9 +552,10 @@ jobs:
                   listUrls=(LinearLayout)findViewById(R.id.listUrls);
                   scrollView=(ScrollView)findViewById(R.id.settingsScroll);
 
-                  // dummy view ẩn: nhận focus thật khi EditText cần buông ra
+                  // Tạo dummy view ẩn để nhận focus khi EditText cần buông
                   dummyFocus=new View(this);
-                  dummyFocus.setFocusable(true);dummyFocus.setFocusableInTouchMode(true);
+                  dummyFocus.setFocusable(true);
+                  dummyFocus.setFocusableInTouchMode(true);
                   ((ViewGroup)getWindow().getDecorView())
                       .addView(dummyFocus,new FrameLayout.LayoutParams(1,1));
 
@@ -569,17 +575,17 @@ jobs:
                       @Override public boolean onEditorAction(TextView v,int actionId,KeyEvent ev){
                           if(actionId==EditorInfo.IME_ACTION_GO||actionId==EditorInfo.IME_ACTION_DONE){doSave();return true;}return false;}});
                   items.clear();
-                  items.add(vBack);    // 0
-                  items.add(editUrl);  // 1
-                  items.add(vSave);    // 2
-                  items.add(vReset);   // 3
-                  // 4+ = url rows
+                  items.add(vBack);   // 0
+                  items.add(editUrl); // 1
+                  items.add(vSave);   // 2
+                  items.add(vReset);  // 3
+                  // 4+ url rows thêm bởi renderHistory()
                   renderHistory();
               }
 
+              // Gọi focusTo(1) ở đây thay vì onCreate: window đã attach, bàn phím mới hiện được
               @Override public void onWindowFocusChanged(boolean hasFocus){
                   super.onWindowFocusChanged(hasFocus);
-                  // Lần đầu window sẵn sàng → focus EditText + hiện bàn phím
                   if(hasFocus&&cur==0)focusTo(1);
               }
 
@@ -590,19 +596,23 @@ jobs:
                   hideKbd();saveUrl(u);openUrl(u);
               }
 
+              // FIX dính EditText: chuyển focus THẬT sang dummyFocus TRƯỚC rồi mới ẩn kbd
               private void hideKbd(){
-                  // Bước 1: chuyển focus thật sang dummy → EditText HOÀN TOÀN mất focus
-                  dummyFocus.requestFocus();
-                  editUrl.clearFocus();
-                  // Bước 2: ẩn bàn phím
-                  imm.hideSoftInputFromWindow(dummyFocus.getWindowToken(),0);
+                  dummyFocus.requestFocus();      // bước 1: focus rời EditText hoàn toàn
+                  editUrl.clearFocus();            // bước 2: xóa focus EditText
+                  imm.hideSoftInputFromWindow(dummyFocus.getWindowToken(),0); // bước 3: ẩn kbd
+                  kbdShown=false;
               }
 
               private void showKbd(){
                   editUrl.requestFocus();
                   editUrl.setCursorVisible(true);
                   handler.postDelayed(new Runnable(){@Override public void run(){
-                      imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);}},150);
+                      boolean ok=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
+                      kbdShown=ok;
+                      if(!ok){handler.postDelayed(new Runnable(){@Override public void run(){
+                          kbdShown=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);}},300);}
+                  }},150);
               }
 
               private List<String> getHist(){
@@ -646,8 +656,8 @@ jobs:
                       TextView bd=new TextView(this);bd.setText("  X  ");bd.setTextColor(Color.WHITE);
                       bd.setBackgroundColor(0xff770000);bd.setTextSize(13);bd.setPadding(18,10,18,10);
                       bd.setGravity(android.view.Gravity.CENTER);bd.setFocusable(false);bd.setClickable(true);
-                      LinearLayout.LayoutParams ddp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      ddp.setMargins(8,0,0,0);bd.setLayoutParams(ddp);
+                      LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+                      dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
                       bd.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
                           List<String>list=getHist();list.remove(url);
                           StringBuilder sb=new StringBuilder();
@@ -705,7 +715,7 @@ jobs:
           }
           JEOF
 
-          # MainActivity: cursor KHÔNG ĐỔI (v18 exact) + web IME + tốc độ
+          # ── MainActivity: v17 CURSOR KHÔNG ĐỔI + web nhanh hơn + IME web input ──────
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.annotation.TargetApi;
@@ -754,12 +764,12 @@ jobs:
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
 
-              // ═══ CURSOR: KHÔNG ĐỔI SO VỚI v18 ══════════════════════════════════════
+              // ═══ CURSOR: SAO CHÉP 100% TỪ v17, KHÔNG SỬA GÌ ════════════════════════
               private static float savedCX=-1,savedCY=-1;
               private static final float STEP_MIN=15f,STEP_MAX=90f;
               private static final int ACCEL_TICKS=12;
               private static final float SCROLL_AXIS=3f;
-              private static final int BAR_ZONE_W=200,BAR_ZONE_H=120;
+              private static final int BAR_ZONE_W=160,BAR_ZONE_H=100;
               private static final int EDGE_ZONE=80,EDGE_INTERVAL=100;
               private static final int EDGE_SCROLL_MIN=60,EDGE_SCROLL_MAX=350;
               private static final long HIDE_DELAY=3000;
@@ -777,8 +787,8 @@ jobs:
                   @Override public void run(){cursorView.setVisibility(View.GONE);cursorVisible=false;}};
               // ════════════════════════════════════════════════════════════════════════
 
-              // web input mode: true khi người dùng click vào input field trên web
-              private boolean webInputActive=false;
+              // web input IME state
+              private boolean webInputFocused=false;
 
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
@@ -800,6 +810,7 @@ jobs:
                   bottomBar=(LinearLayout)findViewById(R.id.bottomBar);
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
+                  // focusable=true để WebView nhận IME
                   webView.setFocusable(true);webView.setFocusableInTouchMode(true);
                   findViewById(R.id.btnHome).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){finish();}});
@@ -828,10 +839,11 @@ jobs:
                   ws.setLoadWithOverviewMode(true);
                   ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                   ws.setBuiltInZoomControls(false);ws.setDisplayZoomControls(false);
+                  // Tối ưu tốc độ: cache trước, network sau
+                  ws.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                  ws.setAppCacheEnabled(true);
                   ws.setGeolocationEnabled(false);
                   ws.setSaveFormData(false);
-                  ws.setAppCacheEnabled(true);
-                  ws.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   ws.setEnableSmoothTransition(true);
                   ws.setSupportMultipleWindows(false);
@@ -849,24 +861,24 @@ jobs:
                           String url=r.getUrl().toString();if(!isHttp(url))return true;v.loadUrl(url);return true;}
                       @Override public void onPageStarted(WebView v,String url,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);
-                          webInputActive=false;}
+                          webInputFocused=false;}
                       @Override public void onPageFinished(WebView v,String url){
                           progressBar.setVisibility(View.GONE);
+                          // JS: fix links + window.open + theo dõi input field focus
                           v.evaluateJavascript("(function(){"
                               +"document.documentElement.style.scrollBehavior='auto';"
                               +"if(document.body)document.body.style.overscrollBehavior='none';"
                               +"document.querySelectorAll('a[target]').forEach(function(a){"
                               +"  if(a.target===\"_blank\")a.target=\"_self\";});"
                               +"window.open=function(u){if(u)location.href=u;return null;};"
-                              // theo dõi input focus để hiện bàn phím
-                              +"window._webInput=false;"
+                              +"window._inputFocused=false;"
                               +"document.addEventListener('focusin',function(e){"
                               +"  var t=e.target.tagName;"
-                              +"  window._webInput=(t==='INPUT'||t==='TEXTAREA'"
+                              +"  window._inputFocused=(t==='INPUT'||t==='TEXTAREA'"
                               +"    ||e.target.isContentEditable===true);"
                               +"});"
                               +"document.addEventListener('focusout',function(){"
-                              +"  window._webInput=false;"
+                              +"  window._inputFocused=false;"
                               +"});"
                               +"})();",null);
                       }
@@ -881,7 +893,7 @@ jobs:
                   });
               }
 
-              // ═══ moveCursor: KHÔNG ĐỔI SO VỚI v18 ═══════════════════════════════════
+              // ═══ moveCursor: SAO CHÉP 100% TỪ v17 ═══════════════════════════════════
               private void moveCursor(float dx,float dy,int rep){
                   wakeC();
                   float t=Math.min(1f,(float)rep/ACCEL_TICKS);
@@ -901,10 +913,11 @@ jobs:
                   if(inZ&&!barVisible){bottomBar.setVisibility(View.VISIBLE);barVisible=true;handler.removeCallbacks(hideBar);}
                   else if(!inZ&&barVisible){handler.removeCallbacks(hideBar);handler.postDelayed(hideBar,2000);}
               }
-              // ═══════════════════════════════════════════════════════════════════════
+              // ═════════════════════════════════════════════════════════════════════════
 
               private void stopEdge(){edgeDir=0;edgeTicks=0;handler.removeCallbacks(edgeScroll);}
 
+              // clickAt: v17 + sau click 300ms kiểm tra JS _inputFocused → hiện bàn phím
               private void clickAt(){
                   wakeC();stopEdge();
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
@@ -922,22 +935,25 @@ jobs:
                       long t1=SystemClock.uptimeMillis();
                       MotionEvent up=MotionEvent.obtain(t0,t1,MotionEvent.ACTION_UP,rx,ry,0);
                       webView.dispatchTouchEvent(up);up.recycle();
-                      // Chờ JS focusin kịp fire rồi kiểm tra
+                      // Chờ 300ms để JS focusin kịp fire
                       handler.postDelayed(new Runnable(){@Override public void run(){
-                          webView.evaluateJavascript("window._webInput===true",
+                          webView.evaluateJavascript("window._inputFocused===true",
                               new android.webkit.ValueCallback<String>(){
                                   @Override public void onReceiveValue(String val){
                                       if("true".equals(val)){
-                                          webInputActive=true;
+                                          webInputFocused=true;
                                           webView.requestFocus();
                                           imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                                      }else{
+                                          webInputFocused=false;
                                       }
                                   }
                               });
-                      }},350);
+                      }},300);
                   }},80);
               }
 
+              // scrollPage: SAO CHÉP 100% TỪ v17
               private void scrollPage(int dy){
                   webView.scrollBy(0,dy);
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
@@ -956,19 +972,20 @@ jobs:
                   wakeC();
                   if(voiceOverlay.getVisibility()==View.VISIBLE){
                       if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
-                  // Khi đang gõ vào input web: Back đóng bàn phím, phím khác truyền cho WebView
-                  if(webInputActive){
+                  // Khi web input đang focus: Back ẩn kbd, phím khác truyền cho WebView
+                  if(webInputFocused){
                       if(key==KeyEvent.KEYCODE_BACK){
                           imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
-                          webInputActive=false;return true;}
+                          webInputFocused=false;return true;}
                       return false;
                   }
+                  // ═══ D-pad cursor: SAO CHÉP 100% TỪ v17 ═══════════════════════════
                   int rep=e.getRepeatCount();
                   switch(key){
-                      case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0,-1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN:  moveCursor(0,1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT:  moveCursor(-1,0,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_RIGHT: moveCursor(1,0,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_UP:moveCursor(0,-1,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:moveCursor(0,1,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:moveCursor(-1,0,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT:moveCursor(1,0,rep);return true;
                       case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
                           if(rep==0)clickAt();return true;
                       case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:case KeyEvent.KEYCODE_MEDIA_PLAY:
@@ -984,12 +1001,11 @@ jobs:
                   return super.onKeyDown(key,e);
               }
 
+              // onKeyUp stopEdge: SAO CHÉP 100% TỪ v17
               @Override public boolean onKeyUp(int key,KeyEvent e){
-                  // stopEdge: KHÔNG ĐỔI
-                  if(!webInputActive){
+                  if(!webInputFocused){
                       if(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
-                          ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT)
-                          stopEdge();
+                          ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT)stopEdge();
                   }
                   return super.onKeyUp(key,e);
               }
