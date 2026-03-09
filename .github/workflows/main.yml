@@ -1,4 +1,4 @@
-name: Build ALL IN ONE Pro (Gradle Version)
+name: Build ALL IN ONE Final
 on:
   push:
     branches: [ main ]
@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -16,27 +16,28 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
+          # Tắt cache để tránh lỗi "No file matched" như hình bạn gửi
+          cache: '' 
 
-      - name: Initialize Android Project
+      - name: Create Android Project Structure
         run: |
-          # Tạo cấu trúc thư mục chuẩn Gradle
           mkdir -p app/src/main/java/com/allinone/app
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable-nodpi
 
-          # Tạo file build.gradle (Trái tim của dự án)
+          # Root build.gradle
           cat > build.gradle << 'EOF'
           buildscript {
               repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+              dependencies { classpath "com.android.tools.build:gradle:8.2.2" }
           }
           allprojects {
               repositories { google(); mavenCentral() }
           }
           EOF
 
+          # App build.gradle
           cat > app/build.gradle << 'EOF'
           plugins { id 'com.android.application' }
           android {
@@ -61,13 +62,15 @@ jobs:
 
           echo "include ':app'" > settings.gradle
 
-      - name: Create Manifest & Resources
+      - name: Create App Source & UI
         run: |
+          # AndroidManifest hỗ trợ Google TV
           cat > app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
-              <application android:label="ALL IN ONE Pro" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:hardwareAccelerated="true">
+              <application android:label="ALL IN ONE Pro" android:hardwareAccelerated="true"
+                  android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -78,24 +81,10 @@ jobs:
               </application>
           </manifest>
           EOF
+          
           echo '<resources><string name="app_name">ALL IN ONE Pro</string></resources>' > app/src/main/res/values/strings.xml
 
-      - name: Generate Assets (Python)
-        run: |
-          python3 -c "
-          import struct,zlib
-          def chunk(n,d): return struct.pack('>I',len(d))+n+d+struct.pack('>I',zlib.crc32(n+d)&0xffffffff)
-          def make_png(w,h,gp):
-              raw=b''
-              for y in range(h):
-                  raw+=b'\x00'
-                  for x in range(w): raw+=bytes(gp(x,y))
-              return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>II',w,h)+bytes([8,6,0,0,0]))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
-          with open('app/src/main/res/drawable-nodpi/ic_launcher.png','wb') as f: f.write(make_png(96,96,lambda x,y: [229,9,20,255] if 40**2<((x-48)**2+(y-48)**2)<46**2 else ([30,30,45,255] if ((x-48)**2+(y-48)**2)<=40**2 else [0,0,0,0])))
-          "
-
-      - name: Create Java Source (Cursor & Web)
-        run: |
+          # Mã nguồn Java: WebView + Con trỏ chuột ảo (Cursor)
           cat > app/src/main/java/com/allinone/app/CursorView.java << 'EOF'
           package com.allinone.app;
           import android.content.Context;
@@ -129,7 +118,7 @@ jobs:
 
           public class MainActivity extends Activity {
               private WebView w; private CursorView cv;
-              private float step = 10, maxStep = 70;
+              private float step = 12, maxStep = 65;
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
                   FrameLayout l = new FrameLayout(this);
@@ -143,16 +132,20 @@ jobs:
                   setContentView(l);
               }
               @Override public boolean onKeyDown(int k, KeyEvent e){
-                  float s = (e.getRepeatCount() > 0) ? Math.min(step + (e.getRepeatCount()*3), maxStep) : step;
-                  if(k==KeyEvent.KEYCODE_DPAD_UP) cv.y -= s;
-                  else if(k==KeyEvent.KEYCODE_DPAD_DOWN) cv.y += s;
-                  else if(k==KeyEvent.KEYCODE_DPAD_LEFT) cv.x -= s;
-                  else if(k==KeyEvent.KEYCODE_DPAD_RIGHT) cv.x += s;
-                  else if(k==KeyEvent.KEYCODE_DPAD_CENTER || k==KeyEvent.KEYCODE_ENTER){
-                      long t = SystemClock.uptimeMillis();
-                      w.dispatchTouchEvent(MotionEvent.obtain(t,t,MotionEvent.ACTION_DOWN,cv.x,cv.y,0));
-                      w.dispatchTouchEvent(MotionEvent.obtain(t,t+50,MotionEvent.ACTION_UP,cv.x,cv.y,0));
-                  } else return super.onKeyDown(k,e);
+                  float s = (e.getRepeatCount() > 0) ? Math.min(step + (e.getRepeatCount()*4), maxStep) : step;
+                  switch(k){
+                      case KeyEvent.KEYCODE_DPAD_UP: cv.y -= s; break;
+                      case KeyEvent.KEYCODE_DPAD_DOWN: cv.y += s; break;
+                      case KeyEvent.KEYCODE_DPAD_LEFT: cv.x -= s; break;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT: cv.x += s; break;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          long t = SystemClock.uptimeMillis();
+                          w.dispatchTouchEvent(MotionEvent.obtain(t,t,MotionEvent.ACTION_DOWN,cv.x,cv.y,0));
+                          w.dispatchTouchEvent(MotionEvent.obtain(t,t+50,MotionEvent.ACTION_UP,cv.x,cv.y,0));
+                          break;
+                      default: return super.onKeyDown(k,e);
+                  }
                   cv.x = Math.max(0, Math.min(cv.x, getResources().getDisplayMetrics().widthPixels));
                   cv.y = Math.max(0, Math.min(cv.y, getResources().getDisplayMetrics().heightPixels));
                   cv.invalidate(); return true;
@@ -160,13 +153,13 @@ jobs:
           }
           EOF
 
-      - name: Build with Gradle
+      - name: Build APK with Gradle Wrapper
         run: |
-          chmod +x /usr/share/gradle/bin/gradle || true
-          gradle build
+          # Dùng gradle cài sẵn trên Ubuntu runner để build
+          gradle assembleRelease
 
-      - name: Upload APK
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: AllInOne-Pro-Gradle
+          name: AllInOne-Pro-Final
           path: app/build/outputs/apk/release/app-release-unsigned.apk
