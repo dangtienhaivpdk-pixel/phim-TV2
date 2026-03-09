@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="22" android:versionName="22.0">
+              package="com.allinone.app" android:versionCode="23" android:versionName="23.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -357,7 +357,6 @@ jobs:
               private List<LinearLayout> cardWrappers=new ArrayList<LinearLayout>();
               private List<String> urls=new ArrayList<String>();
               private int zone=1,gridIdx=0;
-
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.home);
                   getWindow().getDecorView().setFocusable(false);
@@ -377,13 +376,10 @@ jobs:
                       @Override public void onClick(View v){
                           startActivity(new Intent(HomeActivity.this,SettingsActivity.class));}});
               }
-
               @Override protected void onResume(){super.onResume();renderLinks();}
-
               private List<String> hist(){
                   return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
               }
-
               private void renderLinks(){
                   grid.removeAllViews();cardWrappers.clear();urls.clear();
                   zone=1;gridIdx=0;
@@ -453,12 +449,10 @@ jobs:
                   }
                   if(!cardWrappers.isEmpty())highlightCard(0,true);
               }
-
               private void openUrl(String url){
                   prefs.edit().putString(KEY_URL,url).apply();
                   startActivity(new Intent(HomeActivity.this,MainActivity.class).putExtra("url",url));
               }
-
               private void highlightCard(int idx,boolean on){
                   if(idx<0||idx>=cardWrappers.size())return;
                   LinearLayout wrap=cardWrappers.get(idx);
@@ -472,7 +466,6 @@ jobs:
                           wrap.getChildAt(0).setBackgroundColor(url.equals(act)?CLR_CARD_ACTIVE:CLR_CARD_NORM);
                   }
               }
-
               private void scrollToCard(int idx){
                   if(idx<0||idx>=cardWrappers.size())return;
                   final LinearLayout w=cardWrappers.get(idx);
@@ -480,7 +473,6 @@ jobs:
                       Rect r=new Rect();w.getDrawingRect(r);
                       scrollView.requestChildRectangleOnScreen(grid,r,false);}});
               }
-
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   int total=cardWrappers.size();
                   if(zone==0){
@@ -537,10 +529,11 @@ jobs:
           }
           JEOF
 
-          # ── SettingsActivity v19: fix focus dính + D-pad đúng ──────────────────────
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
+          import android.app.AlertDialog;
           import android.content.Context;
+          import android.content.DialogInterface;
           import android.content.Intent;
           import android.content.SharedPreferences;
           import android.graphics.Color;
@@ -548,6 +541,7 @@ jobs:
           import android.os.Bundle;
           import android.os.Handler;
           import android.app.Activity;
+          import android.text.InputType;
           import android.view.KeyEvent;
           import android.view.View;
           import android.view.ViewGroup;
@@ -565,8 +559,7 @@ jobs:
                   DEF="https://pointnorth.io",SEP="|||";
               private static final int CLR_FOCUS=0xffE50914,CLR_BACK=0xff333355;
               private static final int CLR_SAVE=0xff9900cc,CLR_RESET=0xff1a1a2e;
-              private static final int CLR_EDIT=0xff222233,CLR_ROW_N=0xff111122,CLR_ROW_A=0xff1e1e35;
-
+              private static final int CLR_EDIT=0xff222244,CLR_ROW_N=0xff111122,CLR_ROW_A=0xff1e1e35;
               private EditText editUrl;
               private LinearLayout listUrls;
               private ScrollView scrollView;
@@ -577,7 +570,6 @@ jobs:
               private List<View> items=new ArrayList<View>();
               private int cur=1;
               private boolean windowReady=false;
-
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.settings);
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
@@ -591,7 +583,7 @@ jobs:
                   vBack.setBackgroundColor(CLR_BACK);
                   vSave.setBackgroundColor(CLR_SAVE);
                   vReset.setBackgroundColor(CLR_RESET);
-                  editUrl.setBackgroundColor(CLR_FOCUS);
+                  editUrl.setBackgroundColor(CLR_EDIT);
                   editUrl.setText(prefs.getString(KEY_URL,DEF));
                   editUrl.setSelection(editUrl.getText().length());
                   vBack.setOnClickListener(new View.OnClickListener(){
@@ -607,42 +599,53 @@ jobs:
                           if(actionId==EditorInfo.IME_ACTION_GO||actionId==EditorInfo.IME_ACTION_DONE){
                               doSave();return true;}return false;}});
                   items.clear();
-                  items.add(vBack);   // 0
-                  items.add(editUrl); // 1
-                  items.add(vSave);   // 2
-                  items.add(vReset);  // 3
+                  items.add(vBack);
+                  items.add(editUrl);
+                  items.add(vSave);
+                  items.add(vReset);
                   renderHistory();
               }
-
               @Override public void onWindowFocusChanged(boolean hasFocus){
                   super.onWindowFocusChanged(hasFocus);
-                  if(hasFocus&&!windowReady){
-                      windowReady=true;
-                      showKbdDelayed();
-                  }
+                  if(hasFocus&&!windowReady){windowReady=true;focusTo(1);}
               }
-
               private void doSave(){
                   String u=editUrl.getText().toString().trim();
                   if(u.isEmpty())return;
                   if(!u.startsWith("http"))u="https://"+u;
                   hideKbd();saveUrl(u);openUrl(u);
               }
-
+              private void showKbd(){
+                  editUrl.requestFocus();
+                  handler.postDelayed(new Runnable(){@Override public void run(){
+                      imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
+                  }},100);
+              }
               private void hideKbd(){
                   imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);
               }
-
-              private void showKbdDelayed(){
-                  editUrl.requestFocus();
-                  handler.postDelayed(new Runnable(){@Override public void run(){
-                      boolean ok=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
-                      if(!ok){handler.postDelayed(new Runnable(){@Override public void run(){
-                          imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
-                      }},400);}
-                  }},150);
+              // Nếu TV không có soft keyboard, mở AlertDialog để nhập URL
+              private void openInputDialog(){
+                  final EditText input=new EditText(this);
+                  input.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
+                  input.setText(editUrl.getText());
+                  input.setSelection(input.getText().length());
+                  new AlertDialog.Builder(this)
+                      .setTitle("Nhap dia chi web")
+                      .setView(input)
+                      .setPositiveButton("Mo", new DialogInterface.OnClickListener(){
+                          @Override public void onClick(DialogInterface d,int w){
+                              String u=input.getText().toString().trim();
+                              if(!u.isEmpty()){
+                                  if(!u.startsWith("http"))u="https://"+u;
+                                  editUrl.setText(u);
+                                  saveUrl(u);openUrl(u);
+                              }
+                          }
+                      })
+                      .setNegativeButton("Huy",null)
+                      .show();
               }
-
               private List<String> getHist(){
                   return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
               }
@@ -665,7 +668,6 @@ jobs:
                   startActivity(new Intent(this,MainActivity.class).putExtra("url",url)
                       .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish();
               }
-
               private void renderHistory(){
                   listUrls.removeAllViews();
                   while(items.size()>4)items.remove(4);
@@ -681,7 +683,7 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
-                      tv.setText((url.equals(active)?"▶  ":"      ")+url);
+                      tv.setText((url.equals(active)?"\u25b6  ":"   ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
                       tv.setTextSize(15);tv.setFocusable(false);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
@@ -719,7 +721,6 @@ jobs:
                   }
                   applyHighlight(cur);
               }
-
               private int normalBg(int idx){
                   if(idx==0)return CLR_BACK;
                   if(idx==1)return CLR_EDIT;
@@ -732,20 +733,17 @@ jobs:
                   }
                   return CLR_ROW_N;
               }
-
               private void applyHighlight(int idx){
                   if(idx>=0&&idx<items.size())
                       items.get(idx).setBackgroundColor(CLR_FOCUS);
               }
-
               private void focusTo(int idx){
                   if(cur>=0&&cur<items.size())
                       items.get(cur).setBackgroundColor(normalBg(cur));
                   if(cur==1&&idx!=1)hideKbd();
                   cur=Math.max(0,Math.min(idx,items.size()-1));
-                  if(cur>=items.size())return;
                   items.get(cur).setBackgroundColor(CLR_FOCUS);
-                  if(cur==1)showKbdDelayed();
+                  if(cur==1)showKbd();
                   if(cur>=4){
                       final View v=items.get(cur);
                       scrollView.post(new Runnable(){@Override public void run(){
@@ -753,11 +751,7 @@ jobs:
                           scrollView.requestChildRectangleOnScreen(listUrls,r,false);}});
                   }
               }
-
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  // Khi EditText đang được focus (cur==1):
-                  // - D-pad UP/DOWN/BACK xử lý đặc biệt
-                  // - các phím khác: dùng dispatchKeyEvent để EditText nhận trực tiếp
                   if(cur==1){
                       switch(key){
                           case KeyEvent.KEYCODE_DPAD_UP:
@@ -766,14 +760,22 @@ jobs:
                               focusTo(2);return true;
                           case KeyEvent.KEYCODE_BACK:
                               hideKbd();focusTo(0);return true;
+                          case KeyEvent.KEYCODE_DPAD_CENTER:
+                          case KeyEvent.KEYCODE_ENTER:
+                              // Enter trên EditText: thử showSoftInput, nếu TV thì mở dialog
+                              if(e.getRepeatCount()==0){
+                                  boolean shown=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
+                                  if(!shown)openInputDialog();
+                              }
+                              return true;
                           default:
-                              // Cho EditText xử lý ký tự
-                              return editUrl.dispatchKeyEvent(new KeyEvent(e.getDownTime(),e.getEventTime(),KeyEvent.ACTION_DOWN,key,e.getRepeatCount(),e.getMetaState()));
+                              return editUrl.dispatchKeyEvent(new KeyEvent(
+                                  e.getDownTime(),e.getEventTime(),
+                                  KeyEvent.ACTION_DOWN,key,e.getRepeatCount(),e.getMetaState()));
                       }
                   }
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:
-                          // cur==0 (Back) → không làm gì (đã ở đầu)
                           if(cur>0)focusTo(cur-1);
                           return true;
                       case KeyEvent.KEYCODE_DPAD_DOWN:
@@ -789,27 +791,28 @@ jobs:
                   }
                   return super.onKeyDown(key,e);
               }
-
               @Override public boolean onKeyUp(int key,KeyEvent e){
                   if(cur==1){
                       switch(key){
                           case KeyEvent.KEYCODE_DPAD_UP:
                           case KeyEvent.KEYCODE_DPAD_DOWN:
                           case KeyEvent.KEYCODE_BACK:
+                          case KeyEvent.KEYCODE_DPAD_CENTER:
+                          case KeyEvent.KEYCODE_ENTER:
                               return true;
                           default:
-                              return editUrl.dispatchKeyEvent(new KeyEvent(e.getDownTime(),e.getEventTime(),KeyEvent.ACTION_UP,key,e.getRepeatCount(),e.getMetaState()));
+                              return editUrl.dispatchKeyEvent(new KeyEvent(
+                                  e.getDownTime(),e.getEventTime(),
+                                  KeyEvent.ACTION_UP,key,e.getRepeatCount(),e.getMetaState()));
                       }
                   }
                   return super.onKeyUp(key,e);
               }
-
               @Override protected void onDestroy(){
                   handler.removeCallbacksAndMessages(null);super.onDestroy();}
           }
           JEOF
 
-          # ── MainActivity v19: WebView nhanh hơn + bàn phím khi click input ─────────
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.annotation.TargetApi;
@@ -862,7 +865,7 @@ jobs:
               private static final int ACCEL_TICKS=12;
               private static final float SCROLL_AXIS=3f;
               private static final int BAR_ZONE_W=160,BAR_ZONE_H=100;
-              private static final int EDGE_ZONE=80,EDGE_INTERVAL=100;
+              private static final int EDGE_INTERVAL=100;
               private static final int EDGE_SCROLL_MIN=60,EDGE_SCROLL_MAX=350;
               private static final long HIDE_DELAY=3000;
               private boolean barVisible=false,cursorVisible=true;
@@ -877,7 +880,6 @@ jobs:
                   @Override public void run(){bottomBar.setVisibility(View.GONE);barVisible=false;}};
               private Runnable hideCursor=new Runnable(){
                   @Override public void run(){cursorView.setVisibility(View.GONE);cursorVisible=false;}};
-
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -898,7 +900,6 @@ jobs:
                   bottomBar=(LinearLayout)findViewById(R.id.bottomBar);
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
-                  // WebView không nhận focus hệ thống (tránh mất cursor)
                   webView.setFocusable(false);
                   webView.setFocusableInTouchMode(false);
                   findViewById(R.id.btnHome).setOnClickListener(new View.OnClickListener(){
@@ -911,13 +912,11 @@ jobs:
                           startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
                   setupSpeech();setupWebView();webView.loadUrl(currentUrl);
               }
-
               private void wakeC(){
                   if(!cursorVisible){cursorView.setVisibility(View.VISIBLE);cursorVisible=true;}
                   handler.removeCallbacks(hideCursor);handler.postDelayed(hideCursor,HIDE_DELAY);
               }
               private boolean isHttp(String u){return u!=null&&(u.startsWith("http://")||u.startsWith("https://"));}
-
               private void setupWebView(){
                   WebSettings ws=webView.getSettings();
                   ws.setJavaScriptEnabled(true);
@@ -930,17 +929,10 @@ jobs:
                   ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                   ws.setBuiltInZoomControls(false);
                   ws.setDisplayZoomControls(false);
-                  // Cache tích cực hơn: dùng cache khi có, chỉ load mạng khi hết hạn
-                  ws.setAppCacheEnabled(true);
                   ws.setCacheMode(WebSettings.LOAD_DEFAULT);
-                  ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   ws.setSupportMultipleWindows(false);
                   ws.setAllowFileAccess(false);
-                  ws.setBlockNetworkImage(false);
-                  // Tắt Safe Browsing để tăng tốc (API 26+)
-                  if(android.os.Build.VERSION.SDK_INT>=26){
-                      ws.setSafeBrowsingEnabled(false);
-                  }
+                  if(Build.VERSION.SDK_INT>=26){ws.setSafeBrowsingEnabled(false);}
                   ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.addJavascriptInterface(new KbdBridge(),"AIO");
@@ -948,18 +940,18 @@ jobs:
                   webView.setOnLongClickListener(new View.OnLongClickListener(){
                       @Override public boolean onLongClick(View v){return true;}});
                   webView.setWebViewClient(new WebViewClient(){
-                      // return false = WebView tự load, giữ history stack
-                      // return true chỉ khi CHẶN (non-http)
                       @Override public boolean shouldOverrideUrlLoading(WebView v,String url){
                           if(url==null)return true;
                           if(!isHttp(url))return true;
-                          return false;}
+                          return false;
+                      }
                       @Override @TargetApi(Build.VERSION_CODES.N)
                       public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
                           if(r==null||r.getUrl()==null)return true;
                           String url=r.getUrl().toString();
                           if(!isHttp(url))return true;
-                          return false;}
+                          return false;
+                      }
                       @Override public void onPageStarted(WebView v,String url,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);}
                       @Override public void onPageFinished(WebView v,String url){
@@ -970,6 +962,8 @@ jobs:
                               +"document.querySelectorAll('a[target]').forEach(function(a){"
                               +"  if(a.target===\"_blank\")a.target=\"_self\";});"
                               +"window.open=function(u){if(u)location.href=u;return null};"
+                              +"if(!window._aioKbd){"
+                              +"window._aioKbd=true;"
                               +"document.addEventListener('focusin',function(e){"
                               +"  var t=e.target;"
                               +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
@@ -979,7 +973,7 @@ jobs:
                               +"  var t=e.target;"
                               +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
                               +"    {if(window.AIO)window.AIO.onInputBlur();}"
-                              +"},true);"
+                              +"},true);}"
                               +"})();",null);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
                   });
@@ -991,8 +985,6 @@ jobs:
                           if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
                   });
               }
-
-              // Bridge nhận tín hiệu focus input từ JS → hiện bàn phím
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){
@@ -1007,7 +999,6 @@ jobs:
                       }});
                   }
               }
-
               private void moveCursor(float dx,float dy,int rep){
                   wakeC();
                   float t=Math.min(1f,(float)rep/ACCEL_TICKS);
@@ -1015,10 +1006,8 @@ jobs:
                   float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
                   float ny=cursorView.getCY()+dy*step;
                   int newDir=0;
-                  // Edge scroll khi cursor sát mép (10px) nhưng không pin cursor
                   if(ny>=screenH-10){newDir=1;}
                   else if(ny<=10){newDir=-1;}
-                  // Cursor đi sát mép màn hình hoàn toàn
                   ny=Math.max(0,Math.min(screenH-2,ny));
                   cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
                   if(newDir!=edgeDir){
@@ -1030,9 +1019,7 @@ jobs:
                   if(inZ&&!barVisible){bottomBar.setVisibility(View.VISIBLE);barVisible=true;handler.removeCallbacks(hideBar);}
                   else if(!inZ&&barVisible){handler.removeCallbacks(hideBar);handler.postDelayed(hideBar,2000);}
               }
-
               private void stopEdge(){edgeDir=0;edgeTicks=0;handler.removeCallbacks(edgeScroll);}
-
               private void clickAt(){
                   wakeC();stopEdge();
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
@@ -1052,7 +1039,6 @@ jobs:
                       webView.dispatchTouchEvent(up);up.recycle();
                   }},80);
               }
-
               private void scrollPage(int dy){
                   webView.scrollBy(0,dy);
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
@@ -1068,7 +1054,6 @@ jobs:
                       0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
               }
-
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   wakeC();
                   if(voiceOverlay.getVisibility()==View.VISIBLE){
@@ -1089,7 +1074,6 @@ jobs:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;
                       case KeyEvent.KEYCODE_MENU:showVoice();return true;
                       case KeyEvent.KEYCODE_BACK:
-                          // Nếu bàn phím đang mở → đóng bàn phím trước
                           if(imm.isActive()){
                               imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
                               return true;
