@@ -1,4 +1,4 @@
-name: Build ALL IN ONE Pro APK
+name: Build ALL IN ONE Pro (Gradle Version)
 on:
   push:
     branches: [ main ]
@@ -8,28 +8,79 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up JDK 11
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
-      - name: Install Android SDK
+      - name: Initialize Android Project
         run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip -q cmdtools.zip -d $HOME/android-sdk/cmdline-tools
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          export PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin
-          yes | sdkmanager --licenses > /dev/null 2>&1
-          sdkmanager "platforms;android-28" "build-tools;28.0.3"
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/android-sdk/build-tools/28.0.3" >> $GITHUB_PATH
+          # Tạo cấu trúc thư mục chuẩn Gradle
+          mkdir -p app/src/main/java/com/allinone/app
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable-nodpi
 
-      - name: Create Project Structure
-        run: mkdir -p src/com/allinone/app res/layout res/values res/drawable obj bin
+          # Tạo file build.gradle (Trái tim của dự án)
+          cat > build.gradle << 'EOF'
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          EOF
 
-      - name: Generate Pro Assets (Python)
+          cat > app/build.gradle << 'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.allinone.app'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.allinone.app"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      signingConfig signingConfigs.debug
+                  }
+              }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+          }
+          EOF
+
+          echo "include ':app'" > settings.gradle
+
+      - name: Create Manifest & Resources
+        run: |
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <application android:label="ALL IN ONE Pro" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:hardwareAccelerated="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                          <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          echo '<resources><string name="app_name">ALL IN ONE Pro</string></resources>' > app/src/main/res/values/strings.xml
+
+      - name: Generate Assets (Python)
         run: |
           python3 -c "
           import struct,zlib
@@ -40,37 +91,12 @@ jobs:
                   raw+=b'\x00'
                   for x in range(w): raw+=bytes(gp(x,y))
               return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>II',w,h)+bytes([8,6,0,0,0]))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
-          def ip(x,y):
-              d2=(x-48)**2+(y-48)**2
-              return [229,9,20,255] if 40**2<d2<46**2 else ([30,30,45,255] if d2<=40**2 else [0,0,0,0])
-          with open('res/drawable/ic_launcher.png','wb') as f: f.write(make_png(96,96,ip))
-          def bp(x,y): return [20,20,35,255] if 10<x<310 and 10<y<170 else [10,10,15,255]
-          with open('res/drawable/banner.png','wb') as f: f.write(make_png(320,180,bp))
+          with open('app/src/main/res/drawable-nodpi/ic_launcher.png','wb') as f: f.write(make_png(96,96,lambda x,y: [229,9,20,255] if 40**2<((x-48)**2+(y-48)**2)<46**2 else ([30,30,45,255] if ((x-48)**2+(y-48)**2)<=40**2 else [0,0,0,0])))
           "
 
-      - name: Create Manifest & Resources
+      - name: Create Java Source (Cursor & Web)
         run: |
-          cat > AndroidManifest.xml << 'XMLEOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.allinone.app">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <application android:label="ALL IN ONE Pro" android:icon="@drawable/ic_launcher" 
-                  android:banner="@drawable/banner" android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-                  android:hardwareAccelerated="true">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/>
-                          <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          XMLEOF
-          echo '<resources><string name="app_name">ALL IN ONE Pro</string></resources>' > res/values/strings.xml
-
-      - name: Create Java Source
-        run: |
-          cat > src/com/allinone/app/CursorView.java << 'JEOF'
+          cat > app/src/main/java/com/allinone/app/CursorView.java << 'EOF'
           package com.allinone.app;
           import android.content.Context;
           import android.graphics.*;
@@ -91,8 +117,9 @@ jobs:
                   c.restore();
               }
           }
-          JEOF
-          cat > src/com/allinone/app/MainActivity.java << 'JEOF'
+          EOF
+
+          cat > app/src/main/java/com/allinone/app/MainActivity.java << 'EOF'
           package com.allinone.app;
           import android.app.Activity;
           import android.os.*;
@@ -106,7 +133,7 @@ jobs:
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
                   FrameLayout l = new FrameLayout(this);
-                  w = new WebView(this); 
+                  w = new WebView(this);
                   w.getSettings().setJavaScriptEnabled(true);
                   w.getSettings().setDomStorageEnabled(true);
                   w.setWebViewClient(new WebViewClient());
@@ -131,25 +158,15 @@ jobs:
                   cv.invalidate(); return true;
               }
           }
-          JEOF
+          EOF
 
-      - name: Build and Sign APK
+      - name: Build with Gradle
         run: |
-          # Dùng aapt tạo R.java
-          aapt package -f -m -J src -M AndroidManifest.xml -S res -I $ANDROID_HOME/platforms/android-28/android.jar
-          # Biên dịch Java với mục tiêu Java 8 để d8 không bị lỗi
-          javac -source 1.8 -target 1.8 -d obj -cp $ANDROID_HOME/platforms/android-28/android.jar $(find src -name "*.java")
-          # Convert class sang dex
-          d8 --output bin/ --lib $ANDROID_HOME/platforms/android-28/android.jar $(find obj -name "*.class")
-          # Đóng gói APK
-          aapt package -f -M AndroidManifest.xml -S res -I $ANDROID_HOME/platforms/android-28/android.jar -F bin/allinone-unsigned.apk
-          cd bin && aapt add allinone-unsigned.apk classes.dex && cd ..
-          # Ký APK
-          keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -storepass android -keypass android
-          apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out bin/allinone-pro.apk bin/allinone-unsigned.apk
+          chmod +x /usr/share/gradle/bin/gradle || true
+          gradle build
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AllInOne-Pro-APK
-          path: bin/allinone-pro.apk
+          name: AllInOne-Pro-Gradle
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
