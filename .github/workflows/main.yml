@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="21" android:versionName="21.0">
+              package="com.allinone.app" android:versionCode="22" android:versionName="22.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -575,7 +575,7 @@ jobs:
               private Handler handler=new Handler();
               // items: 0=Back, 1=EditText, 2=Save, 3=Reset, 4+=url rows
               private List<View> items=new ArrayList<View>();
-              private int cur=1; // bắt đầu ở EditText
+              private int cur=1;
               private boolean windowReady=false;
 
               @Override protected void onCreate(Bundle s){
@@ -591,7 +591,7 @@ jobs:
                   vBack.setBackgroundColor(CLR_BACK);
                   vSave.setBackgroundColor(CLR_SAVE);
                   vReset.setBackgroundColor(CLR_RESET);
-                  editUrl.setBackgroundColor(CLR_FOCUS); // bắt đầu focus vào EditText
+                  editUrl.setBackgroundColor(CLR_FOCUS);
                   editUrl.setText(prefs.getString(KEY_URL,DEF));
                   editUrl.setSelection(editUrl.getText().length());
                   vBack.setOnClickListener(new View.OnClickListener(){
@@ -612,14 +612,12 @@ jobs:
                   items.add(vSave);   // 2
                   items.add(vReset);  // 3
                   renderHistory();
-                  // KHÔNG gọi focusTo/showKbd ở đây – chờ onWindowFocusChanged
               }
 
               @Override public void onWindowFocusChanged(boolean hasFocus){
                   super.onWindowFocusChanged(hasFocus);
                   if(hasFocus&&!windowReady){
                       windowReady=true;
-                      // Lần đầu window sẵn sàng → focus EditText + hiện bàn phím
                       showKbdDelayed();
                   }
               }
@@ -633,18 +631,15 @@ jobs:
 
               private void hideKbd(){
                   imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);
-                  // KHÔNG clearFocus() để tránh dính focus vào chỗ khác
               }
 
               private void showKbdDelayed(){
                   editUrl.requestFocus();
                   handler.postDelayed(new Runnable(){@Override public void run(){
                       boolean ok=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
-                      if(!ok){
-                          handler.postDelayed(new Runnable(){@Override public void run(){
-                              imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
-                          }},400);
-                      }
+                      if(!ok){handler.postDelayed(new Runnable(){@Override public void run(){
+                          imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
+                      }},400);}
                   }},150);
               }
 
@@ -686,7 +681,7 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
-                      tv.setText((url.equals(active)?"\u25b6  ":"      ")+url);
+                      tv.setText((url.equals(active)?"▶  ":"      ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
                       tv.setTextSize(15);tv.setFocusable(false);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
@@ -715,8 +710,7 @@ jobs:
                               for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
                               prefs.edit().putString(KEY_HIST,sb.toString()).apply();
                               if(cur>=items.size()-1)cur=Math.max(1,items.size()-2);
-                              renderHistory();
-                              applyHighlight(cur);}});
+                              renderHistory();applyHighlight(cur);}});
                       row.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
                       row.addView(bu);row.addView(bd);
@@ -745,17 +739,13 @@ jobs:
               }
 
               private void focusTo(int idx){
-                  // Xóa highlight cũ
                   if(cur>=0&&cur<items.size())
                       items.get(cur).setBackgroundColor(normalBg(cur));
-                  // Ẩn bàn phím khi rời EditText
                   if(cur==1&&idx!=1)hideKbd();
                   cur=Math.max(0,Math.min(idx,items.size()-1));
                   if(cur>=items.size())return;
                   items.get(cur).setBackgroundColor(CLR_FOCUS);
-                  // Hiện bàn phím khi vào EditText
                   if(cur==1)showKbdDelayed();
-                  // Scroll nếu là url row
                   if(cur>=4){
                       final View v=items.get(cur);
                       scrollView.post(new Runnable(){@Override public void run(){
@@ -765,25 +755,53 @@ jobs:
               }
 
               @Override public boolean onKeyDown(int key,KeyEvent e){
+                  // Khi EditText đang được focus (cur==1):
+                  // - D-pad UP/DOWN/BACK xử lý đặc biệt
+                  // - các phím khác: dùng dispatchKeyEvent để EditText nhận trực tiếp
                   if(cur==1){
-                      if(key==KeyEvent.KEYCODE_DPAD_UP){focusTo(0);return true;}
-                      if(key==KeyEvent.KEYCODE_DPAD_DOWN){focusTo(2);return true;}
-                      if(key==KeyEvent.KEYCODE_BACK){hideKbd();focusTo(0);return true;}
-                      return false; // ký tự khác → EditText tự xử lý
+                      switch(key){
+                          case KeyEvent.KEYCODE_DPAD_UP:
+                              focusTo(0);return true;
+                          case KeyEvent.KEYCODE_DPAD_DOWN:
+                              focusTo(2);return true;
+                          case KeyEvent.KEYCODE_BACK:
+                              hideKbd();focusTo(0);return true;
+                          default:
+                              // Cho EditText xử lý ký tự
+                              return editUrl.dispatchKeyEvent(new KeyEvent(e.getDownTime(),e.getEventTime(),KeyEvent.ACTION_DOWN,key,e.getRepeatCount(),e.getMetaState()));
+                      }
                   }
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:
-                          if(cur>0)focusTo(cur-1);return true;
+                          // cur==0 (Back) → không làm gì (đã ở đầu)
+                          if(cur>0)focusTo(cur-1);
+                          return true;
                       case KeyEvent.KEYCODE_DPAD_DOWN:
-                          if(cur<items.size()-1)focusTo(cur+1);return true;
+                          if(cur<items.size()-1)focusTo(cur+1);
+                          return true;
                       case KeyEvent.KEYCODE_DPAD_CENTER:
                       case KeyEvent.KEYCODE_ENTER:
                           if(e.getRepeatCount()==0&&cur<items.size())
                               items.get(cur).performClick();
                           return true;
-                      case KeyEvent.KEYCODE_BACK:finish();return true;
+                      case KeyEvent.KEYCODE_BACK:
+                          finish();return true;
                   }
                   return super.onKeyDown(key,e);
+              }
+
+              @Override public boolean onKeyUp(int key,KeyEvent e){
+                  if(cur==1){
+                      switch(key){
+                          case KeyEvent.KEYCODE_DPAD_UP:
+                          case KeyEvent.KEYCODE_DPAD_DOWN:
+                          case KeyEvent.KEYCODE_BACK:
+                              return true;
+                          default:
+                              return editUrl.dispatchKeyEvent(new KeyEvent(e.getDownTime(),e.getEventTime(),KeyEvent.ACTION_UP,key,e.getRepeatCount(),e.getMetaState()));
+                      }
+                  }
+                  return super.onKeyUp(key,e);
               }
 
               @Override protected void onDestroy(){
@@ -997,8 +1015,10 @@ jobs:
                   float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
                   float ny=cursorView.getCY()+dy*step;
                   int newDir=0;
-                  if(ny>=screenH-EDGE_ZONE){ny=screenH-EDGE_ZONE;newDir=1;}
-                  else if(ny<=EDGE_ZONE){ny=EDGE_ZONE;newDir=-1;}
+                  // Edge scroll khi cursor sát mép (10px) nhưng không pin cursor
+                  if(ny>=screenH-10){newDir=1;}
+                  else if(ny<=10){newDir=-1;}
+                  // Cursor đi sát mép màn hình hoàn toàn
                   ny=Math.max(0,Math.min(screenH-2,ny));
                   cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
                   if(newDir!=edgeDir){
