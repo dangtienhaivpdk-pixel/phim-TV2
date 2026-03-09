@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="20" android:versionName="20.0">
+              package="com.allinone.app" android:versionCode="21" android:versionName="21.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -914,7 +914,7 @@ jobs:
                   ws.setDisplayZoomControls(false);
                   // Cache tích cực hơn: dùng cache khi có, chỉ load mạng khi hết hạn
                   ws.setAppCacheEnabled(true);
-                  ws.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                  ws.setCacheMode(WebSettings.LOAD_DEFAULT);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   ws.setSupportMultipleWindows(false);
                   ws.setAllowFileAccess(false);
@@ -925,34 +925,42 @@ jobs:
                   }
                   ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
+                  webView.addJavascriptInterface(new KbdBridge(),"AIO");
                   webView.setLongClickable(false);
                   webView.setOnLongClickListener(new View.OnLongClickListener(){
                       @Override public boolean onLongClick(View v){return true;}});
                   webView.setWebViewClient(new WebViewClient(){
+                      // return false = WebView tự load, giữ history stack
+                      // return true chỉ khi CHẶN (non-http)
                       @Override public boolean shouldOverrideUrlLoading(WebView v,String url){
-                          if(!isHttp(url))return true;v.loadUrl(url);return true;}
+                          if(url==null)return true;
+                          if(!isHttp(url))return true;
+                          return false;}
                       @Override @TargetApi(Build.VERSION_CODES.N)
                       public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
-                          String url=r.getUrl().toString();if(!isHttp(url))return true;v.loadUrl(url);return true;}
+                          if(r==null||r.getUrl()==null)return true;
+                          String url=r.getUrl().toString();
+                          if(!isHttp(url))return true;
+                          return false;}
                       @Override public void onPageStarted(WebView v,String url,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);}
                       @Override public void onPageFinished(WebView v,String url){
                           progressBar.setVisibility(View.GONE);
-                          // Inject: fix scroll, _blank→_self, window.open, và quan trọng:
-                          // khi input/textarea được focus → request bàn phím Android
                           v.evaluateJavascript("(function(){"
                               +"document.documentElement.style.scrollBehavior='auto';"
                               +"if(document.body)document.body.style.overscrollBehavior='none';"
                               +"document.querySelectorAll('a[target]').forEach(function(a){"
                               +"  if(a.target===\"_blank\")a.target=\"_self\";});"
                               +"window.open=function(u){if(u)location.href=u;return null};"
-                              // Khi bất kỳ input/textarea focus → thông báo Android qua alert giả
-                              // (dùng cách khác vì không có JavascriptInterface)
                               +"document.addEventListener('focusin',function(e){"
                               +"  var t=e.target;"
-                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable)){"
-                              +"    t.click();"
-                              +"  }"
+                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
+                              +"    {if(window.AIO)window.AIO.onInputFocus();}"
+                              +"},true);"
+                              +"document.addEventListener('focusout',function(e){"
+                              +"  var t=e.target;"
+                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
+                              +"    {if(window.AIO)window.AIO.onInputBlur();}"
                               +"},true);"
                               +"})();",null);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
@@ -964,6 +972,22 @@ jobs:
                           WebView.HitTestResult hr=v.getHitTestResult();
                           if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
                   });
+              }
+
+              // Bridge nhận tín hiệu focus input từ JS → hiện bàn phím
+              private class KbdBridge {
+                  @android.webkit.JavascriptInterface
+                  public void onInputFocus(){
+                      handler.post(new Runnable(){@Override public void run(){
+                          imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                      }});
+                  }
+                  @android.webkit.JavascriptInterface
+                  public void onInputBlur(){
+                      handler.post(new Runnable(){@Override public void run(){
+                          imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
+                      }});
+                  }
               }
 
               private void moveCursor(float dx,float dy,int rep){
@@ -1006,25 +1030,6 @@ jobs:
                       long t1=SystemClock.uptimeMillis();
                       MotionEvent up=MotionEvent.obtain(t0,t1,MotionEvent.ACTION_UP,rx,ry,0);
                       webView.dispatchTouchEvent(up);up.recycle();
-                      // Sau click, kiểm tra nếu WebView có focus → có thể là input đang focus
-                      // Delay nhỏ để WebView xử lý xong rồi mới show kbd nếu cần
-                      handler.postDelayed(new Runnable(){@Override public void run(){
-                          webView.evaluateJavascript(
-                              "(function(){var e=document.activeElement;"
-                              +"return e?(e.tagName+'|'+(e.isContentEditable?'1':'0')):'none';})()",
-                              new android.webkit.ValueCallback<String>(){
-                                  @Override public void onReceiveValue(String val){
-                                      if(val!=null){
-                                          val=val.replace("\"","");
-                                          if(val.startsWith("INPUT")||val.startsWith("TEXTAREA")
-                                              ||val.endsWith("|1")){
-                                              // Input đang focus → hiện bàn phím (KHÔNG requestFocus webView)
-                                              imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                                          }
-                                      }
-                                  }
-                              });
-                      }},200);
                   }},80);
               }
 
