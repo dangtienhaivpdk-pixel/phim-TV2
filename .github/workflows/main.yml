@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="23" android:versionName="23.0">
+              package="com.allinone.app" android:versionCode="24" android:versionName="24.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -167,14 +167,12 @@ jobs:
                       android:layout_width="44dp" android:layout_height="44dp"
                       android:text="&#8962;" android:textSize="18sp" android:textColor="#ddffffff"
                       android:gravity="center" android:background="#00000000"
-                      android:clickable="true" android:focusable="false"
-                      android:layout_marginRight="2dp"/>
+                      android:clickable="true" android:focusable="false" android:layout_marginRight="2dp"/>
                   <TextView android:id="@+id/btnWebBack"
                       android:layout_width="44dp" android:layout_height="44dp"
                       android:text="&#9664;" android:textSize="18sp" android:textColor="#ddffffff"
                       android:gravity="center" android:background="#00000000"
-                      android:clickable="true" android:focusable="false"
-                      android:layout_marginRight="2dp"/>
+                      android:clickable="true" android:focusable="false" android:layout_marginRight="2dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
                       android:layout_width="44dp" android:layout_height="44dp"
                       android:text="&#9881;" android:textSize="18sp" android:textColor="#ddffffff"
@@ -228,7 +226,7 @@ jobs:
                   android:orientation="vertical" android:padding="40dp" android:focusable="false">
                   <EditText android:id="@+id/editUrl"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:hint="Nhap duong dan web moi..." android:textSize="20sp"
+                      android:hint="Nhap duong dan web..." android:textSize="20sp"
                       android:textColor="#ffffff" android:textColorHint="#666666"
                       android:background="#222233" android:padding="18dp"
                       android:inputType="textUri" android:layout_marginBottom="16dp"
@@ -460,7 +458,7 @@ jobs:
                   if(on){
                       wrap.setBackgroundColor(CLR_BORDER_FOCUS);wrap.setPadding(4,4,4,4);
                       if(wrap.getChildCount()>0)wrap.getChildAt(0).setBackgroundColor(CLR_CARD_FOCUS);
-                  } else {
+                  }else{
                       wrap.setBackgroundColor(CLR_BORDER_NONE);wrap.setPadding(3,3,3,3);
                       if(wrap.getChildCount()>0)
                           wrap.getChildAt(0).setBackgroundColor(url.equals(act)?CLR_CARD_ACTIVE:CLR_CARD_NORM);
@@ -488,34 +486,20 @@ jobs:
                               return true;
                           case KeyEvent.KEYCODE_BACK:finish();return true;
                       }
-                  } else {
+                  }else{
                       switch(key){
                           case KeyEvent.KEYCODE_DPAD_UP:
-                              if(gridIdx-COLS>=0){
-                                  highlightCard(gridIdx,false);gridIdx-=COLS;
-                                  highlightCard(gridIdx,true);scrollToCard(gridIdx);
-                              } else {
-                                  highlightCard(gridIdx,false);
-                                  zone=0;btnSettings.setBackgroundColor(CLR_BTN_FOCUS);
-                              }
+                              if(gridIdx-COLS>=0){highlightCard(gridIdx,false);gridIdx-=COLS;highlightCard(gridIdx,true);scrollToCard(gridIdx);}
+                              else{highlightCard(gridIdx,false);zone=0;btnSettings.setBackgroundColor(CLR_BTN_FOCUS);}
                               return true;
                           case KeyEvent.KEYCODE_DPAD_DOWN:
-                              if(gridIdx+COLS<total){
-                                  highlightCard(gridIdx,false);gridIdx+=COLS;
-                                  highlightCard(gridIdx,true);scrollToCard(gridIdx);
-                              }
+                              if(gridIdx+COLS<total){highlightCard(gridIdx,false);gridIdx+=COLS;highlightCard(gridIdx,true);scrollToCard(gridIdx);}
                               return true;
                           case KeyEvent.KEYCODE_DPAD_LEFT:
-                              if(gridIdx-1>=0){
-                                  highlightCard(gridIdx,false);gridIdx--;
-                                  highlightCard(gridIdx,true);scrollToCard(gridIdx);
-                              }
+                              if(gridIdx-1>=0){highlightCard(gridIdx,false);gridIdx--;highlightCard(gridIdx,true);scrollToCard(gridIdx);}
                               return true;
                           case KeyEvent.KEYCODE_DPAD_RIGHT:
-                              if(gridIdx+1<total){
-                                  highlightCard(gridIdx,false);gridIdx++;
-                                  highlightCard(gridIdx,true);scrollToCard(gridIdx);
-                              }
+                              if(gridIdx+1<total){highlightCard(gridIdx,false);gridIdx++;highlightCard(gridIdx,true);scrollToCard(gridIdx);}
                               return true;
                           case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
                               if(e.getRepeatCount()==0&&!urls.isEmpty())openUrl(urls.get(gridIdx));return true;
@@ -566,7 +550,7 @@ jobs:
               private SharedPreferences prefs;
               private InputMethodManager imm;
               private Handler handler=new Handler();
-              // items: 0=Back, 1=EditText, 2=Save, 3=Reset, 4+=url rows
+              // 0=Back 1=EditText 2=Save 3=Reset 4+=rows
               private List<View> items=new ArrayList<View>();
               private int cur=1;
               private boolean windowReady=false;
@@ -586,6 +570,9 @@ jobs:
                   editUrl.setBackgroundColor(CLR_EDIT);
                   editUrl.setText(prefs.getString(KEY_URL,DEF));
                   editUrl.setSelection(editUrl.getText().length());
+                  // Tắt focus tự động của EditText - Activity quản lý focus hoàn toàn
+                  editUrl.setFocusable(false);
+                  editUrl.setFocusableInTouchMode(false);
                   vBack.setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){finish();}});
                   vSave.setOnClickListener(new View.OnClickListener(){
@@ -594,10 +581,6 @@ jobs:
                       @Override public void onClick(View v){
                           prefs.edit().putString(KEY_URL,DEF).apply();
                           resetHistory();openUrl(DEF);}});
-                  editUrl.setOnEditorActionListener(new TextView.OnEditorActionListener(){
-                      @Override public boolean onEditorAction(TextView v,int actionId,KeyEvent ev){
-                          if(actionId==EditorInfo.IME_ACTION_GO||actionId==EditorInfo.IME_ACTION_DONE){
-                              doSave();return true;}return false;}});
                   items.clear();
                   items.add(vBack);
                   items.add(editUrl);
@@ -607,33 +590,28 @@ jobs:
               }
               @Override public void onWindowFocusChanged(boolean hasFocus){
                   super.onWindowFocusChanged(hasFocus);
-                  if(hasFocus&&!windowReady){windowReady=true;focusTo(1);}
+                  if(hasFocus&&!windowReady){windowReady=true;applyHighlight(cur);}
               }
               private void doSave(){
                   String u=editUrl.getText().toString().trim();
                   if(u.isEmpty())return;
                   if(!u.startsWith("http"))u="https://"+u;
-                  hideKbd();saveUrl(u);openUrl(u);
+                  saveUrl(u);openUrl(u);
               }
-              private void showKbd(){
-                  editUrl.requestFocus();
-                  handler.postDelayed(new Runnable(){@Override public void run(){
-                      imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
-                  }},100);
-              }
-              private void hideKbd(){
-                  imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);
-              }
-              // Nếu TV không có soft keyboard, mở AlertDialog để nhập URL
+              // Mở dialog nhập URL - hoạt động 100% trên cả TV lẫn LDPlayer
               private void openInputDialog(){
                   final EditText input=new EditText(this);
-                  input.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
+                  input.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);
+                  input.setSingleLine(true);
                   input.setText(editUrl.getText());
                   input.setSelection(input.getText().length());
+                  input.setTextColor(0xffffffff);
+                  input.setBackgroundColor(0xff222233);
+                  input.setPadding(24,24,24,24);
                   new AlertDialog.Builder(this)
                       .setTitle("Nhap dia chi web")
                       .setView(input)
-                      .setPositiveButton("Mo", new DialogInterface.OnClickListener(){
+                      .setPositiveButton("Mo va luu", new DialogInterface.OnClickListener(){
                           @Override public void onClick(DialogInterface d,int w){
                               String u=input.getText().toString().trim();
                               if(!u.isEmpty()){
@@ -711,7 +689,7 @@ jobs:
                               StringBuilder sb=new StringBuilder();
                               for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
                               prefs.edit().putString(KEY_HIST,sb.toString()).apply();
-                              if(cur>=items.size()-1)cur=Math.max(1,items.size()-2);
+                              if(cur>=items.size()-1)cur=Math.max(0,items.size()-2);
                               renderHistory();applyHighlight(cur);}});
                       row.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
@@ -740,10 +718,8 @@ jobs:
               private void focusTo(int idx){
                   if(cur>=0&&cur<items.size())
                       items.get(cur).setBackgroundColor(normalBg(cur));
-                  if(cur==1&&idx!=1)hideKbd();
                   cur=Math.max(0,Math.min(idx,items.size()-1));
                   items.get(cur).setBackgroundColor(CLR_FOCUS);
-                  if(cur==1)showKbd();
                   if(cur>=4){
                       final View v=items.get(cur);
                       scrollView.post(new Runnable(){@Override public void run(){
@@ -752,28 +728,8 @@ jobs:
                   }
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  if(cur==1){
-                      switch(key){
-                          case KeyEvent.KEYCODE_DPAD_UP:
-                              focusTo(0);return true;
-                          case KeyEvent.KEYCODE_DPAD_DOWN:
-                              focusTo(2);return true;
-                          case KeyEvent.KEYCODE_BACK:
-                              hideKbd();focusTo(0);return true;
-                          case KeyEvent.KEYCODE_DPAD_CENTER:
-                          case KeyEvent.KEYCODE_ENTER:
-                              // Enter trên EditText: thử showSoftInput, nếu TV thì mở dialog
-                              if(e.getRepeatCount()==0){
-                                  boolean shown=imm.showSoftInput(editUrl,InputMethodManager.SHOW_FORCED);
-                                  if(!shown)openInputDialog();
-                              }
-                              return true;
-                          default:
-                              return editUrl.dispatchKeyEvent(new KeyEvent(
-                                  e.getDownTime(),e.getEventTime(),
-                                  KeyEvent.ACTION_DOWN,key,e.getRepeatCount(),e.getMetaState()));
-                      }
-                  }
+                  // cur==1 là EditText NHƯNG editUrl.setFocusable(false)
+                  // nên D-pad không bị EditText nuốt - Activity nhận 100%
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:
                           if(cur>0)focusTo(cur-1);
@@ -783,30 +739,16 @@ jobs:
                           return true;
                       case KeyEvent.KEYCODE_DPAD_CENTER:
                       case KeyEvent.KEYCODE_ENTER:
-                          if(e.getRepeatCount()==0&&cur<items.size())
-                              items.get(cur).performClick();
+                          if(e.getRepeatCount()==0){
+                              if(cur==0){finish();return true;}
+                              if(cur==1){openInputDialog();return true;}
+                              if(cur<items.size())items.get(cur).performClick();
+                          }
                           return true;
                       case KeyEvent.KEYCODE_BACK:
                           finish();return true;
                   }
                   return super.onKeyDown(key,e);
-              }
-              @Override public boolean onKeyUp(int key,KeyEvent e){
-                  if(cur==1){
-                      switch(key){
-                          case KeyEvent.KEYCODE_DPAD_UP:
-                          case KeyEvent.KEYCODE_DPAD_DOWN:
-                          case KeyEvent.KEYCODE_BACK:
-                          case KeyEvent.KEYCODE_DPAD_CENTER:
-                          case KeyEvent.KEYCODE_ENTER:
-                              return true;
-                          default:
-                              return editUrl.dispatchKeyEvent(new KeyEvent(
-                                  e.getDownTime(),e.getEventTime(),
-                                  KeyEvent.ACTION_UP,key,e.getRepeatCount(),e.getMetaState()));
-                      }
-                  }
-                  return super.onKeyUp(key,e);
               }
               @Override protected void onDestroy(){
                   handler.removeCallbacksAndMessages(null);super.onDestroy();}
@@ -1074,10 +1016,7 @@ jobs:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;
                       case KeyEvent.KEYCODE_MENU:showVoice();return true;
                       case KeyEvent.KEYCODE_BACK:
-                          if(imm.isActive()){
-                              imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
-                              return true;
-                          }
+                          if(imm.isActive()){imm.hideSoftInputFromWindow(webView.getWindowToken(),0);return true;}
                           if(webView.canGoBack()){webView.goBack();return true;}finish();return true;
                   }
                   return super.onKeyDown(key,e);
