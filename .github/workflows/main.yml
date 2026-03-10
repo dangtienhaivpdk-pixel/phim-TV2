@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="30" android:versionName="30.0">
+              package="com.allinone.app" android:versionCode="31" android:versionName="31.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -162,21 +162,31 @@ jobs:
                   android:layout_gravity="bottom|start" android:orientation="horizontal"
                   android:layout_marginLeft="12dp" android:layout_marginBottom="12dp"
                   android:visibility="gone" android:focusable="false"
-                  android:background="#55000000">
+                  android:background="#88000000" android:padding="4dp">
                   <TextView android:id="@+id/btnHome"
-                      android:layout_width="44dp" android:layout_height="44dp"
-                      android:text="&#8962;" android:textSize="18sp" android:textColor="#ddffffff"
-                      android:gravity="center" android:background="#00000000"
-                      android:clickable="true" android:focusable="false" android:layout_marginRight="2dp"/>
+                      android:layout_width="50dp" android:layout_height="50dp"
+                      android:text="&#8962;" android:textSize="20sp" android:textColor="#ffffffff"
+                      android:gravity="center" android:background="#33ffffff"
+                      android:clickable="true" android:focusable="false" android:layout_marginRight="4dp"/>
                   <TextView android:id="@+id/btnWebBack"
-                      android:layout_width="44dp" android:layout_height="44dp"
-                      android:text="&#9664;" android:textSize="18sp" android:textColor="#ddffffff"
-                      android:gravity="center" android:background="#00000000"
-                      android:clickable="true" android:focusable="false" android:layout_marginRight="2dp"/>
+                      android:layout_width="50dp" android:layout_height="50dp"
+                      android:text="&#9664;" android:textSize="20sp" android:textColor="#ffffffff"
+                      android:gravity="center" android:background="#33ffffff"
+                      android:clickable="true" android:focusable="false" android:layout_marginRight="4dp"/>
+                  <TextView android:id="@+id/btnWebForward"
+                      android:layout_width="50dp" android:layout_height="50dp"
+                      android:text="&#9654;" android:textSize="20sp" android:textColor="#ffffffff"
+                      android:gravity="center" android:background="#33ffffff"
+                      android:clickable="true" android:focusable="false" android:layout_marginRight="4dp"/>
+                  <TextView android:id="@+id/btnRefresh"
+                      android:layout_width="50dp" android:layout_height="50dp"
+                      android:text="&#8635;" android:textSize="20sp" android:textColor="#ffffffff"
+                      android:gravity="center" android:background="#33ffffff"
+                      android:clickable="true" android:focusable="false" android:layout_marginRight="4dp"/>
                   <TextView android:id="@+id/btnSettingsWeb"
-                      android:layout_width="44dp" android:layout_height="44dp"
-                      android:text="&#9881;" android:textSize="18sp" android:textColor="#ddffffff"
-                      android:gravity="center" android:background="#00000000"
+                      android:layout_width="50dp" android:layout_height="50dp"
+                      android:text="&#9881;" android:textSize="20sp" android:textColor="#ffffffff"
+                      android:gravity="center" android:background="#33ffffff"
                       android:clickable="true" android:focusable="false"/>
               </LinearLayout>
               <RelativeLayout android:id="@+id/voiceOverlay"
@@ -258,37 +268,73 @@ jobs:
           <resources><string name="app_name">ALL IN ONE</string></resources>
           XMLEOF
 
+          # ─── CursorView ───────────────────────────────────────────────────────────────
+          # Con trỏ mũi tên trắng kiểu Windows, viền đen, chấm đỏ ở đầu mũi tên
+          # Hiển thị tooltip "DRAG" khi đang kéo, "HOLD" khi đang giữ
           cat > src/com/allinone/app/CursorView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
           import android.graphics.Canvas;
           import android.graphics.Paint;
           import android.graphics.Path;
+          import android.graphics.Typeface;
           import android.util.AttributeSet;
           import android.view.View;
           public class CursorView extends View {
-              private final Paint wFill,bStroke,rDot;
+              public static final int MODE_NORMAL=0,MODE_HOLD=1,MODE_DRAG=2,MODE_SCROLL=3;
+              private final Paint wFill,bStroke,rDot,lblBg,lblTxt;
               private float cx=-1,cy=-1;
-              public CursorView(Context c){super(c);wFill=pw();bStroke=ps();rDot=pd();}
-              public CursorView(Context c,AttributeSet a){super(c,a);wFill=pw();bStroke=ps();rDot=pd();}
+              private int mode=MODE_NORMAL;
+              public CursorView(Context c){super(c);wFill=pw();bStroke=ps();rDot=pd();lblBg=pb();lblTxt=pt();}
+              public CursorView(Context c,AttributeSet a){super(c,a);wFill=pw();bStroke=ps();rDot=pd();lblBg=pb();lblTxt=pt();}
               private Paint pw(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFFFFFFF);p.setStyle(Paint.Style.FILL);return p;}
               private Paint ps(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFF000000);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.5f);p.setStrokeJoin(Paint.Join.ROUND);return p;}
               private Paint pd(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFE50914);p.setStyle(Paint.Style.FILL);return p;}
+              private Paint pb(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setStyle(Paint.Style.FILL);return p;}
+              private Paint pt(){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(0xFFFFFFFF);p.setTextSize(22f);p.setTypeface(Typeface.DEFAULT_BOLD);return p;}
               public void setPos(float x,float y){cx=x;cy=y;invalidate();}
               public float getCX(){return cx;}
               public float getCY(){return cy;}
+              public void setMode(int m){if(mode!=m){mode=m;invalidate();}}
+              public int getMode(){return mode;}
               @Override protected void onDraw(Canvas c){
                   if(cx<0||cy<0)return;
+                  // Màu mũi tên thay đổi theo mode
+                  switch(mode){
+                      case MODE_HOLD: wFill.setColor(0xFFFFAA00);break;  // vàng = đang giữ
+                      case MODE_DRAG: wFill.setColor(0xFF00CCFF);break;  // xanh = đang kéo
+                      case MODE_SCROLL:wFill.setColor(0xFF00FF88);break; // xanh lá = scroll
+                      default:        wFill.setColor(0xFFFFFFFF);break;  // trắng = bình thường
+                  }
                   Path p=new Path();
-                  p.moveTo(cx,cy);p.lineTo(cx,cy+22);p.lineTo(cx+6,cy+16);
-                  p.lineTo(cx+13,cy+27);p.lineTo(cx+16,cy+25);
-                  p.lineTo(cx+9,cy+14);p.lineTo(cx+17,cy+14);p.close();
-                  c.drawPath(p,bStroke);c.drawPath(p,wFill);
-                  c.drawCircle(cx,cy,3.5f,rDot);
+                  p.moveTo(cx,cy);
+                  p.lineTo(cx,cy+26);
+                  p.lineTo(cx+7,cy+19);
+                  p.lineTo(cx+15,cy+32);
+                  p.lineTo(cx+19,cy+30);
+                  p.lineTo(cx+11,cy+17);
+                  p.lineTo(cx+20,cy+17);
+                  p.close();
+                  c.drawPath(p,bStroke);
+                  c.drawPath(p,wFill);
+                  c.drawCircle(cx,cy,4f,rDot);
+                  // Label mode
+                  String lbl=null;
+                  if(mode==MODE_HOLD)lbl="HOLD";
+                  else if(mode==MODE_DRAG)lbl="DRAG";
+                  else if(mode==MODE_SCROLL)lbl="SCROLL";
+                  if(lbl!=null){
+                      float tw=lblTxt.measureText(lbl);
+                      float lx=cx+22,ly=cy+14;
+                      lblBg.setColor(mode==MODE_HOLD?0xCCCC8800:mode==MODE_DRAG?0xCC0088CC:0xCC008844);
+                      c.drawRoundRect(lx-4,ly-18,lx+tw+8,ly+6,6,6,lblBg);
+                      c.drawText(lbl,lx,ly,lblTxt);
+                  }
               }
           }
           JEOF
 
+          # ─── ScrollWebView ────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/ScrollWebView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -300,6 +346,7 @@ jobs:
           }
           JEOF
 
+          # ─── HomeActivity ─────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/HomeActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -501,6 +548,9 @@ jobs:
           }
           JEOF
 
+          # ─── SettingsActivity ──────────────────────────────────────────────────────────
+          # FIX CRASH: cur bắt đầu = 0 (không phải 1), items.add() xong mới gọi renderHistory()
+          # focusTo() dùng getTop() thực tế + scrollTo() tuyệt đối
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
           import android.app.AlertDialog;
@@ -534,7 +584,8 @@ jobs:
               private SharedPreferences prefs;
               private Handler handler=new Handler();
               private List<View> items=new ArrayList<View>();
-              private int cur=1;
+              // [FIX] cur=0 an toàn: items[0]=btnBack luôn tồn tại sau onCreate
+              private int cur=0;
               private boolean windowReady=false;
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.settings);
@@ -553,13 +604,22 @@ jobs:
                       @Override public void onClick(View v){openInputDialog(null);}});
                   vReset.setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){resetHistory();renderHistory();}});
+                  // [FIX] thêm vào items TRƯỚC khi gọi renderHistory
                   items.clear();
-                  items.add(vBack);items.add(vAdd);items.add(vReset);
+                  items.add(vBack);   // index 0
+                  items.add(vAdd);    // index 1
+                  items.add(vReset);  // index 2
+                  // url rows thêm vào từ index 3 trở đi trong renderHistory()
                   renderHistory();
               }
               @Override public void onWindowFocusChanged(boolean hasFocus){
                   super.onWindowFocusChanged(hasFocus);
-                  if(hasFocus&&!windowReady){windowReady=true;applyHighlight(cur);}
+                  // [FIX] chỉ highlight sau khi window đã layout xong, và chỉ 1 lần
+                  if(hasFocus&&!windowReady){
+                      windowReady=true;
+                      // Đảm bảo cur hợp lệ
+                      if(cur>=0&&cur<items.size())applyHighlight(cur);
+                  }
               }
               private void openInputDialog(final String prefill){
                   final EditText input=new EditText(this);
@@ -605,6 +665,7 @@ jobs:
               }
               private void renderHistory(){
                   listUrls.removeAllViews();
+                  // Xoá url rows cũ (từ index 3 trở đi), giữ lại 3 nút header
                   while(items.size()>3)items.remove(3);
                   List<String>hist=getHist();
                   final String active=prefs.getString(KEY_URL,DEF);
@@ -661,23 +722,27 @@ jobs:
                       row.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
                       row.addView(tv);row.addView(bu);row.addView(be);row.addView(bd);
-                      listUrls.addView(row);items.add(row);
+                      listUrls.addView(row);
+                      items.add(row);
                   }
+                  // Clamp cur trong range hợp lệ
+                  if(cur>=items.size())cur=Math.max(0,items.size()-1);
                   applyHighlight(cur);
               }
               private int normalBg(int idx){
-                  if(idx==0)return CLR_BACK;if(idx==1)return CLR_ADD;if(idx==2)return CLR_RESET;
-                  if(idx>=3&&idx<items.size()){int ri=idx-3;List<String>h=getHist();
+                  if(idx==0)return CLR_BACK;
+                  if(idx==1)return CLR_ADD;
+                  if(idx==2)return CLR_RESET;
+                  if(idx>=3&&idx<items.size()){
+                      int ri=idx-3;List<String>h=getHist();
                       if(ri<h.size()){String act=prefs.getString(KEY_URL,DEF);
-                          return h.get(ri).equals(act)?CLR_ROW_A:CLR_ROW_N;}}
+                          return h.get(ri).equals(act)?CLR_ROW_A:CLR_ROW_N;}
+                  }
                   return CLR_ROW_N;
               }
               private void applyHighlight(int idx){
                   if(idx>=0&&idx<items.size())items.get(idx).setBackgroundColor(CLR_FOCUS);
               }
-              // v30 FIX: scroll chính xác 1 item mỗi lần nhấn
-              // Mỗi row url cao WRAP_CONTENT + padding(16+16)=32 + margin_bottom=8 = ~60px thực tế
-              // Dùng getTop() của view sau khi layout xong — chính xác 100%
               private void focusTo(int idx){
                   if(cur>=0&&cur<items.size())items.get(cur).setBackgroundColor(normalBg(cur));
                   cur=Math.max(0,Math.min(idx,items.size()-1));
@@ -685,19 +750,12 @@ jobs:
                   if(cur<3)return;
                   final View v=items.get(cur);
                   scrollView.post(new Runnable(){@Override public void run(){
-                      // getTop() trả về vị trí thực của view trong listUrls
                       int top=v.getTop();
                       int bot=top+v.getHeight();
                       int svTop=scrollView.getScrollY();
                       int svBot=svTop+scrollView.getHeight();
-                      if(top<svTop){
-                          // item bị che phía trên: cuộn lên để hiện item
-                          scrollView.scrollTo(0,top);
-                      }else if(bot>svBot){
-                          // item bị che phía dưới: cuộn xuống vừa đủ
-                          scrollView.scrollTo(0,bot-scrollView.getHeight());
-                      }
-                      // item đã hiện: không làm gì
+                      if(top<svTop)scrollView.scrollTo(0,top);
+                      else if(bot>svBot)scrollView.scrollTo(0,bot-scrollView.getHeight());
                   }});
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
@@ -717,6 +775,14 @@ jobs:
           }
           JEOF
 
+          # ─── MainActivity ──────────────────────────────────────────────────────────────
+          # Con chuột đầy đủ như LDPlayer:
+          # D-pad    = di chuyển con trỏ (có gia tốc)
+          # OK/Enter = click trái (nhấn thả nhanh = click, giữ = long press)
+          # MENU     = giữ OK lâu hơn để chuyển mode HOLD (giữ chuột trái = drag)
+          # L1/R1    (KEYCODE_BUTTON_L1/R1) = scroll lên/xuống
+          # Back     = quay lại trang trước
+          # Khi cursor vào góc trái dưới: hiện thanh điều hướng
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.annotation.TargetApi;
@@ -761,18 +827,21 @@ jobs:
               private SpeechRecognizer speechRecognizer;
               private InputMethodManager imm;
               private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://pointnorth.io";
-              private String currentUrl;
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
               private static float savedCX=-1,savedCY=-1;
-              private static final float STEP_MIN=15f,STEP_MAX=90f;
-              private static final int ACCEL_TICKS=12;
+
+              // ── Cursor movement ──────────────────────────────────────────────────────
+              private static final float STEP_MIN=12f,STEP_MAX=100f;
+              private static final int ACCEL_TICKS=15;
               private static final float SCROLL_AXIS=3f;
               private static final int BAR_ZONE_W=160,BAR_ZONE_H=100;
-              private static final int EDGE_INTERVAL=100;
-              private static final int EDGE_SCROLL_MIN=60,EDGE_SCROLL_MAX=350;
-              private static final long HIDE_DELAY=3000;
+              private static final long HIDE_DELAY=4000;
               private boolean barVisible=false,cursorVisible=true;
+
+              // ── Edge auto-scroll ─────────────────────────────────────────────────────
+              private static final int EDGE_INTERVAL=80;
+              private static final int EDGE_SCROLL_MIN=50,EDGE_SCROLL_MAX=400;
               private int edgeDir=0,edgeTicks=0;
               private Runnable edgeScroll=new Runnable(){
                   @Override public void run(){
@@ -780,10 +849,35 @@ jobs:
                       edgeTicks=Math.min(edgeTicks+1,10);
                       scrollPage(edgeDir*(EDGE_SCROLL_MIN+(EDGE_SCROLL_MAX-EDGE_SCROLL_MIN)*edgeTicks/10));
                       handler.postDelayed(this,EDGE_INTERVAL);}};
+
+              // ── Drag/Hold state ──────────────────────────────────────────────────────
+              // LDPlayer-style:
+              //   OK press (giữ <400ms)          → click trái thường
+              //   OK giữ (400ms~1500ms)           → long press (right-click menu)
+              //   MENU key                         → bật/tắt drag mode (giữ chuột trái)
+              //   Channel+/- hoặc L1/R1            → scroll lên/xuống
+              private boolean dragMode=false;      // true = đang giữ chuột trái (drag)
+              private boolean btnOkDown=false;     // true = OK đang được giữ
+              private long okDownTime=0;
+              private float okDownX,okDownY;       // vị trí cursor khi nhấn OK
+              private static final long HOLD_THRESH=400;  // ms để chuyển sang hold/longpress
+              private static final int SCROLL_AMOUNT=200;
+
               private Runnable hideBar=new Runnable(){
                   @Override public void run(){bottomBar.setVisibility(View.GONE);barVisible=false;}};
               private Runnable hideCursor=new Runnable(){
                   @Override public void run(){cursorView.setVisibility(View.GONE);cursorVisible=false;}};
+
+              // Khi giữ OK lâu hơn HOLD_THRESH: bắt đầu long press
+              private Runnable startHold=new Runnable(){
+                  @Override public void run(){
+                      if(!btnOkDown)return;
+                      // Gửi ACTION_DOWN dài → WebView nhận là long press
+                      sendTouchDown(okDownX,okDownY);
+                      cursorView.setMode(CursorView.MODE_HOLD);
+                  }
+              };
+
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -797,60 +891,55 @@ jobs:
                   cursorView.setPos(ix,iy);savedCX=ix;savedCY=iy;
                   handler.postDelayed(hideCursor,HIDE_DELAY);
                   SharedPreferences prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
-                  currentUrl=prefs.getString(KEY_URL,DEF);
+                  String currentUrl=prefs.getString(KEY_URL,DEF);
                   if(getIntent().hasExtra("url"))currentUrl=getIntent().getStringExtra("url");
                   webView=(ScrollWebView)findViewById(R.id.webview);
                   progressBar=(ProgressBar)findViewById(R.id.progress);
                   bottomBar=(LinearLayout)findViewById(R.id.bottomBar);
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
-                  // Giữ nguyên v25: focusable=false để D-pad điều cursor không bị intercept
                   webView.setFocusable(false);
                   webView.setFocusableInTouchMode(false);
+                  // ── Bottom bar buttons ───────────────────────────────────────────────
+                  final String loadUrl=currentUrl;
                   findViewById(R.id.btnHome).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){finish();}});
                   findViewById(R.id.btnWebBack).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){if(webView.canGoBack())webView.goBack();}});
+                  findViewById(R.id.btnWebForward).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){if(webView.canGoForward())webView.goForward();}});
+                  findViewById(R.id.btnRefresh).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){webView.reload();}});
                   findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){
                           savedCX=cursorView.getCX();savedCY=cursorView.getCY();
                           startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
-                  setupSpeech();setupWebView();webView.loadUrl(currentUrl);
+                  setupSpeech();setupWebView();webView.loadUrl(loadUrl);
               }
+
               private void wakeC(){
                   if(!cursorVisible){cursorView.setVisibility(View.VISIBLE);cursorVisible=true;}
                   handler.removeCallbacks(hideCursor);handler.postDelayed(hideCursor,HIDE_DELAY);
               }
               private boolean isHttp(String u){return u!=null&&(u.startsWith("http://")||u.startsWith("https://"));}
+
               private void setupWebView(){
                   WebSettings ws=webView.getSettings();
-                  ws.setJavaScriptEnabled(true);
-                  ws.setDomStorageEnabled(true);
-                  ws.setDatabaseEnabled(true);
-                  ws.setGeolocationEnabled(false);
-                  ws.setMediaPlaybackRequiresUserGesture(false);
-                  ws.setUseWideViewPort(true);
-                  ws.setLoadWithOverviewMode(true);
+                  ws.setJavaScriptEnabled(true);ws.setDomStorageEnabled(true);ws.setDatabaseEnabled(true);
+                  ws.setGeolocationEnabled(false);ws.setMediaPlaybackRequiresUserGesture(false);
+                  ws.setUseWideViewPort(true);ws.setLoadWithOverviewMode(true);
                   ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-                  ws.setBuiltInZoomControls(false);
-                  ws.setDisplayZoomControls(false);
-                  ws.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-                  ws.setAppCacheEnabled(true);
-                  ws.setSupportMultipleWindows(false);
-                  ws.setAllowFileAccess(false);
-                  ws.setAllowContentAccess(false);
-                  ws.setNeedInitialFocus(false);
-                  ws.setLoadsImagesAutomatically(true);
-                  ws.setBlockNetworkImage(false);
+                  ws.setBuiltInZoomControls(false);ws.setDisplayZoomControls(false);
+                  ws.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);ws.setAppCacheEnabled(true);
+                  ws.setSupportMultipleWindows(false);ws.setAllowFileAccess(false);
+                  ws.setAllowContentAccess(false);ws.setNeedInitialFocus(false);
+                  ws.setLoadsImagesAutomatically(true);ws.setBlockNetworkImage(false);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   if(Build.VERSION.SDK_INT>=26)ws.setSafeBrowsingEnabled(false);
-                  // Desktop UA — tránh site redirect sang mobile version
                   ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.addJavascriptInterface(new KbdBridge(),"AIO");
-                  webView.setLongClickable(false);
-                  webView.setOnLongClickListener(new View.OnLongClickListener(){
-                      @Override public boolean onLongClick(View v){return true;}});
+                  webView.setLongClickable(true); // cần true để long press hoạt động
                   webView.setWebViewClient(new WebViewClient(){
                       @Override public boolean shouldOverrideUrlLoading(WebView v,String url){
                           if(url==null)return true;if(!isHttp(url))return true;return false;}
@@ -861,8 +950,7 @@ jobs:
                       @Override public void onPageStarted(WebView v,String url,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);}
                       @Override public void onPageFinished(WebView v,String url){
-                          progressBar.setVisibility(View.GONE);
-                          injectJs(v);}
+                          progressBar.setVisibility(View.GONE);injectJs(v);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
                   });
                   webView.setWebChromeClient(new WebChromeClient(){
@@ -873,19 +961,14 @@ jobs:
                           if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
                   });
               }
-              // v30: inject tách riêng thành method, gọi từ onPageFinished
-              // Giữ y chang v25 phần keyboard bridge.
-              // Thêm duy nhất: portrait overlay fix cho vtvgo.vn
+
               private void injectJs(WebView v){
                   v.evaluateJavascript("(function(){"
-                      // --- PHẦN GỐC V25: scroll, _blank, keyboard bridge ---
                       +"document.documentElement.style.scrollBehavior='auto';"
                       +"if(document.body)document.body.style.overscrollBehavior='none';"
                       +"document.querySelectorAll('a[target]').forEach(function(a){"
                       +"  if(a.target===\"_blank\")a.target=\"_self\";});"
                       +"window.open=function(u){if(u)location.href=u;return null};"
-                      // Keyboard bridge: chỉ focusin/focusout — không mousedown, không click
-                      // focusin chỉ fire khi INPUT/TEXTAREA thực sự được focus (không fire khi click link/quảng cáo)
                       +"if(!window._aioKbd){"
                       +"window._aioKbd=true;"
                       +"document.addEventListener('focusin',function(e){"
@@ -898,113 +981,89 @@ jobs:
                       +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
                       +"    {if(window.AIO)window.AIO.onInputBlur();}"
                       +"},true);}"
-                      // --- THÊM V30: fix portrait overlay vtvgo.vn ---
-                      // vtvgo check window.innerWidth < window.innerHeight để hiện overlay xoay màn hình
-                      // Override cả hai property để luôn trả về landscape (rộng > cao)
+                      // Portrait overlay fix (vtvgo.vn)
                       +"try{"
                       +"  Object.defineProperty(window,'innerWidth',{configurable:true,"
                       +"    get:function(){return Math.max(screen.width||1920,screen.height||1080)+1;}});"
                       +"  Object.defineProperty(window,'innerHeight',{configurable:true,"
                       +"    get:function(){return Math.min(screen.width||1920,screen.height||1080)-1;}});"
                       +"}catch(e){}"
-                      // Override screen.orientation
-                      +"try{"
-                      +"  Object.defineProperty(screen,'orientation',{configurable:true,get:function(){"
-                      +"    return{type:'landscape-primary',angle:0,"
-                      +"      lock:function(){return Promise.resolve();},"
-                      +"      unlock:function(){},"
-                      +"      addEventListener:function(){},"
-                      +"      removeEventListener:function(){}};"
-                      +"  }});"
-                      +"}catch(e){}"
+                      +"try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){"
+                      +"  return{type:'landscape-primary',angle:0,lock:function(){return Promise.resolve();},"
+                      +"    unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};"
+                      +"}})}catch(e){}"
                       +"try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(e){}"
-                      // Inject CSS ẩn overlay một lần (id _aio_s để tránh duplicate)
                       +"if(!document.getElementById('_aio_s')){"
                       +"  var s=document.createElement('style');s.id='_aio_s';"
-                      +"  s.textContent='"
-                      +"    [class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
-                      +"    [id*=\"rotate-\"],[id*=\"portrait-\"],"
-                      +"    [class*=\"landscape-guide\"],[class*=\"screen-rotate\"],"
-                      +"    [class*=\"orientation-warn\"],[class*=\"orientation-over\"]"
-                      +"    {display:none!important;visibility:hidden!important;opacity:0!important;}"
-                      +"  ';"
-                      +"  (document.head||document.documentElement).appendChild(s);"
-                      +"}"
-                      // MutationObserver: ẩn overlay ngay khi được inject vào DOM
+                      +"  s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
+                      +"[id*=\"rotate-\"],[id*=\"portrait-\"],[class*=\"landscape-guide\"],"
+                      +"[class*=\"screen-rotate\"],[class*=\"orientation-warn\"],[class*=\"orientation-over\"]"
+                      +"{display:none!important;visibility:hidden!important;opacity:0!important;}';"
+                      +"  (document.head||document.documentElement).appendChild(s);}"
                       +"if(!window._aioObs){"
                       +"  window._aioObs=true;"
                       +"  var _nk=function(n){"
                       +"    if(!n||n.nodeType!==1)return;"
-                      +"    var c=(typeof n.className==='string'?n.className:'')+(n.id?n.id:'');"
+                      +"    var c=(typeof n.className==='string'?n.className:'')+(n.id||'');"
                       +"    if(/rotat|portrait|turn.dev|landscape.g|orient.warn|screen.rot/i.test(c))"
                       +"      n.style.cssText='display:none!important;visibility:hidden!important;';"
                       +"  };"
                       +"  var ob=new MutationObserver(function(ms){"
-                      +"    ms.forEach(function(m){"
-                      +"      m.addedNodes.forEach(function(n){"
-                      +"        _nk(n);"
-                      +"        try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"],[id*=\"rotate\"]').forEach(_nk);}catch(e){}"
-                      +"      });"
-                      +"    });"
-                      +"  });"
+                      +"    ms.forEach(function(m){m.addedNodes.forEach(function(n){"
+                      +"      _nk(n);"
+                      +"      try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"]').forEach(_nk);}catch(e){}"
+                      +"    });});});"
                       +"  try{ob.observe(document.body||document.documentElement,{childList:true,subtree:true});}catch(e){}"
                       +"}"
-                      // Dispatch resize để vtvgo re-evaluate orientation check
                       +"try{window.dispatchEvent(new Event('resize'));}catch(e){}"
                       +"})();",null);
               }
-              // KbdBridge: y chang v25 gốc — KHÔNG toggle setFocusable
-              // focusin/focusout trong JS đã đảm bảo chỉ fire khi click đúng INPUT/TEXTAREA
+
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){
                       handler.post(new Runnable(){@Override public void run(){
-                          imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                      }});
-                  }
+                          imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);}});}
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){
                       handler.post(new Runnable(){@Override public void run(){
-                          imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
-                      }});
-                  }
+                          imm.hideSoftInputFromWindow(webView.getWindowToken(),0);}});}
               }
-              private void moveCursor(float dx,float dy,int rep){
-                  wakeC();
-                  float t=Math.min(1f,(float)rep/ACCEL_TICKS);
-                  float step=STEP_MIN+(STEP_MAX-STEP_MIN)*t;
-                  float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
-                  float ny=cursorView.getCY()+dy*step;
-                  int newDir=0;
-                  if(ny>=screenH-10)newDir=1;else if(ny<=10)newDir=-1;
-                  ny=Math.max(0,Math.min(screenH-2,ny));
-                  cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
-                  if(newDir!=edgeDir){edgeDir=newDir;edgeTicks=0;
-                      handler.removeCallbacks(edgeScroll);if(newDir!=0)handler.post(edgeScroll);}
-                  boolean inZ=(nx<=BAR_ZONE_W&&ny>=screenH-BAR_ZONE_H);
-                  if(inZ&&!barVisible){bottomBar.setVisibility(View.VISIBLE);barVisible=true;handler.removeCallbacks(hideBar);}
-                  else if(!inZ&&barVisible){handler.removeCallbacks(hideBar);handler.postDelayed(hideBar,2000);}
-              }
-              private void stopEdge(){edgeDir=0;edgeTicks=0;handler.removeCallbacks(edgeScroll);}
-              private void clickAt(){
-                  wakeC();stopEdge();
-                  float sx=cursorView.getCX(),sy=cursorView.getCY();
-                  if(barVisible){
-                      int[]ids={R.id.btnHome,R.id.btnWebBack,R.id.btnSettingsWeb};
-                      for(int id:ids){View b=findViewById(id);int[]loc=new int[2];b.getLocationOnScreen(loc);
-                          if(sx>=loc[0]&&sx<loc[0]+b.getWidth()&&sy>=loc[1]&&sy<loc[1]+b.getHeight()){b.performClick();return;}}
-                  }
+
+              // ────────────────────────────────────────────────────────────────────────
+              // TOUCH HELPERS — giả lập chuột thực như LDPlayer
+              // ────────────────────────────────────────────────────────────────────────
+              private float[] webCoords(){
                   int[]wl=new int[2];webView.getLocationOnScreen(wl);
-                  final float rx=sx-wl[0],ry=sy-wl[1];
+                  return new float[]{cursorView.getCX()-wl[0],cursorView.getCY()-wl[1]};
+              }
+              private void sendTouchDown(float rx,float ry){
+                  long t=SystemClock.uptimeMillis();
+                  MotionEvent dn=MotionEvent.obtain(t,t,MotionEvent.ACTION_DOWN,rx,ry,0);
+                  webView.dispatchTouchEvent(dn);dn.recycle();
+              }
+              private void sendTouchUp(float rx,float ry,long downTime){
+                  long t=SystemClock.uptimeMillis();
+                  MotionEvent up=MotionEvent.obtain(downTime,t,MotionEvent.ACTION_UP,rx,ry,0);
+                  webView.dispatchTouchEvent(up);up.recycle();
+              }
+              private void sendTouchMove(float rx,float ry,long downTime){
+                  long t=SystemClock.uptimeMillis();
+                  MotionEvent mv=MotionEvent.obtain(downTime,t,MotionEvent.ACTION_MOVE,rx,ry,0);
+                  webView.dispatchTouchEvent(mv);mv.recycle();
+              }
+              // Click trái: DOWN rồi UP sau 80ms
+              private void clickLeft(){
+                  wakeC();stopEdge();
+                  float[]rc=webCoords();
+                  final float rx=rc[0],ry=rc[1];
                   final long t0=SystemClock.uptimeMillis();
                   MotionEvent dn=MotionEvent.obtain(t0,t0,MotionEvent.ACTION_DOWN,rx,ry,0);
                   webView.dispatchTouchEvent(dn);dn.recycle();
                   handler.postDelayed(new Runnable(){@Override public void run(){
-                      long t1=SystemClock.uptimeMillis();
-                      MotionEvent up=MotionEvent.obtain(t0,t1,MotionEvent.ACTION_UP,rx,ry,0);
-                      webView.dispatchTouchEvent(up);up.recycle();
-                  }},80);
+                      sendTouchUp(rx,ry,t0);}},80);
               }
+              // Scroll trang bằng wheel event
               private void scrollPage(int dy){
                   webView.scrollBy(0,dy);
                   float sx=cursorView.getCX(),sy=cursorView.getCY();
@@ -1020,35 +1079,172 @@ jobs:
                       0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
               }
+
+              // ────────────────────────────────────────────────────────────────────────
+              // CURSOR MOVEMENT
+              // ────────────────────────────────────────────────────────────────────────
+              private long dragDownTime=0;
+              private void moveCursor(float dx,float dy,int rep){
+                  wakeC();
+                  float t=Math.min(1f,(float)rep/ACCEL_TICKS);
+                  float step=STEP_MIN+(STEP_MAX-STEP_MIN)*t;
+                  float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
+                  float ny=cursorView.getCY()+dy*step;
+                  int newDir=0;
+                  if(ny>=screenH-10)newDir=1;else if(ny<=10)newDir=-1;
+                  ny=Math.max(0,Math.min(screenH-2,ny));
+                  cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
+                  // Drag mode: gửi ACTION_MOVE liên tục
+                  if(dragMode){
+                      int[]wl=new int[2];webView.getLocationOnScreen(wl);
+                      sendTouchMove(nx-wl[0],ny-wl[1],dragDownTime);
+                  }
+                  if(newDir!=edgeDir){edgeDir=newDir;edgeTicks=0;
+                      handler.removeCallbacks(edgeScroll);if(newDir!=0)handler.post(edgeScroll);}
+                  boolean inZ=(nx<=BAR_ZONE_W&&ny>=screenH-BAR_ZONE_H);
+                  if(inZ&&!barVisible){bottomBar.setVisibility(View.VISIBLE);barVisible=true;handler.removeCallbacks(hideBar);}
+                  else if(!inZ&&barVisible){handler.removeCallbacks(hideBar);handler.postDelayed(hideBar,2000);}
+              }
+              private void stopEdge(){edgeDir=0;edgeTicks=0;handler.removeCallbacks(edgeScroll);}
+
+              // ────────────────────────────────────────────────────────────────────────
+              // KEY HANDLING
+              // Mapping giống LDPlayer:
+              //   D-pad          = di chuột
+              //   OK (nhấn)      = click trái
+              //   OK (giữ 400ms) = long press
+              //   MENU           = toggle drag mode (nhấn = bắt đầu drag, nhấn lại = thả)
+              //   L1 / Chan-     = scroll lên
+              //   R1 / Chan+     = scroll xuống
+              //   Back           = quay lại web hoặc thoát
+              // ────────────────────────────────────────────────────────────────────────
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   wakeC();
-                  if(voiceOverlay.getVisibility()==View.VISIBLE){
+                  if(voiceOverlay.getVisibility()==android.view.View.VISIBLE){
                       if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
                   int rep=e.getRepeatCount();
                   switch(key){
-                      case KeyEvent.KEYCODE_DPAD_UP:moveCursor(0,-1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN:moveCursor(0,1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT:moveCursor(-1,0,rep);return true;
+                      // Di chuyển cursor
+                      case KeyEvent.KEYCODE_DPAD_UP:   moveCursor(0,-1,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN: moveCursor(0,1,rep);return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT: moveCursor(-1,0,rep);return true;
                       case KeyEvent.KEYCODE_DPAD_RIGHT:moveCursor(1,0,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
-                          if(rep==0)clickAt();return true;
+                      // OK / Enter — nhấn xuống: bắt đầu tính thời gian
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          if(rep==0){
+                              btnOkDown=true;okDownTime=SystemClock.uptimeMillis();
+                              float[]rc=webCoords();okDownX=rc[0];okDownY=rc[1];
+                              if(dragMode){
+                                  // Đang drag: click = thả drag
+                                  toggleDrag();
+                              }else{
+                                  // Đặt timer: nếu giữ >HOLD_THRESH ms → long press
+                                  handler.postDelayed(startHold,HOLD_THRESH);
+                              }
+                          }
+                          return true;
+                      // MENU = toggle drag (giữ chuột trái)
+                      case KeyEvent.KEYCODE_MENU:
+                          if(rep==0)toggleDrag();
+                          return true;
+                      // Scroll lên: L1, Channel-, Page Up, Volume Up
+                      case KeyEvent.KEYCODE_BUTTON_L1:
+                      case KeyEvent.KEYCODE_CHANNEL_DOWN:
+                      case KeyEvent.KEYCODE_PAGE_UP:
+                          cursorView.setMode(CursorView.MODE_SCROLL);
+                          scrollPage(-SCROLL_AMOUNT);
+                          handler.removeCallbacks(clearScrollMode);
+                          handler.postDelayed(clearScrollMode,300);
+                          return true;
+                      // Scroll xuống: R1, Channel+, Page Down, Volume Down
+                      case KeyEvent.KEYCODE_BUTTON_R1:
+                      case KeyEvent.KEYCODE_CHANNEL_UP:
+                      case KeyEvent.KEYCODE_PAGE_DOWN:
+                          cursorView.setMode(CursorView.MODE_SCROLL);
+                          scrollPage(SCROLL_AMOUNT);
+                          handler.removeCallbacks(clearScrollMode);
+                          handler.postDelayed(clearScrollMode,300);
+                          return true;
+                      // Media keys
                       case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:case KeyEvent.KEYCODE_MEDIA_PLAY:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);return true;
                       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);return true;
                       case KeyEvent.KEYCODE_MEDIA_REWIND:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;
-                      case KeyEvent.KEYCODE_MENU:showVoice();return true;
+                      // Voice
+                      case KeyEvent.KEYCODE_SEARCH:case KeyEvent.KEYCODE_VOICE_ASSIST:
+                          showVoice();return true;
+                      // Back
                       case KeyEvent.KEYCODE_BACK:
-                          if(webView.canGoBack()){webView.goBack();return true;}finish();return true;
+                          if(dragMode){dragMode=false;cursorView.setMode(CursorView.MODE_NORMAL);return true;}
+                          if(webView.canGoBack()){webView.goBack();return true;}
+                          finish();return true;
                   }
                   return super.onKeyDown(key,e);
               }
+
+              private Runnable clearScrollMode=new Runnable(){
+                  @Override public void run(){
+                      if(cursorView.getMode()==CursorView.MODE_SCROLL)
+                          cursorView.setMode(CursorView.MODE_NORMAL);}};
+
               @Override public boolean onKeyUp(int key,KeyEvent e){
+                  // Dừng edge scroll
                   if(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
                       ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT)stopEdge();
+                  // OK thả: quyết định click hay long press
+                  if((key==KeyEvent.KEYCODE_DPAD_CENTER||key==KeyEvent.KEYCODE_ENTER)&&btnOkDown){
+                      btnOkDown=false;
+                      handler.removeCallbacks(startHold);
+                      long held=SystemClock.uptimeMillis()-okDownTime;
+                      if(!dragMode){
+                          if(held<HOLD_THRESH){
+                              // Nhấn nhanh = click trái
+                              clickAtBarOrWeb();
+                          }else{
+                              // Đã gửi ACTION_DOWN trong startHold, giờ gửi UP = long press kết thúc
+                              sendTouchUp(okDownX,okDownY,okDownTime);
+                              cursorView.setMode(CursorView.MODE_NORMAL);
+                          }
+                      }
+                      return true;
+                  }
                   return super.onKeyUp(key,e);
               }
+
+              private void clickAtBarOrWeb(){
+                  wakeC();stopEdge();
+                  float sx=cursorView.getCX(),sy=cursorView.getCY();
+                  // Kiểm tra click vào bottom bar trước
+                  if(barVisible){
+                      int[]ids={R.id.btnHome,R.id.btnWebBack,R.id.btnWebForward,R.id.btnRefresh,R.id.btnSettingsWeb};
+                      for(int id:ids){View b=findViewById(id);int[]loc=new int[2];b.getLocationOnScreen(loc);
+                          if(sx>=loc[0]&&sx<loc[0]+b.getWidth()&&sy>=loc[1]&&sy<loc[1]+b.getHeight()){b.performClick();return;}}
+                  }
+                  // Click vào WebView
+                  clickLeft();
+              }
+
+              // Toggle drag mode: nhấn MENU để bắt đầu/kết thúc kéo
+              private void toggleDrag(){
+                  if(!dragMode){
+                      // Bắt đầu drag: gửi ACTION_DOWN và giữ
+                      dragMode=true;
+                      dragDownTime=SystemClock.uptimeMillis();
+                      float[]rc=webCoords();
+                      sendTouchDown(rc[0],rc[1]);
+                      cursorView.setMode(CursorView.MODE_DRAG);
+                  }else{
+                      // Kết thúc drag: gửi ACTION_UP
+                      dragMode=false;
+                      float[]rc=webCoords();
+                      sendTouchUp(rc[0],rc[1],dragDownTime);
+                      cursorView.setMode(CursorView.MODE_NORMAL);
+                  }
+              }
+
               private void setupSpeech(){
                   if(!SpeechRecognizer.isRecognitionAvailable(this))return;
                   speechRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
@@ -1068,14 +1264,10 @@ jobs:
                   });
               }
               private void handleVoice(String t){
-                  if(t.contains("phát")||t.contains("play"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
-                  else if(t.contains("dừng")||t.contains("pause"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
-                  else if(t.contains("tua tới"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
-                  else if(t.contains("tua lùi")||t.contains("quay lại"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
+                  if(t.contains("phát")||t.contains("play"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
+                  else if(t.contains("dừng")||t.contains("pause"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
+                  else if(t.contains("tua tới"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
+                  else if(t.contains("tua lùi"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
                   else if(t.contains("trang chủ")||t.contains("home"))finish();
                   else if(t.contains("cài đặt"))startActivity(new Intent(MainActivity.this,SettingsActivity.class));
               }
@@ -1094,6 +1286,8 @@ jobs:
               @Override protected void onPause(){
                   super.onPause();webView.onPause();
                   savedCX=cursorView.getCX();savedCY=cursorView.getCY();
+                  // Nếu đang drag thì cancel
+                  if(dragMode){dragMode=false;float[]rc=webCoords();sendTouchUp(rc[0],rc[1],dragDownTime);}
                   stopEdge();handler.removeCallbacksAndMessages(null);}
               @Override protected void onResume(){super.onResume();webView.onResume();wakeC();}
               @Override protected void onDestroy(){
