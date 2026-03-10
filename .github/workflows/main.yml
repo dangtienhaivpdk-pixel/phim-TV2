@@ -110,10 +110,10 @@ jobs:
                       android:hardwareAccelerated="true"
                       android:windowSoftInputMode="adjustResize"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
-                  <!-- FIX CRASH: SettingsActivity dùng Theme.Holo.Dark để AlertDialog hoạt động -->
-                  <!-- Fullscreen được set bằng code trong onCreate -->
+                  <!-- FIX CRASH: SettingsActivity dùng Theme.DeviceDefault.NoActionBar -->
+                  <!-- Fullscreen set bằng code trong onCreate -->
                   <activity android:name=".SettingsActivity" android:exported="false"
-                      android:theme="@android:style/Theme.Holo.Dark"
+                      android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
                       android:windowSoftInputMode="adjustResize"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
               </application>
