@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="27" android:versionName="27.0">
+              package="com.allinone.app" android:versionCode="28" android:versionName="28.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -149,9 +149,9 @@ jobs:
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:background="#000000" android:focusable="false">
-              <com.allinone.app.ScrollWebView android:id="@+id/webview"
+              <com.allinone.app.AioWebView android:id="@+id/webview"
                   android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:focusable="false" android:focusableInTouchMode="false"/>
+                  android:focusable="true" android:focusableInTouchMode="true"/>
               <ProgressBar android:id="@+id/progress"
                   style="?android:attr/progressBarStyleHorizontal"
                   android:layout_width="match_parent" android:layout_height="3dp"
@@ -229,15 +229,13 @@ jobs:
                       android:text="&#10133; Thêm địa chỉ web mới"
                       android:textSize="18sp" android:textColor="#ffffff"
                       android:background="#1a3a1a" android:padding="18dp"
-                      android:gravity="center_vertical"
-                      android:layout_marginBottom="12dp"
+                      android:gravity="center_vertical" android:layout_marginBottom="12dp"
                       android:clickable="true" android:focusable="false"/>
                   <TextView android:id="@+id/btnReset"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:text="&#8635; Reset về mặc định"
                       android:textSize="16sp" android:textColor="#aaaaaa"
-                      android:background="#1a1a2e" android:padding="14dp"
-                      android:gravity="center"
+                      android:background="#1a1a2e" android:padding="14dp" android:gravity="center"
                       android:clickable="true" android:focusable="false"/>
               </LinearLayout>
               <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -247,8 +245,7 @@ jobs:
               <ScrollView android:id="@+id/settingsScroll"
                   android:layout_width="match_parent" android:layout_height="0dp"
                   android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp"
-                  android:paddingBottom="20dp"
-                  android:focusable="false" android:fillViewport="true">
+                  android:focusable="false">
                   <LinearLayout android:id="@+id/listUrls"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:orientation="vertical" android:focusable="false"/>
@@ -292,14 +289,27 @@ jobs:
           }
           JEOF
 
-          cat > src/com/allinone/app/ScrollWebView.java << 'JEOF'
+          # AioWebView: WebView con riêng, luôn có InputConnection để IME hoạt động
+          cat > src/com/allinone/app/AioWebView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
           import android.util.AttributeSet;
+          import android.view.inputmethod.EditorInfo;
+          import android.view.inputmethod.InputConnection;
           import android.webkit.WebView;
-          public class ScrollWebView extends WebView {
-              public ScrollWebView(Context c){super(c);}
-              public ScrollWebView(Context c,AttributeSet a){super(c,a);}
+          public class AioWebView extends WebView {
+              public AioWebView(Context c){super(c);}
+              public AioWebView(Context c,AttributeSet a){super(c,a);}
+              // Luôn trả về InputConnection hợp lệ dù focusable hay không
+              // Đây là key để IME (bàn phím ảo) hoạt động trên Android TV WebView
+              @Override
+              public InputConnection onCreateInputConnection(EditorInfo info){
+                  InputConnection ic=super.onCreateInputConnection(info);
+                  if(ic==null){
+                      info.inputType=android.text.InputType.TYPE_CLASS_TEXT;
+                  }
+                  return ic;
+              }
           }
           JEOF
 
@@ -532,17 +542,20 @@ jobs:
               private static final int CLR_FOCUS=0xffE50914,CLR_BACK=0xff333355;
               private static final int CLR_ADD=0xff1a3a1a,CLR_RESET=0xff1a1a2e;
               private static final int CLR_ROW_N=0xff111122,CLR_ROW_A=0xff1e1e35;
-              private static final int ROW_H_PX=110;
+              // Chiều cao cố định mỗi row = ROW_H dp, margin = ROW_M dp
+              // focusTo() dùng giá trị này tính toán vị trí scroll tuyệt đối
+              private int ROW_H_DP=64, ROW_M_DP=4;
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private SharedPreferences prefs;
               private Handler handler=new Handler();
-              // items: 0=Quay lại, 1=Thêm, 2=Reset, 3+=url rows
               private List<View> items=new ArrayList<View>();
               private int cur=1;
               private boolean windowReady=false;
+              private float density=1f;
               @Override protected void onCreate(Bundle s){
                   super.onCreate(s);setContentView(R.layout.settings);
+                  density=getResources().getDisplayMetrics().density;
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   listUrls=(LinearLayout)findViewById(R.id.listUrls);
                   scrollView=(ScrollView)findViewById(R.id.settingsScroll);
@@ -559,11 +572,10 @@ jobs:
                   vReset.setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){resetHistory();renderHistory();}});
                   items.clear();
-                  items.add(vBack);
-                  items.add(vAdd);
-                  items.add(vReset);
+                  items.add(vBack);items.add(vAdd);items.add(vReset);
                   renderHistory();
               }
+              private int dp(int v){return (int)(v*density);}
               @Override public void onWindowFocusChanged(boolean hasFocus){
                   super.onWindowFocusChanged(hasFocus);
                   if(hasFocus&&!windowReady){windowReady=true;applyHighlight(cur);}
@@ -582,15 +594,11 @@ jobs:
                   new AlertDialog.Builder(this)
                       .setTitle("Nhập địa chỉ web")
                       .setView(input)
-                      .setPositiveButton("Lưu và mở", new DialogInterface.OnClickListener(){
+                      .setPositiveButton("Lưu và mở",new DialogInterface.OnClickListener(){
                           @Override public void onClick(DialogInterface d,int w){
                               String u=input.getText().toString().trim();
-                              if(!u.isEmpty()){
-                                  if(!u.startsWith("http"))u="https://"+u;
-                                  saveUrl(u);openUrl(u);
-                              }
-                          }
-                      })
+                              if(!u.isEmpty()){if(!u.startsWith("http"))u="https://"+u;saveUrl(u);openUrl(u);}
+                          }})
                       .setNegativeButton("Huỷ",null)
                       .show();
               }
@@ -605,14 +613,11 @@ jobs:
                   prefs.edit().putString(KEY_HIST,sb.toString()).apply();
               }
               private void resetHistory(){
-                  StringBuilder sb=new StringBuilder();
-                  String[]defs=HomeActivity.DEFS;
+                  StringBuilder sb=new StringBuilder();String[]defs=HomeActivity.DEFS;
                   for(int i=0;i<defs.length;i++){if(i>0)sb.append(SEP);sb.append(defs[i]);}
-                  prefs.edit().putString(KEY_HIST,sb.toString())
-                      .putString(KEY_URL,HomeActivity.DEF).apply();
+                  prefs.edit().putString(KEY_HIST,sb.toString()).putString(KEY_URL,HomeActivity.DEF).apply();
               }
-              private void saveUrl(String url){
-                  prefs.edit().putString(KEY_URL,url).apply();addHist(url);}
+              private void saveUrl(String url){prefs.edit().putString(KEY_URL,url).apply();addHist(url);}
               private void openUrl(String url){
                   startActivity(new Intent(this,MainActivity.class).putExtra("url",url)
                       .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish();
@@ -626,13 +631,13 @@ jobs:
                       final LinearLayout row=new LinearLayout(this);
                       row.setOrientation(LinearLayout.HORIZONTAL);
                       row.setGravity(android.view.Gravity.CENTER_VERTICAL);
-                      row.setPadding(20,0,20,0);
+                      row.setPadding(dp(16),0,dp(16),0);
                       row.setBackgroundColor(url.equals(active)?CLR_ROW_A:CLR_ROW_N);
                       row.setFocusable(false);row.setClickable(true);
-                      // [v27] chiều cao cố định ROW_H_PX px để scroll đúng 1 item/lần
+                      // Chiều cao cố định dp để tính scroll chính xác
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, ROW_H_PX);
-                      rp.setMargins(0,0,0,6);row.setLayoutParams(rp);
+                          ViewGroup.LayoutParams.MATCH_PARENT,dp(ROW_H_DP));
+                      rp.setMargins(0,0,0,dp(ROW_M_DP));row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
                       tv.setText((url.equals(active)?"\u25b6  ":"    ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
@@ -642,30 +647,25 @@ jobs:
                       TextView bu=new TextView(this);
                       bu.setText(" Chọn ");bu.setTextColor(Color.WHITE);
                       bu.setBackgroundColor(0xff2233aa);bu.setTextSize(13);
-                      bu.setPadding(16,8,16,8);bu.setGravity(android.view.Gravity.CENTER);
+                      bu.setPadding(dp(14),dp(6),dp(14),dp(6));bu.setGravity(android.view.Gravity.CENTER);
                       bu.setFocusable(false);bu.setClickable(true);
-                      bu.setLayoutParams(new LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-                      bu.setOnClickListener(new View.OnClickListener(){
-                          @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
+                      bu.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
+                      bu.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
                       TextView be=new TextView(this);
                       be.setText(" \u270e ");be.setTextColor(Color.WHITE);
                       be.setBackgroundColor(0xff336600);be.setTextSize(13);
-                      be.setPadding(12,8,12,8);be.setGravity(android.view.Gravity.CENTER);
+                      be.setPadding(dp(10),dp(6),dp(10),dp(6));be.setGravity(android.view.Gravity.CENTER);
                       be.setFocusable(false);be.setClickable(true);
-                      LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      ep.setMargins(6,0,0,0);be.setLayoutParams(ep);
-                      be.setOnClickListener(new View.OnClickListener(){
-                          @Override public void onClick(View v){openInputDialog(url);}});
+                      LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+                      ep.setMargins(dp(6),0,0,0);be.setLayoutParams(ep);
+                      be.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){openInputDialog(url);}});
                       TextView bd=new TextView(this);
                       bd.setText("  X  ");bd.setTextColor(Color.WHITE);
                       bd.setBackgroundColor(0xff770000);bd.setTextSize(13);
-                      bd.setPadding(16,8,16,8);bd.setGravity(android.view.Gravity.CENTER);
+                      bd.setPadding(dp(14),dp(6),dp(14),dp(6));bd.setGravity(android.view.Gravity.CENTER);
                       bd.setFocusable(false);bd.setClickable(true);
-                      LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      dp.setMargins(6,0,0,0);bd.setLayoutParams(dp);
+                      LinearLayout.LayoutParams dp2=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+                      dp2.setMargins(dp(6),0,0,0);bd.setLayoutParams(dp2);
                       bd.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){
                               List<String>list=getHist();list.remove(url);
@@ -674,78 +674,60 @@ jobs:
                               prefs.edit().putString(KEY_HIST,sb.toString()).apply();
                               if(cur>=items.size()-1)cur=Math.max(0,items.size()-2);
                               renderHistory();applyHighlight(cur);}});
-                      row.setOnClickListener(new View.OnClickListener(){
-                          @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
+                      row.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
                       row.addView(tv);row.addView(bu);row.addView(be);row.addView(bd);
-                      listUrls.addView(row);
-                      items.add(row);
+                      listUrls.addView(row);items.add(row);
                   }
                   applyHighlight(cur);
               }
               private int normalBg(int idx){
-                  if(idx==0)return CLR_BACK;
-                  if(idx==1)return CLR_ADD;
-                  if(idx==2)return CLR_RESET;
-                  if(idx>=3&&idx<items.size()){
-                      int ri=idx-3;List<String>h=getHist();
+                  if(idx==0)return CLR_BACK;if(idx==1)return CLR_ADD;if(idx==2)return CLR_RESET;
+                  if(idx>=3&&idx<items.size()){int ri=idx-3;List<String>h=getHist();
                       if(ri<h.size()){String act=prefs.getString(KEY_URL,DEF);
-                          return h.get(ri).equals(act)?CLR_ROW_A:CLR_ROW_N;}
-                  }
+                          return h.get(ri).equals(act)?CLR_ROW_A:CLR_ROW_N;}}
                   return CLR_ROW_N;
               }
               private void applyHighlight(int idx){
-                  if(idx>=0&&idx<items.size())
-                      items.get(idx).setBackgroundColor(CLR_FOCUS);
+                  if(idx>=0&&idx<items.size())items.get(idx).setBackgroundColor(CLR_FOCUS);
               }
-              // [v27] scroll mượt: cuộn đúng 1 item mỗi lần nhấn, không cuộn nếu đã hiện
+              // [v28] scroll đúng 1 item: tính toán tuyệt đối dùng dp
+              // mỗi row url = dp(ROW_H_DP) + dp(ROW_M_DP) pixels
               private void focusTo(int idx){
-                  if(cur>=0&&cur<items.size())
-                      items.get(cur).setBackgroundColor(normalBg(cur));
+                  if(cur>=0&&cur<items.size())items.get(cur).setBackgroundColor(normalBg(cur));
                   cur=Math.max(0,Math.min(idx,items.size()-1));
                   items.get(cur).setBackgroundColor(CLR_FOCUS);
-                  if(cur>=3){
-                      final int target=cur;
-                      scrollView.post(new Runnable(){@Override public void run(){
-                          if(target<3||target>=items.size())return;
-                          // tính vị trí tuyệt đối của item trong listUrls
-                          int rowIdx=target-3;
-                          int itemTop=rowIdx*(ROW_H_PX+6); // ROW_H_PX + margin 6
-                          int itemBot=itemTop+ROW_H_PX;
-                          int svTop=scrollView.getScrollY();
-                          int svBot=svTop+scrollView.getHeight();
-                          if(itemTop<svTop){
-                              // item bị che phía trên → scroll lên đúng vị trí item
-                              scrollView.smoothScrollTo(0,itemTop-4);
-                          }else if(itemBot>svBot){
-                              // item bị che phía dưới → scroll xuống vừa đủ để hiện item
-                              scrollView.smoothScrollTo(0,itemBot-scrollView.getHeight()+4);
-                          }
-                          // nếu item đã hiện trên màn hình → không cuộn gì
-                      }});
-                  }
+                  if(cur<3)return; // header items - không cần scroll
+                  final int rowIdx=cur-3;
+                  final int itemH=dp(ROW_H_DP)+dp(ROW_M_DP);
+                  scrollView.post(new Runnable(){@Override public void run(){
+                      int itemTop=rowIdx*itemH;
+                      int itemBot=itemTop+dp(ROW_H_DP);
+                      int svTop=scrollView.getScrollY();
+                      int svBot=svTop+scrollView.getHeight();
+                      if(itemTop<svTop){
+                          // item bị che ở trên: cuộn lên đúng vị trí
+                          scrollView.scrollTo(0,Math.max(0,itemTop-dp(4)));
+                      }else if(itemBot>svBot){
+                          // item bị che ở dưới: cuộn xuống vừa đủ hiện item
+                          scrollView.scrollTo(0,itemBot-scrollView.getHeight()+dp(4));
+                      }
+                      // item đã hiện đủ: không cuộn
+                  }});
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   switch(key){
-                      case KeyEvent.KEYCODE_DPAD_UP:
-                          if(cur>0)focusTo(cur-1);
-                          return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN:
-                          if(cur<items.size()-1)focusTo(cur+1);
-                          return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:
-                      case KeyEvent.KEYCODE_ENTER:
+                      case KeyEvent.KEYCODE_DPAD_UP:if(cur>0)focusTo(cur-1);return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:if(cur<items.size()-1)focusTo(cur+1);return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
                           if(e.getRepeatCount()==0){
                               if(cur==0){finish();return true;}
-                              if(cur<items.size())items.get(cur).performClick();
-                          }
+                              if(cur<items.size())items.get(cur).performClick();}
                           return true;
-                      case KeyEvent.KEYCODE_BACK:
-                          finish();return true;
+                      case KeyEvent.KEYCODE_BACK:finish();return true;
                   }
                   return super.onKeyDown(key,e);
               }
-              @Override protected void onDestroy(){
-                  handler.removeCallbacksAndMessages(null);super.onDestroy();}
+              @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);super.onDestroy();}
           }
           JEOF
 
@@ -784,7 +766,7 @@ jobs:
           import android.view.inputmethod.InputMethodManager;
           import java.util.ArrayList;
           public class MainActivity extends Activity {
-              private ScrollWebView webView;
+              private AioWebView webView;
               private ProgressBar progressBar;
               private LinearLayout bottomBar;
               private RelativeLayout voiceOverlay;
@@ -805,6 +787,7 @@ jobs:
               private static final int EDGE_SCROLL_MIN=60,EDGE_SCROLL_MAX=350;
               private static final long HIDE_DELAY=3000;
               private boolean barVisible=false,cursorVisible=true;
+              // [v28] inputFocused: true khi web input đang active, D-pad không di cursor
               private boolean inputFocused=false;
               private int edgeDir=0,edgeTicks=0;
               private Runnable edgeScroll=new Runnable(){
@@ -832,13 +815,16 @@ jobs:
                   SharedPreferences prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
                   currentUrl=prefs.getString(KEY_URL,DEF);
                   if(getIntent().hasExtra("url"))currentUrl=getIntent().getStringExtra("url");
-                  webView=(ScrollWebView)findViewById(R.id.webview);
+                  webView=(AioWebView)findViewById(R.id.webview);
                   progressBar=(ProgressBar)findViewById(R.id.progress);
                   bottomBar=(LinearLayout)findViewById(R.id.bottomBar);
                   voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
                   voiceResult=(TextView)findViewById(R.id.voiceResult);
-                  webView.setFocusable(false);
-                  webView.setFocusableInTouchMode(false);
+                  // [v28] WebView focusable=true từ đầu để IME attach được
+                  // cursor vẫn hoạt động vì input events được Activity xử lý trước
+                  webView.setFocusable(true);
+                  webView.setFocusableInTouchMode(true);
+                  webView.requestFocus();
                   findViewById(R.id.btnHome).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){finish();}});
                   findViewById(R.id.btnWebBack).setOnClickListener(new View.OnClickListener(){
@@ -875,7 +861,6 @@ jobs:
                   ws.setLoadsImagesAutomatically(true);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   if(Build.VERSION.SDK_INT>=26)ws.setSafeBrowsingEnabled(false);
-                  // UA mobile Chrome - tương thích tốt với vtvgo.vn và các site VN
                   ws.setUserAgentString("Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.addJavascriptInterface(new KbdBridge(),"AIO");
@@ -884,22 +869,16 @@ jobs:
                       @Override public boolean onLongClick(View v){return true;}});
                   webView.setWebViewClient(new WebViewClient(){
                       @Override public boolean shouldOverrideUrlLoading(WebView v,String url){
-                          if(url==null)return true;
-                          if(!isHttp(url))return true;
-                          return false;
-                      }
+                          if(url==null)return true;if(!isHttp(url))return true;return false;}
                       @Override @TargetApi(Build.VERSION_CODES.N)
                       public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
                           if(r==null||r.getUrl()==null)return true;
-                          if(!isHttp(r.getUrl().toString()))return true;
-                          return false;
-                      }
+                          if(!isHttp(r.getUrl().toString()))return true;return false;}
                       @Override public void onPageStarted(WebView v,String url,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);}
                       @Override public void onPageFinished(WebView v,String url){
                           progressBar.setVisibility(View.GONE);
-                          injectJs(v);
-                      }
+                          injectJs(v);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
                   });
                   webView.setWebChromeClient(new WebChromeClient(){
@@ -910,122 +889,113 @@ jobs:
                           if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
                   });
               }
-              // =====================================================================
-              // [v27] injectJs: tách ra hàm riêng cho dễ đọc
-              // Fix 1: portrait overlay - dùng CSS <style> inject + MutationObserver
-              //        để xử lý cả trường hợp CSS media query orientation:portrait
-              // Fix 2: keyboard - click/focusin trên input → AIO.onInputFocus()
-              // =====================================================================
               private void injectJs(WebView v){
-                  // Phần 1: CSS override orientation:portrait
-                  // Chèn thẻ <style> vào <head> với !important để ghi đè mọi media query
-                  String cssInject=""
-                      +"(function(){"
-                      +"try{"
-                      +"var s=document.getElementById('_aio_css');"
-                      +"if(!s){"
-                      +"s=document.createElement('style');"
-                      +"s.id='_aio_css';"
-                      // Ghi đè media query orientation:portrait - ẩn mọi overlay xoay màn hình
-                      +"s.textContent="
-                      +"'@media (orientation:portrait){"
-                      +"  body{transform:none!important;width:100vw!important;height:100vh!important;}"
-                      +"}"
-                      // Selector phổ biến của các site VN để hiện overlay xoay màn hình
-                      +"[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
-                      +"[class*=\"landscape-guide\"],[class*=\"rotate-device\"],"
-                      +"[id*=\"rotate\"],[id*=\"portrait\"],"
-                      +"[class*=\"orientation-warning\"],[class*=\"orientation-overlay\"]{"
-                      +"  display:none!important;visibility:hidden!important;"
-                      +"  opacity:0!important;pointer-events:none!important;"
-                      +"}';"
-                      +"(document.head||document.documentElement).appendChild(s);"
-                      +"}"
-                      +"}catch(ex){}"
-                      // Phần 2: JS fake orientation APIs
-                      +"try{Object.defineProperty(screen,'orientation',{get:function(){"
-                      +"  return{type:'landscape-primary',angle:0,"
-                      +"  lock:function(){return Promise.resolve();},"
-                      +"  unlock:function(){},"
-                      +"  addEventListener:function(){},removeEventListener:function(){},"
-                      +"  dispatchEvent:function(){return true;}};"
-                      +"}})}catch(ex){}"
-                      +"try{Object.defineProperty(window,'orientation',{get:function(){return 0;},configurable:true})}catch(ex){}"
-                      +"try{Object.defineProperty(screen,'width',{get:function(){return 1920;},configurable:true})}catch(ex){}"
-                      +"try{Object.defineProperty(screen,'height',{get:function(){return 1080;},configurable:true})}catch(ex){}"
-                      // Phần 3: MutationObserver - theo dõi DOM, ẩn ngay khi overlay được tạo ra
-                      +"if(!window._aioObs){"
-                      +"window._aioObs=true;"
-                      +"var _hide=function(node){"
-                      +"  if(!node||!node.className)return;"
-                      +"  var c=typeof node.className==='string'?node.className:'';"
-                      +"  var id=node.id||'';"
-                      +"  if(/rotate|portrait|turn.device|landscape.guide|orientation/i.test(c+id)){"
-                      +"    node.style.cssText='display:none!important;visibility:hidden!important;opacity:0!important;';"
-                      +"  }"
-                      +"};"
-                      +"var obs=new MutationObserver(function(muts){"
-                      +"  muts.forEach(function(m){"
-                      +"    m.addedNodes.forEach(function(n){if(n.nodeType===1){_hide(n);"
-                      +"      n.querySelectorAll&&n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"],[id*=\"rotate\"],[id*=\"portrait\"]').forEach(_hide);"
-                      +"    }});"
-                      +"  });"
-                      +"});"
-                      +"obs.observe(document.body||document.documentElement,{childList:true,subtree:true});"
-                      +"}"
-                      // Phần 4: misc - tắt scroll smooth, chặn _blank
-                      +"document.documentElement.style.scrollBehavior='auto';"
-                      +"if(document.body)document.body.style.overscrollBehavior='none';"
-                      +"document.querySelectorAll('a[target]').forEach(function(a){if(a.target===\"_blank\")a.target=\"_self\";});"
-                      +"window.open=function(u){if(u)location.href=u;return null};"
-                      // Phần 5: keyboard bridge - click và focus trên input → show keyboard
-                      +"if(!window._aioKbd){"
-                      +"window._aioKbd=true;"
-                      // focusin: mọi cách focus vào input đều bắt được
-                      +"document.addEventListener('focusin',function(e){"
-                      +"  var t=e.target;"
-                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
-                      +"    try{var len=t.value?t.value.length:0;t.setSelectionRange(len,len);}catch(ex){}"
-                      +"    if(window.AIO)window.AIO.onInputFocus();"
-                      +"  }"
-                      +"},true);"
-                      // focusout: ẩn keyboard
-                      +"document.addEventListener('focusout',function(e){"
-                      +"  var t=e.target;"
-                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
-                      +"    if(window.AIO)window.AIO.onInputBlur();"
-                      +"  }"
-                      +"},true);"
-                      // mousedown/touchstart: kích hoạt focus + keyboard sớm nhất có thể
-                      +"document.addEventListener('mousedown',function(e){"
-                      +"  var t=e.target;"
-                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
-                      +"    t.focus();"
-                      +"    if(window.AIO)window.AIO.onInputFocus();"
-                      +"  }"
-                      +"},true);"
-                      +"}"
-                      +"})();";
-                  v.evaluateJavascript(cssInject,null);
+                  // ============================================================
+                  // [v28] FIX 1: Portrait overlay - vtvgo.vn dùng window.innerWidth < window.innerHeight
+                  // Phải override window.innerWidth/innerHeight + inject CSS style tag
+                  // + MutationObserver để ẩn overlay ngay khi được thêm vào DOM
+                  // ============================================================
+                  String js="(function(){"
+                  // --- CSS: inject <style> ẩn mọi overlay xoay màn hình ---
+                  +"if(!document.getElementById('_aio_s')){"
+                  +"var st=document.createElement('style');st.id='_aio_s';"
+                  +"st.textContent='"
+                  // ẩn overlay qua selector phổ biến
+                  +"[class*=rotate],[class*=portrait],[class*=turn],[class*=landscape-guide],"
+                  +"[id*=rotate],[id*=portrait],"
+                  +"[class*=orientation-warn],[class*=orientation-over],"
+                  +"[class*=screen-rotate],[class*=rotate-screen]"
+                  +"{display:none!important;visibility:hidden!important;opacity:0!important;}"
+                  // ghi đè toàn bộ media query portrait
+                  +"@media(orientation:portrait){"
+                  +"html,body{width:100vw!important;height:100vh!important;overflow:auto!important;}"
+                  +"}"
+                  +"';"
+                  +"(document.head||document.documentElement).appendChild(st);}"
+                  // --- JS: fake orientation APIs ---
+                  +"try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){"
+                  +"return{type:'landscape-primary',angle:0,lock:function(){return Promise.resolve();},"
+                  +"unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};"
+                  +"}});}catch(e){}"
+                  +"try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}});}catch(e){}"
+                  // Override window.innerWidth/innerHeight - đây là root cause vtvgo check
+                  +"try{Object.defineProperty(window,'innerWidth',{configurable:true,get:function(){return screen.availWidth||1920;}});}catch(e){}"
+                  +"try{Object.defineProperty(window,'innerHeight',{configurable:true,get:function(){return screen.availHeight||1080;}});}catch(e){}"
+                  // Dispatch resize event để site re-evaluate
+                  +"try{window.dispatchEvent(new Event('resize'));}catch(e){}"
+                  +"try{window.dispatchEvent(new Event('orientationchange'));}catch(e){}"
+                  // --- MutationObserver: ẩn overlay ngay khi được tạo ---
+                  +"if(!window._aioObs){"
+                  +"window._aioObs=true;"
+                  +"var _nuke=function(el){"
+                  +"if(!el||el.nodeType!==1)return;"
+                  +"var c=el.className||'';var id=el.id||'';"
+                  +"if(typeof c!=='string')c='';"
+                  +"if(/rotat|portrait|turn.dev|landscape.guid|orient.warn|orient.over|screen.rotat/i.test(c+id)){"
+                  +"el.style.cssText='display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;';"
+                  +"}};"
+                  +"var obs=new MutationObserver(function(ms){"
+                  +"ms.forEach(function(m){"
+                  +"m.addedNodes.forEach(function(n){"
+                  +"_nuke(n);"
+                  +"if(n.querySelectorAll){"
+                  +"n.querySelectorAll('[class*=rotate],[class*=portrait],[id*=rotate],[id*=portrait],[class*=orient]')"
+                  +".forEach(_nuke);}"
+                  +"});});});"
+                  +"if(document.body)obs.observe(document.body,{childList:true,subtree:true});"
+                  +"}"
+                  // misc
+                  +"document.documentElement.style.scrollBehavior='auto';"
+                  +"if(document.body)document.body.style.overscrollBehavior='none';"
+                  +"document.querySelectorAll('a[target]').forEach(function(a){if(a.target===\"_blank\")a.target=\"_self\";});"
+                  +"window.open=function(u){if(u)location.href=u;return null};"
+                  // ============================================================
+                  // [v28] FIX 2: Keyboard - dùng mousedown (trước click) để bắt sớm nhất
+                  // AIO.onInputFocus() → Android show IME
+                  // ============================================================
+                  +"if(!window._aioKbd){"
+                  +"window._aioKbd=true;"
+                  +"function _aioFocus(t){"
+                  +"if(!t)return;"
+                  +"var tag=t.tagName||'';"
+                  +"if(tag==='INPUT'||tag==='TEXTAREA'||t.contentEditable==='true'||t.isContentEditable){"
+                  +"try{t.focus();}catch(e){}"
+                  +"try{var l=t.value?t.value.length:0;t.setSelectionRange(l,l);}catch(e){}"
+                  +"if(window.AIO)window.AIO.onInputFocus();"
+                  +"}}"
+                  // mousedown: bắt sớm nhất khi người dùng click
+                  +"document.addEventListener('mousedown',function(e){_aioFocus(e.target);},true);"
+                  // touchstart: backup cho touch
+                  +"document.addEventListener('touchstart',function(e){_aioFocus(e.target);},{passive:true,capture:true});"
+                  // focusin: backup khi focus qua tab/JS
+                  +"document.addEventListener('focusin',function(e){"
+                  +"var t=e.target;var tag=t?t.tagName:'';"
+                  +"if(tag==='INPUT'||tag==='TEXTAREA'||((t.contentEditable==='true'||t.isContentEditable))){"
+                  +"if(window.AIO)window.AIO.onInputFocus();}"
+                  +"},true);"
+                  // focusout: ẩn keyboard
+                  +"document.addEventListener('focusout',function(e){"
+                  +"var t=e.target;var tag=t?t.tagName:'';"
+                  +"if(tag==='INPUT'||tag==='TEXTAREA'||(t.contentEditable==='true'||t.isContentEditable)){"
+                  +"if(window.AIO)window.AIO.onInputBlur();}"
+                  +"},true);"
+                  +"}"
+                  +"})();";
+                  v.evaluateJavascript(js,null);
               }
-              // =====================================================================
-              // [v27] KbdBridge: onInputFocus cấp focus + show IME đúng cách cho TV
-              // =====================================================================
+              // ============================================================
+              // [v28] KbdBridge: show/hide IME, manage inputFocused state
+              // ============================================================
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){
                       handler.post(new Runnable(){@Override public void run(){
                           inputFocused=true;
-                          // Bước 1: cấp focusable cho webView để IME gắn vào
-                          webView.setFocusable(true);
-                          webView.setFocusableInTouchMode(true);
                           webView.requestFocus();
-                          // Bước 2: show IME ngay
                           imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                          // Bước 3: retry sau 200ms phòng IME chưa sẵn sàng
                           handler.postDelayed(new Runnable(){@Override public void run(){
                               if(inputFocused)imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                          }},200);
+                          }},300);
                       }});
                   }
                   @android.webkit.JavascriptInterface
@@ -1033,13 +1003,6 @@ jobs:
                       handler.post(new Runnable(){@Override public void run(){
                           inputFocused=false;
                           imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
-                          // Trả webView về không focusable → D-pad điều cursor bình thường
-                          handler.postDelayed(new Runnable(){@Override public void run(){
-                              if(!inputFocused){
-                                  webView.setFocusable(false);
-                                  webView.setFocusableInTouchMode(false);
-                              }
-                          }},100);
                       }});
                   }
               }
@@ -1051,15 +1014,11 @@ jobs:
                   float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
                   float ny=cursorView.getCY()+dy*step;
                   int newDir=0;
-                  if(ny>=screenH-10)newDir=1;
-                  else if(ny<=10)newDir=-1;
+                  if(ny>=screenH-10)newDir=1;else if(ny<=10)newDir=-1;
                   ny=Math.max(0,Math.min(screenH-2,ny));
                   cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
-                  if(newDir!=edgeDir){
-                      edgeDir=newDir;edgeTicks=0;
-                      handler.removeCallbacks(edgeScroll);
-                      if(newDir!=0)handler.post(edgeScroll);
-                  }
+                  if(newDir!=edgeDir){edgeDir=newDir;edgeTicks=0;
+                      handler.removeCallbacks(edgeScroll);if(newDir!=0)handler.post(edgeScroll);}
                   boolean inZ=(nx<=BAR_ZONE_W&&ny>=screenH-BAR_ZONE_H);
                   if(inZ&&!barVisible){bottomBar.setVisibility(View.VISIBLE);barVisible=true;handler.removeCallbacks(hideBar);}
                   else if(!inZ&&barVisible){handler.removeCallbacks(hideBar);handler.postDelayed(hideBar,2000);}
@@ -1090,8 +1049,7 @@ jobs:
                   int[]wl=new int[2];webView.getLocationOnScreen(wl);
                   float rx=sx-wl[0],ry=sy-wl[1];long t=SystemClock.uptimeMillis();
                   MotionEvent.PointerProperties[]pp=new MotionEvent.PointerProperties[1];
-                  pp[0]=new MotionEvent.PointerProperties();pp[0].id=0;
-                  pp[0].toolType=MotionEvent.TOOL_TYPE_MOUSE;
+                  pp[0]=new MotionEvent.PointerProperties();pp[0].id=0;pp[0].toolType=MotionEvent.TOOL_TYPE_MOUSE;
                   MotionEvent.PointerCoords[]pc=new MotionEvent.PointerCoords[1];
                   pc[0]=new MotionEvent.PointerCoords();pc[0].x=rx;pc[0].y=ry;
                   pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-SCROLL_AXIS:SCROLL_AXIS);
@@ -1102,14 +1060,11 @@ jobs:
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   if(inputFocused){
                       if(key==KeyEvent.KEYCODE_BACK){
-                          // BACK khi đang nhập: blur input + ẩn keyboard
                           webView.evaluateJavascript("if(document.activeElement)document.activeElement.blur();",null);
                           inputFocused=false;
                           imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
-                          webView.setFocusable(false);webView.setFocusableInTouchMode(false);
                           return true;
                       }
-                      // phím khác khi đang nhập: để WebView xử lý
                       return super.onKeyDown(key,e);
                   }
                   wakeC();
@@ -1205,7 +1160,7 @@ jobs:
             -d build/classes \
             build/gen/com/allinone/app/R.java \
             src/com/allinone/app/CursorView.java \
-            src/com/allinone/app/ScrollWebView.java \
+            src/com/allinone/app/AioWebView.java \
             src/com/allinone/app/HomeActivity.java \
             src/com/allinone/app/SettingsActivity.java \
             src/com/allinone/app/MainActivity.java
