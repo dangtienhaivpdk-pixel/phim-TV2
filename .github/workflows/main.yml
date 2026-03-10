@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="25" android:versionName="25.0">
+              package="com.allinone.app" android:versionCode="26" android:versionName="26.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -536,7 +536,7 @@ jobs:
               private ScrollView scrollView;
               private SharedPreferences prefs;
               private Handler handler=new Handler();
-              // 0=Quay lại, 1=Thêm, 2=Reset, 3+=rows
+              // items: 0=Quay lại, 1=Thêm, 2=Reset, 3+=url rows
               private List<View> items=new ArrayList<View>();
               private int cur=1;
               private boolean windowReady=false;
@@ -624,16 +624,20 @@ jobs:
                   for(final String url:hist){
                       final LinearLayout row=new LinearLayout(this);
                       row.setOrientation(LinearLayout.HORIZONTAL);
-                      row.setPadding(20,16,20,16);
+                      // [FIX v26] chiều cao cố định 56dp để scroll mượt, cuộn đúng 1 item/lần
+                      row.setPadding(20,0,20,0);
+                      row.setMinimumHeight(56);
+                      row.setGravity(android.view.Gravity.CENTER_VERTICAL);
                       row.setBackgroundColor(url.equals(active)?CLR_ROW_A:CLR_ROW_N);
                       row.setFocusable(false);row.setClickable(true);
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      rp.setMargins(0,0,0,8);row.setLayoutParams(rp);
+                          ViewGroup.LayoutParams.MATCH_PARENT,120);
+                      rp.setMargins(0,0,0,6);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
                       tv.setText((url.equals(active)?"\u25b6  ":"   ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
-                      tv.setTextSize(15);tv.setFocusable(false);
+                      tv.setTextSize(15);tv.setFocusable(false);tv.setSingleLine(true);
+                      tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
                       TextView bu=new TextView(this);
                       bu.setText(" Chọn ");bu.setTextColor(Color.WHITE);
@@ -645,7 +649,7 @@ jobs:
                       bu.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveUrl(url);openUrl(url);}});
                       TextView be=new TextView(this);
-                      be.setText(" ✎ ");be.setTextColor(Color.WHITE);
+                      be.setText(" \u270e ");be.setTextColor(Color.WHITE);
                       be.setBackgroundColor(0xff336600);be.setTextSize(13);
                       be.setPadding(14,10,14,10);be.setGravity(android.view.Gravity.CENTER);
                       be.setFocusable(false);be.setClickable(true);
@@ -693,16 +697,28 @@ jobs:
                   if(idx>=0&&idx<items.size())
                       items.get(idx).setBackgroundColor(CLR_FOCUS);
               }
+              // [FIX v26] scroll mượt: dùng smoothScrollTo thay requestChildRectangleOnScreen
               private void focusTo(int idx){
                   if(cur>=0&&cur<items.size())
                       items.get(cur).setBackgroundColor(normalBg(cur));
                   cur=Math.max(0,Math.min(idx,items.size()-1));
                   items.get(cur).setBackgroundColor(CLR_FOCUS);
                   if(cur>=3){
-                      final View v=items.get(cur);
+                      final int targetIdx=cur;
                       scrollView.post(new Runnable(){@Override public void run(){
-                          Rect r=new Rect();v.getDrawingRect(r);
-                          scrollView.requestChildRectangleOnScreen(listUrls,r,false);}});
+                          if(targetIdx>=3&&targetIdx<items.size()){
+                              View v=items.get(targetIdx);
+                              int top=v.getTop();
+                              int svH=scrollView.getHeight();
+                              int scrollY=scrollView.getScrollY();
+                              // cuộn đúng 1 item: nếu item bị che khuất mới cuộn
+                              if(top<scrollY){
+                                  scrollView.smoothScrollTo(0,top-8);
+                              }else if(top+v.getHeight()>scrollY+svH){
+                                  scrollView.smoothScrollTo(0,top+v.getHeight()-svH+8);
+                              }
+                          }
+                      }});
                   }
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
@@ -786,6 +802,7 @@ jobs:
               private static final int EDGE_SCROLL_MIN=60,EDGE_SCROLL_MAX=350;
               private static final long HIDE_DELAY=3000;
               private boolean barVisible=false,cursorVisible=true;
+              private boolean inputFocused=false;
               private int edgeDir=0,edgeTicks=0;
               private Runnable edgeScroll=new Runnable(){
                   @Override public void run(){
@@ -855,7 +872,8 @@ jobs:
                   ws.setLoadsImagesAutomatically(true);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   if(Build.VERSION.SDK_INT>=26)ws.setSafeBrowsingEnabled(false);
-                  ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+                  // [FIX v26] dùng UA mobile Chrome để vtvgo.vn và các site mobile không block
+                  ws.setUserAgentString("Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.addJavascriptInterface(new KbdBridge(),"AIO");
                   webView.setLongClickable(false);
@@ -877,24 +895,68 @@ jobs:
                           progressBar.setVisibility(View.VISIBLE);}
                       @Override public void onPageFinished(WebView v,String url){
                           progressBar.setVisibility(View.GONE);
+                          // [FIX v26] inject: orientation fake + remove rotate overlay + auto keyboard on input focus
                           v.evaluateJavascript("(function(){"
+                              // tắt scroll animation
                               +"document.documentElement.style.scrollBehavior='auto';"
                               +"if(document.body)document.body.style.overscrollBehavior='none';"
+                              // [FIX] fake screen.orientation = landscape để vtvgo.vn không hiện overlay xoay
+                              +"try{Object.defineProperty(screen,'orientation',{get:function(){"
+                              +"  return{type:'landscape-primary',angle:0,"
+                              +"  lock:function(){return Promise.resolve();},"
+                              +"  unlock:function(){},"
+                              +"  addEventListener:function(){},removeEventListener:function(){},"
+                              +"  dispatchEvent:function(){return true;}};"
+                              +"}})}catch(ex){}"
+                              // fake window.orientation = 0 (landscape)
+                              +"try{Object.defineProperty(window,'orientation',{get:function(){return 0;},configurable:true})}catch(ex){}"
+                              // fake screen dimensions: width > height → landscape
+                              +"try{Object.defineProperty(screen,'width',{get:function(){return 1920;},configurable:true})}catch(ex){}"
+                              +"try{Object.defineProperty(screen,'height',{get:function(){return 1080;},configurable:true})}catch(ex){}"
+                              // xoá/ẩn overlay báo xoay màn hình
+                              +"var _rmRot=function(){"
+                              +"  var sel=['[class*=\"rotate\"]','[class*=\"portrait\"]','[id*=\"rotate\"]',"
+                              +"  '[id*=\"portrait\"]','[class*=\"orientation\"]','[class*=\"landscape-guide\"]',"
+                              +"  '[class*=\"turn-device\"]','[class*=\"rotate-device\"]'];"
+                              +"  sel.forEach(function(s){"
+                              +"    try{document.querySelectorAll(s).forEach(function(el){"
+                              +"      el.style.cssText='display:none!important;visibility:hidden!important;opacity:0!important;';"
+                              +"    });}catch(ex){}"
+                              +"  });"
+                              +"};"
+                              +"_rmRot();"
+                              +"setTimeout(_rmRot,500);setTimeout(_rmRot,1500);setTimeout(_rmRot,3000);"
+                              // chặn _blank và window.open
                               +"document.querySelectorAll('a[target]').forEach(function(a){"
                               +"  if(a.target===\"_blank\")a.target=\"_self\";});"
                               +"window.open=function(u){if(u)location.href=u;return null};"
+                              // [FIX v26] tự động focus + bật bàn phím khi click vào input/search
                               +"if(!window._aioKbd){"
                               +"window._aioKbd=true;"
                               +"document.addEventListener('focusin',function(e){"
                               +"  var t=e.target;"
-                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
-                              +"    {if(window.AIO)window.AIO.onInputFocus();}"
+                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
+                              +"    t.focus();"
+                              // đặt con trỏ về cuối text nếu có
+                              +"    try{var len=t.value?t.value.length:0;t.setSelectionRange(len,len);}catch(ex){}"
+                              +"    if(window.AIO)window.AIO.onInputFocus();"
+                              +"  }"
                               +"},true);"
                               +"document.addEventListener('focusout',function(e){"
                               +"  var t=e.target;"
-                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
-                              +"    {if(window.AIO)window.AIO.onInputBlur();}"
-                              +"},true);}"
+                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
+                              +"    if(window.AIO)window.AIO.onInputBlur();"
+                              +"  }"
+                              +"},true);"
+                              // click vào input → gọi focus + bàn phím ngay
+                              +"document.addEventListener('click',function(e){"
+                              +"  var t=e.target;"
+                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
+                              +"    t.focus();"
+                              +"    if(window.AIO)window.AIO.onInputFocus();"
+                              +"  }"
+                              +"},true);"
+                              +"}"
                               +"})();",null);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
                   });
@@ -906,21 +968,38 @@ jobs:
                           if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
                   });
               }
+              // [FIX v26] KbdBridge: khi JS báo input focus → cấp focus webView + show keyboard ngay
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){
                       handler.post(new Runnable(){@Override public void run(){
+                          inputFocused=true;
+                          // cấp focus cho webView để IME biết gắn vào đâu
+                          webView.setFocusable(true);
+                          webView.setFocusableInTouchMode(true);
+                          webView.requestFocus();
+                          // show keyboard mạnh nhất có thể
                           imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                          // fallback sau 150ms phòng race condition
+                          handler.postDelayed(new Runnable(){@Override public void run(){
+                              imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                          }},150);
                       }});
                   }
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){
                       handler.post(new Runnable(){@Override public void run(){
+                          inputFocused=false;
                           imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
+                          // trả webView về không focusable để D-pad điều khiển cursor bình thường
+                          webView.setFocusable(false);
+                          webView.setFocusableInTouchMode(false);
                       }});
                   }
               }
               private void moveCursor(float dx,float dy,int rep){
+                  // nếu đang có input focus thì không di chuyển cursor
+                  if(inputFocused)return;
                   wakeC();
                   float t=Math.min(1f,(float)rep/ACCEL_TICKS);
                   float step=STEP_MIN+(STEP_MAX-STEP_MIN)*t;
@@ -976,6 +1055,17 @@ jobs:
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
+                  // khi đang nhập liệu: BACK thoát bàn phím, không chặn phím khác
+                  if(inputFocused){
+                      if(key==KeyEvent.KEYCODE_BACK){
+                          imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
+                          webView.evaluateJavascript("if(document.activeElement)document.activeElement.blur();",null);
+                          inputFocused=false;
+                          webView.setFocusable(false);webView.setFocusableInTouchMode(false);
+                          return true;
+                      }
+                      return super.onKeyDown(key,e);
+                  }
                   wakeC();
                   if(voiceOverlay.getVisibility()==View.VISIBLE){
                       if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
@@ -995,14 +1085,13 @@ jobs:
                           webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;
                       case KeyEvent.KEYCODE_MENU:showVoice();return true;
                       case KeyEvent.KEYCODE_BACK:
-                          if(imm.isActive()){imm.hideSoftInputFromWindow(webView.getWindowToken(),0);return true;}
                           if(webView.canGoBack()){webView.goBack();return true;}finish();return true;
                   }
                   return super.onKeyDown(key,e);
               }
               @Override public boolean onKeyUp(int key,KeyEvent e){
-                  if(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
-                      ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT)stopEdge();
+                  if(!inputFocused&&(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
+                      ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT))stopEdge();
                   return super.onKeyUp(key,e);
               }
               private void setupSpeech(){
