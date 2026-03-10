@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="34" android:versionName="34.0">
+              package="com.allinone.app" android:versionCode="35" android:versionName="35.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -227,7 +227,8 @@ jobs:
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:focusable="false">
-              <LinearLayout
+              <!-- Nội dung chính -->
+              <LinearLayout android:id="@+id/settingsMain"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:orientation="vertical" android:background="#0d0d1a" android:focusable="false">
                   <LinearLayout android:layout_width="match_parent" android:layout_height="70dp"
@@ -248,16 +249,14 @@ jobs:
                       android:orientation="horizontal" android:padding="24dp" android:focusable="false">
                       <TextView android:id="@+id/btnAddUrl"
                           android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1"
-                          android:text="&#10133; Thêm URL mới"
+                          android:layout_weight="1" android:text="&#10133; Thêm URL mới"
                           android:textSize="16sp" android:textColor="#ffffff"
                           android:background="#1a3a1a" android:padding="16dp"
                           android:gravity="center" android:layout_marginRight="12dp"
                           android:clickable="true" android:focusable="false"/>
                       <TextView android:id="@+id/btnReset"
                           android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1"
-                          android:text="&#8635; Reset mặc định"
+                          android:layout_weight="1" android:text="&#8635; Reset mặc định"
                           android:textSize="16sp" android:textColor="#aaaaaa"
                           android:background="#1a1a2e" android:padding="16dp" android:gravity="center"
                           android:clickable="true" android:focusable="false"/>
@@ -275,6 +274,47 @@ jobs:
                           android:orientation="vertical" android:focusable="false"/>
                   </ScrollView>
               </LinearLayout>
+              <!-- Dialog nội tuyến thay AlertDialog — cursor vẫn hoạt động -->
+              <FrameLayout android:id="@+id/dialogOverlay"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:background="#cc000000" android:visibility="gone" android:focusable="false">
+                  <LinearLayout android:layout_width="700dp" android:layout_height="wrap_content"
+                      android:layout_gravity="center"
+                      android:orientation="vertical" android:background="#1e1e30"
+                      android:padding="32dp" android:focusable="false">
+                      <TextView android:id="@+id/dialogTitle"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:text="Nhập địa chỉ web" android:textSize="20sp"
+                          android:textColor="#ffffff" android:textStyle="bold"
+                          android:layout_marginBottom="8dp" android:focusable="false"/>
+                      <TextView android:id="@+id/dialogHint"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:text="Ví dụ: https://vtvgo.vn" android:textSize="14sp"
+                          android:textColor="#888888" android:layout_marginBottom="16dp"
+                          android:focusable="false"/>
+                      <EditText android:id="@+id/dialogInput"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:textSize="17sp" android:textColor="#ffffff"
+                          android:hint="https://example.com" android:singleLine="true"
+                          android:background="#111133" android:padding="16dp"
+                          android:layout_marginBottom="24dp" android:focusable="true"
+                          android:focusableInTouchMode="true"/>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:orientation="horizontal" android:gravity="end" android:focusable="false">
+                          <TextView android:id="@+id/dialogBtnCancel"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"
+                              android:text="  HUỶ  " android:textSize="16sp" android:textColor="#aaaaaa"
+                              android:background="#333344" android:padding="14dp"
+                              android:layout_marginRight="16dp"
+                              android:clickable="true" android:focusable="false"/>
+                          <TextView android:id="@+id/dialogBtnSave"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"
+                              android:text="  LƯU  " android:textSize="16sp" android:textColor="#ffffff"
+                              android:background="#E50914" android:padding="14dp"
+                              android:clickable="true" android:focusable="false"/>
+                      </LinearLayout>
+                  </LinearLayout>
+              </FrameLayout>
               <!-- Con trỏ chuột nổi trên mọi thứ -->
               <com.allinone.app.CursorView android:id="@+id/settingsCursor"
                   android:layout_width="match_parent" android:layout_height="match_parent"
@@ -377,11 +417,11 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited5",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited6",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vtvgo.vn",
-                  "https://bilutv.org",
-                  "https://phimhay.cc",
+                  "https://pointnorth.io",
+                  "https://phimmoilam.com",
                   "https://fptplay.vn",
                   "https://www.youtube.com",
                   "https://tv360.vn/tv/vtv1-hd?ch=2&c=0",
@@ -547,28 +587,27 @@ jobs:
           }
           JEOF
 
-          # ── SettingsActivity ───────────────────────────────────────────────────────
-          # V34: Chuột hoạt động trong Settings
-          # D-pad di chuyển cursor, OK click vào View dưới cursor
-          # findClickableAt() dùng hit-test đệ quy để tìm nút Chọn/Sửa/X
+          # ── SettingsActivity v35 ─────────────────────────────────────────────────
+          # Bỏ AlertDialog (chiếm focus, cursor mất) → dùng dialog nội tuyến trong layout
+          # Cursor hoạt động cả khi dialog mở: click LƯU/HUỶ bình thường
+          # Thay bilutv/phimhay → pointnorth.io
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
-          import android.app.AlertDialog;
           import android.content.Context;
-          import android.content.DialogInterface;
           import android.content.Intent;
           import android.content.SharedPreferences;
           import android.graphics.Color;
           import android.os.Bundle;
           import android.os.Handler;
           import android.app.Activity;
-          import android.text.InputType;
           import android.util.DisplayMetrics;
           import android.view.KeyEvent;
           import android.view.View;
           import android.view.ViewGroup;
           import android.view.WindowManager;
+          import android.view.inputmethod.InputMethodManager;
           import android.widget.EditText;
+          import android.widget.FrameLayout;
           import android.widget.LinearLayout;
           import android.widget.ScrollView;
           import android.widget.TextView;
@@ -580,13 +619,18 @@ jobs:
                   DEF="https://vtvgo.vn",SEP="|||";
               private LinearLayout listUrls;
               private ScrollView scrollView;
+              private FrameLayout dialogOverlay;
+              private EditText dialogInput;
               private SharedPreferences prefs;
               private Handler handler=new Handler();
+              private InputMethodManager imm;
+              private String dialogPrefill=null; // null = thêm mới, có giá trị = sửa
+              // Cursor
               private CursorView cursor;
               private float scW=1920,scH=1080;
               private static float savedCX=-1,savedCY=-1;
               private static final float STEP_MIN=12f,STEP_MAX=90f,ACCEL=14f;
-              private static final long HIDE_DELAY=5000;
+              private static final long HIDE_DELAY=6000;
               private boolean cursorVisible=true;
               private Runnable hideCursorRun=new Runnable(){
                   @Override public void run(){cursor.setVisibility(View.GONE);cursorVisible=false;}};
@@ -596,8 +640,11 @@ jobs:
                       WindowManager.LayoutParams.FLAG_FULLSCREEN);
                   setContentView(R.layout.settings);
                   prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
+                  imm=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
                   listUrls=(LinearLayout)findViewById(R.id.listUrls);
                   scrollView=(ScrollView)findViewById(R.id.settingsScroll);
+                  dialogOverlay=(FrameLayout)findViewById(R.id.dialogOverlay);
+                  dialogInput=(EditText)findViewById(R.id.dialogInput);
                   cursor=(CursorView)findViewById(R.id.settingsCursor);
                   DisplayMetrics dm=new DisplayMetrics();
                   getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -608,11 +655,42 @@ jobs:
                   findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){finish();}});
                   findViewById(R.id.btnAddUrl).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){showInputDialog(null);}});
+                      @Override public void onClick(View v){openDialog(null);}});
                   findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){doReset();}});
+                  // Dialog buttons
+                  findViewById(R.id.dialogBtnCancel).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){closeDialog();}});
+                  findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){saveFromDialog();}});
                   renderHistory();
               }
+              // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
+              private void openDialog(String prefill){
+                  dialogPrefill=prefill;
+                  dialogInput.setText(prefill!=null?prefill:"");
+                  if(prefill!=null)dialogInput.setSelection(prefill.length());
+                  else dialogInput.setText("https://");
+                  dialogOverlay.setVisibility(View.VISIBLE);
+                  // Hiện bàn phím
+                  dialogInput.requestFocus();
+                  handler.postDelayed(new Runnable(){@Override public void run(){
+                      imm.showSoftInput(dialogInput,InputMethodManager.SHOW_FORCED);}},100);
+              }
+              private void closeDialog(){
+                  dialogOverlay.setVisibility(View.GONE);
+                  imm.hideSoftInputFromWindow(dialogInput.getWindowToken(),0);
+                  wakeC();
+              }
+              private void saveFromDialog(){
+                  String u=dialogInput.getText().toString().trim();
+                  if(u.isEmpty()||u.equals("https://")){closeDialog();return;}
+                  if(!u.startsWith("http"))u="https://"+u;
+                  closeDialog();
+                  saveAndOpen(u);
+              }
+              private boolean isDialogOpen(){return dialogOverlay.getVisibility()==View.VISIBLE;}
+              // ── Cursor ──────────────────────────────────────────────────────────
               private void wakeC(){
                   if(!cursorVisible){cursor.setVisibility(View.VISIBLE);cursorVisible=true;}
                   handler.removeCallbacks(hideCursorRun);handler.postDelayed(hideCursorRun,HIDE_DELAY);
@@ -624,11 +702,12 @@ jobs:
                   float nx=Math.max(0,Math.min(scW-2,cursor.getCX()+dx*step));
                   float ny=Math.max(0,Math.min(scH-2,cursor.getCY()+dy*step));
                   cursor.setPos(nx,ny);savedCX=nx;savedCY=ny;
-                  // Cuộn scrollview khi cursor gần mép
-                  int[]sl=new int[2];scrollView.getLocationOnScreen(sl);
-                  int svBot=sl[1]+scrollView.getHeight();
-                  if(ny>svBot-60)scrollView.scrollBy(0,40);
-                  else if(ny<sl[1]+60&&scrollView.getScrollY()>0)scrollView.scrollBy(0,-40);
+                  if(!isDialogOpen()){
+                      int[]sl=new int[2];scrollView.getLocationOnScreen(sl);
+                      int svBot=sl[1]+scrollView.getHeight();
+                      if(ny>svBot-60)scrollView.scrollBy(0,40);
+                      else if(ny<sl[1]+60&&scrollView.getScrollY()>0)scrollView.scrollBy(0,-40);
+                  }
               }
               private void clickAtCursor(){
                   wakeC();
@@ -657,26 +736,7 @@ jobs:
                   if(v.isClickable()&&!(v instanceof CursorView))return v;
                   return null;
               }
-              private void showInputDialog(final String prefill){
-                  final EditText et=new EditText(this);
-                  et.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);
-                  et.setSingleLine(true);et.setHint("https://example.com");
-                  if(prefill!=null&&!prefill.isEmpty()){et.setText(prefill);et.setSelection(prefill.length());}
-                  et.setTextColor(0xffffffff);et.setHintTextColor(0xff555555);
-                  et.setBackgroundColor(0xff1a1a2e);et.setPadding(24,20,24,20);et.setTextSize(17f);
-                  new AlertDialog.Builder(this)
-                      .setTitle("Nhập địa chỉ web")
-                      .setMessage("Ví dụ: https://vtvgo.vn")
-                      .setView(et)
-                      .setPositiveButton("Lưu",new DialogInterface.OnClickListener(){
-                          @Override public void onClick(DialogInterface d,int w){
-                              String u=et.getText().toString().trim();
-                              if(u.isEmpty())return;
-                              if(!u.startsWith("http"))u="https://"+u;
-                              saveAndOpen(u);
-                          }})
-                      .setNegativeButton("Huỷ",null).show();
-              }
+              // ── Data ────────────────────────────────────────────────────────────
               private void saveAndOpen(String url){
                   addHist(url);prefs.edit().putString(KEY_URL,url).apply();
                   startActivity(new Intent(this,MainActivity.class).putExtra("url",url)
@@ -704,8 +764,7 @@ jobs:
                   List<String>hist=getHist();String active=prefs.getString(KEY_URL,DEF);
                   for(final String url:hist){
                       final LinearLayout row=new LinearLayout(this);
-                      row.setOrientation(LinearLayout.HORIZONTAL);
-                      row.setPadding(16,14,16,14);
+                      row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(16,14,16,14);
                       row.setBackgroundColor(url.equals(active)?0xff1e1e35:0xff111122);
                       row.setFocusable(false);row.setClickable(true);
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
@@ -721,7 +780,7 @@ jobs:
                           @Override public void onClick(View v){saveAndOpen(url);}});
                       TextView bEdt=mkBtn(" \u270e ",0xff226600);
                       bEdt.setOnClickListener(new View.OnClickListener(){
-                          @Override public void onClick(View v){showInputDialog(url);}});
+                          @Override public void onClick(View v){openDialog(url);}});
                       TextView bDel=mkBtn("  X  ",0xff880000);
                       bDel.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){
@@ -745,6 +804,21 @@ jobs:
                   lp.setMargins(6,0,0,0);b.setLayoutParams(lp);return b;
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
+                  // Khi dialog mở: BACK đóng dialog, OK = click tại cursor
+                  if(isDialogOpen()){
+                      if(key==KeyEvent.KEYCODE_BACK){closeDialog();return true;}
+                      // D-pad vẫn di cursor trong dialog để bấm LƯU/HUỶ
+                      int rep=e.getRepeatCount();
+                      switch(key){
+                          case KeyEvent.KEYCODE_DPAD_UP:   moveCursor(0,-1,rep);return true;
+                          case KeyEvent.KEYCODE_DPAD_DOWN: moveCursor(0, 1,rep);return true;
+                          case KeyEvent.KEYCODE_DPAD_LEFT: moveCursor(-1,0,rep);return true;
+                          case KeyEvent.KEYCODE_DPAD_RIGHT:moveCursor( 1,0,rep);return true;
+                          case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
+                              if(e.getRepeatCount()==0)clickAtCursor();return true;
+                      }
+                      return true; // chặn mọi key khác khi dialog mở
+                  }
                   int rep=e.getRepeatCount();
                   switch(key){
                       case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0,-1,rep);return true;
