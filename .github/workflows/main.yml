@@ -82,7 +82,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="26" android:versionName="26.0">
+              package="com.allinone.app" android:versionCode="27" android:versionName="27.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -242,12 +242,13 @@ jobs:
               </LinearLayout>
               <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:text="Danh sách kênh:" android:textSize="18sp" android:textColor="#888888"
-                  android:layout_marginLeft="40dp" android:layout_marginBottom="12dp"
+                  android:layout_marginLeft="40dp" android:layout_marginBottom="8dp"
                   android:focusable="false"/>
               <ScrollView android:id="@+id/settingsScroll"
                   android:layout_width="match_parent" android:layout_height="0dp"
                   android:layout_weight="1" android:paddingLeft="40dp" android:paddingRight="40dp"
-                  android:focusable="false">
+                  android:paddingBottom="20dp"
+                  android:focusable="false" android:fillViewport="true">
                   <LinearLayout android:id="@+id/listUrls"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:orientation="vertical" android:focusable="false"/>
@@ -511,7 +512,6 @@ jobs:
           import android.content.Intent;
           import android.content.SharedPreferences;
           import android.graphics.Color;
-          import android.graphics.Rect;
           import android.os.Bundle;
           import android.os.Handler;
           import android.app.Activity;
@@ -532,6 +532,7 @@ jobs:
               private static final int CLR_FOCUS=0xffE50914,CLR_BACK=0xff333355;
               private static final int CLR_ADD=0xff1a3a1a,CLR_RESET=0xff1a1a2e;
               private static final int CLR_ROW_N=0xff111122,CLR_ROW_A=0xff1e1e35;
+              private static final int ROW_H_PX=110;
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private SharedPreferences prefs;
@@ -624,25 +625,24 @@ jobs:
                   for(final String url:hist){
                       final LinearLayout row=new LinearLayout(this);
                       row.setOrientation(LinearLayout.HORIZONTAL);
-                      // [FIX v26] chiều cao cố định 56dp để scroll mượt, cuộn đúng 1 item/lần
-                      row.setPadding(20,0,20,0);
-                      row.setMinimumHeight(56);
                       row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+                      row.setPadding(20,0,20,0);
                       row.setBackgroundColor(url.equals(active)?CLR_ROW_A:CLR_ROW_N);
                       row.setFocusable(false);row.setClickable(true);
+                      // [v27] chiều cao cố định ROW_H_PX px để scroll đúng 1 item/lần
                       LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,120);
+                          ViewGroup.LayoutParams.MATCH_PARENT, ROW_H_PX);
                       rp.setMargins(0,0,0,6);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
-                      tv.setText((url.equals(active)?"\u25b6  ":"   ")+url);
+                      tv.setText((url.equals(active)?"\u25b6  ":"    ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffcccccc);
-                      tv.setTextSize(15);tv.setFocusable(false);tv.setSingleLine(true);
+                      tv.setTextSize(14);tv.setFocusable(false);tv.setSingleLine(true);
                       tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
                       TextView bu=new TextView(this);
                       bu.setText(" Chọn ");bu.setTextColor(Color.WHITE);
                       bu.setBackgroundColor(0xff2233aa);bu.setTextSize(13);
-                      bu.setPadding(18,10,18,10);bu.setGravity(android.view.Gravity.CENTER);
+                      bu.setPadding(16,8,16,8);bu.setGravity(android.view.Gravity.CENTER);
                       bu.setFocusable(false);bu.setClickable(true);
                       bu.setLayoutParams(new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -651,21 +651,21 @@ jobs:
                       TextView be=new TextView(this);
                       be.setText(" \u270e ");be.setTextColor(Color.WHITE);
                       be.setBackgroundColor(0xff336600);be.setTextSize(13);
-                      be.setPadding(14,10,14,10);be.setGravity(android.view.Gravity.CENTER);
+                      be.setPadding(12,8,12,8);be.setGravity(android.view.Gravity.CENTER);
                       be.setFocusable(false);be.setClickable(true);
                       LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      ep.setMargins(8,0,0,0);be.setLayoutParams(ep);
+                      ep.setMargins(6,0,0,0);be.setLayoutParams(ep);
                       be.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){openInputDialog(url);}});
                       TextView bd=new TextView(this);
                       bd.setText("  X  ");bd.setTextColor(Color.WHITE);
                       bd.setBackgroundColor(0xff770000);bd.setTextSize(13);
-                      bd.setPadding(18,10,18,10);bd.setGravity(android.view.Gravity.CENTER);
+                      bd.setPadding(16,8,16,8);bd.setGravity(android.view.Gravity.CENTER);
                       bd.setFocusable(false);bd.setClickable(true);
                       LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      dp.setMargins(8,0,0,0);bd.setLayoutParams(dp);
+                      dp.setMargins(6,0,0,0);bd.setLayoutParams(dp);
                       bd.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){
                               List<String>list=getHist();list.remove(url);
@@ -697,27 +697,30 @@ jobs:
                   if(idx>=0&&idx<items.size())
                       items.get(idx).setBackgroundColor(CLR_FOCUS);
               }
-              // [FIX v26] scroll mượt: dùng smoothScrollTo thay requestChildRectangleOnScreen
+              // [v27] scroll mượt: cuộn đúng 1 item mỗi lần nhấn, không cuộn nếu đã hiện
               private void focusTo(int idx){
                   if(cur>=0&&cur<items.size())
                       items.get(cur).setBackgroundColor(normalBg(cur));
                   cur=Math.max(0,Math.min(idx,items.size()-1));
                   items.get(cur).setBackgroundColor(CLR_FOCUS);
                   if(cur>=3){
-                      final int targetIdx=cur;
+                      final int target=cur;
                       scrollView.post(new Runnable(){@Override public void run(){
-                          if(targetIdx>=3&&targetIdx<items.size()){
-                              View v=items.get(targetIdx);
-                              int top=v.getTop();
-                              int svH=scrollView.getHeight();
-                              int scrollY=scrollView.getScrollY();
-                              // cuộn đúng 1 item: nếu item bị che khuất mới cuộn
-                              if(top<scrollY){
-                                  scrollView.smoothScrollTo(0,top-8);
-                              }else if(top+v.getHeight()>scrollY+svH){
-                                  scrollView.smoothScrollTo(0,top+v.getHeight()-svH+8);
-                              }
+                          if(target<3||target>=items.size())return;
+                          // tính vị trí tuyệt đối của item trong listUrls
+                          int rowIdx=target-3;
+                          int itemTop=rowIdx*(ROW_H_PX+6); // ROW_H_PX + margin 6
+                          int itemBot=itemTop+ROW_H_PX;
+                          int svTop=scrollView.getScrollY();
+                          int svBot=svTop+scrollView.getHeight();
+                          if(itemTop<svTop){
+                              // item bị che phía trên → scroll lên đúng vị trí item
+                              scrollView.smoothScrollTo(0,itemTop-4);
+                          }else if(itemBot>svBot){
+                              // item bị che phía dưới → scroll xuống vừa đủ để hiện item
+                              scrollView.smoothScrollTo(0,itemBot-scrollView.getHeight()+4);
                           }
+                          // nếu item đã hiện trên màn hình → không cuộn gì
                       }});
                   }
               }
@@ -872,7 +875,7 @@ jobs:
                   ws.setLoadsImagesAutomatically(true);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   if(Build.VERSION.SDK_INT>=26)ws.setSafeBrowsingEnabled(false);
-                  // [FIX v26] dùng UA mobile Chrome để vtvgo.vn và các site mobile không block
+                  // UA mobile Chrome - tương thích tốt với vtvgo.vn và các site VN
                   ws.setUserAgentString("Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.addJavascriptInterface(new KbdBridge(),"AIO");
@@ -895,69 +898,8 @@ jobs:
                           progressBar.setVisibility(View.VISIBLE);}
                       @Override public void onPageFinished(WebView v,String url){
                           progressBar.setVisibility(View.GONE);
-                          // [FIX v26] inject: orientation fake + remove rotate overlay + auto keyboard on input focus
-                          v.evaluateJavascript("(function(){"
-                              // tắt scroll animation
-                              +"document.documentElement.style.scrollBehavior='auto';"
-                              +"if(document.body)document.body.style.overscrollBehavior='none';"
-                              // [FIX] fake screen.orientation = landscape để vtvgo.vn không hiện overlay xoay
-                              +"try{Object.defineProperty(screen,'orientation',{get:function(){"
-                              +"  return{type:'landscape-primary',angle:0,"
-                              +"  lock:function(){return Promise.resolve();},"
-                              +"  unlock:function(){},"
-                              +"  addEventListener:function(){},removeEventListener:function(){},"
-                              +"  dispatchEvent:function(){return true;}};"
-                              +"}})}catch(ex){}"
-                              // fake window.orientation = 0 (landscape)
-                              +"try{Object.defineProperty(window,'orientation',{get:function(){return 0;},configurable:true})}catch(ex){}"
-                              // fake screen dimensions: width > height → landscape
-                              +"try{Object.defineProperty(screen,'width',{get:function(){return 1920;},configurable:true})}catch(ex){}"
-                              +"try{Object.defineProperty(screen,'height',{get:function(){return 1080;},configurable:true})}catch(ex){}"
-                              // xoá/ẩn overlay báo xoay màn hình
-                              +"var _rmRot=function(){"
-                              +"  var sel=['[class*=\"rotate\"]','[class*=\"portrait\"]','[id*=\"rotate\"]',"
-                              +"  '[id*=\"portrait\"]','[class*=\"orientation\"]','[class*=\"landscape-guide\"]',"
-                              +"  '[class*=\"turn-device\"]','[class*=\"rotate-device\"]'];"
-                              +"  sel.forEach(function(s){"
-                              +"    try{document.querySelectorAll(s).forEach(function(el){"
-                              +"      el.style.cssText='display:none!important;visibility:hidden!important;opacity:0!important;';"
-                              +"    });}catch(ex){}"
-                              +"  });"
-                              +"};"
-                              +"_rmRot();"
-                              +"setTimeout(_rmRot,500);setTimeout(_rmRot,1500);setTimeout(_rmRot,3000);"
-                              // chặn _blank và window.open
-                              +"document.querySelectorAll('a[target]').forEach(function(a){"
-                              +"  if(a.target===\"_blank\")a.target=\"_self\";});"
-                              +"window.open=function(u){if(u)location.href=u;return null};"
-                              // [FIX v26] tự động focus + bật bàn phím khi click vào input/search
-                              +"if(!window._aioKbd){"
-                              +"window._aioKbd=true;"
-                              +"document.addEventListener('focusin',function(e){"
-                              +"  var t=e.target;"
-                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
-                              +"    t.focus();"
-                              // đặt con trỏ về cuối text nếu có
-                              +"    try{var len=t.value?t.value.length:0;t.setSelectionRange(len,len);}catch(ex){}"
-                              +"    if(window.AIO)window.AIO.onInputFocus();"
-                              +"  }"
-                              +"},true);"
-                              +"document.addEventListener('focusout',function(e){"
-                              +"  var t=e.target;"
-                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
-                              +"    if(window.AIO)window.AIO.onInputBlur();"
-                              +"  }"
-                              +"},true);"
-                              // click vào input → gọi focus + bàn phím ngay
-                              +"document.addEventListener('click',function(e){"
-                              +"  var t=e.target;"
-                              +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
-                              +"    t.focus();"
-                              +"    if(window.AIO)window.AIO.onInputFocus();"
-                              +"  }"
-                              +"},true);"
-                              +"}"
-                              +"})();",null);}
+                          injectJs(v);
+                      }
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
                   });
                   webView.setWebChromeClient(new WebChromeClient(){
@@ -968,22 +910,122 @@ jobs:
                           if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
                   });
               }
-              // [FIX v26] KbdBridge: khi JS báo input focus → cấp focus webView + show keyboard ngay
+              // =====================================================================
+              // [v27] injectJs: tách ra hàm riêng cho dễ đọc
+              // Fix 1: portrait overlay - dùng CSS <style> inject + MutationObserver
+              //        để xử lý cả trường hợp CSS media query orientation:portrait
+              // Fix 2: keyboard - click/focusin trên input → AIO.onInputFocus()
+              // =====================================================================
+              private void injectJs(WebView v){
+                  // Phần 1: CSS override orientation:portrait
+                  // Chèn thẻ <style> vào <head> với !important để ghi đè mọi media query
+                  String cssInject=""
+                      +"(function(){"
+                      +"try{"
+                      +"var s=document.getElementById('_aio_css');"
+                      +"if(!s){"
+                      +"s=document.createElement('style');"
+                      +"s.id='_aio_css';"
+                      // Ghi đè media query orientation:portrait - ẩn mọi overlay xoay màn hình
+                      +"s.textContent="
+                      +"'@media (orientation:portrait){"
+                      +"  body{transform:none!important;width:100vw!important;height:100vh!important;}"
+                      +"}"
+                      // Selector phổ biến của các site VN để hiện overlay xoay màn hình
+                      +"[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
+                      +"[class*=\"landscape-guide\"],[class*=\"rotate-device\"],"
+                      +"[id*=\"rotate\"],[id*=\"portrait\"],"
+                      +"[class*=\"orientation-warning\"],[class*=\"orientation-overlay\"]{"
+                      +"  display:none!important;visibility:hidden!important;"
+                      +"  opacity:0!important;pointer-events:none!important;"
+                      +"}';"
+                      +"(document.head||document.documentElement).appendChild(s);"
+                      +"}"
+                      +"}catch(ex){}"
+                      // Phần 2: JS fake orientation APIs
+                      +"try{Object.defineProperty(screen,'orientation',{get:function(){"
+                      +"  return{type:'landscape-primary',angle:0,"
+                      +"  lock:function(){return Promise.resolve();},"
+                      +"  unlock:function(){},"
+                      +"  addEventListener:function(){},removeEventListener:function(){},"
+                      +"  dispatchEvent:function(){return true;}};"
+                      +"}})}catch(ex){}"
+                      +"try{Object.defineProperty(window,'orientation',{get:function(){return 0;},configurable:true})}catch(ex){}"
+                      +"try{Object.defineProperty(screen,'width',{get:function(){return 1920;},configurable:true})}catch(ex){}"
+                      +"try{Object.defineProperty(screen,'height',{get:function(){return 1080;},configurable:true})}catch(ex){}"
+                      // Phần 3: MutationObserver - theo dõi DOM, ẩn ngay khi overlay được tạo ra
+                      +"if(!window._aioObs){"
+                      +"window._aioObs=true;"
+                      +"var _hide=function(node){"
+                      +"  if(!node||!node.className)return;"
+                      +"  var c=typeof node.className==='string'?node.className:'';"
+                      +"  var id=node.id||'';"
+                      +"  if(/rotate|portrait|turn.device|landscape.guide|orientation/i.test(c+id)){"
+                      +"    node.style.cssText='display:none!important;visibility:hidden!important;opacity:0!important;';"
+                      +"  }"
+                      +"};"
+                      +"var obs=new MutationObserver(function(muts){"
+                      +"  muts.forEach(function(m){"
+                      +"    m.addedNodes.forEach(function(n){if(n.nodeType===1){_hide(n);"
+                      +"      n.querySelectorAll&&n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"],[id*=\"rotate\"],[id*=\"portrait\"]').forEach(_hide);"
+                      +"    }});"
+                      +"  });"
+                      +"});"
+                      +"obs.observe(document.body||document.documentElement,{childList:true,subtree:true});"
+                      +"}"
+                      // Phần 4: misc - tắt scroll smooth, chặn _blank
+                      +"document.documentElement.style.scrollBehavior='auto';"
+                      +"if(document.body)document.body.style.overscrollBehavior='none';"
+                      +"document.querySelectorAll('a[target]').forEach(function(a){if(a.target===\"_blank\")a.target=\"_self\";});"
+                      +"window.open=function(u){if(u)location.href=u;return null};"
+                      // Phần 5: keyboard bridge - click và focus trên input → show keyboard
+                      +"if(!window._aioKbd){"
+                      +"window._aioKbd=true;"
+                      // focusin: mọi cách focus vào input đều bắt được
+                      +"document.addEventListener('focusin',function(e){"
+                      +"  var t=e.target;"
+                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
+                      +"    try{var len=t.value?t.value.length:0;t.setSelectionRange(len,len);}catch(ex){}"
+                      +"    if(window.AIO)window.AIO.onInputFocus();"
+                      +"  }"
+                      +"},true);"
+                      // focusout: ẩn keyboard
+                      +"document.addEventListener('focusout',function(e){"
+                      +"  var t=e.target;"
+                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
+                      +"    if(window.AIO)window.AIO.onInputBlur();"
+                      +"  }"
+                      +"},true);"
+                      // mousedown/touchstart: kích hoạt focus + keyboard sớm nhất có thể
+                      +"document.addEventListener('mousedown',function(e){"
+                      +"  var t=e.target;"
+                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true')){"
+                      +"    t.focus();"
+                      +"    if(window.AIO)window.AIO.onInputFocus();"
+                      +"  }"
+                      +"},true);"
+                      +"}"
+                      +"})();";
+                  v.evaluateJavascript(cssInject,null);
+              }
+              // =====================================================================
+              // [v27] KbdBridge: onInputFocus cấp focus + show IME đúng cách cho TV
+              // =====================================================================
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){
                       handler.post(new Runnable(){@Override public void run(){
                           inputFocused=true;
-                          // cấp focus cho webView để IME biết gắn vào đâu
+                          // Bước 1: cấp focusable cho webView để IME gắn vào
                           webView.setFocusable(true);
                           webView.setFocusableInTouchMode(true);
                           webView.requestFocus();
-                          // show keyboard mạnh nhất có thể
+                          // Bước 2: show IME ngay
                           imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                          // fallback sau 150ms phòng race condition
+                          // Bước 3: retry sau 200ms phòng IME chưa sẵn sàng
                           handler.postDelayed(new Runnable(){@Override public void run(){
-                              imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                          }},150);
+                              if(inputFocused)imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                          }},200);
                       }});
                   }
                   @android.webkit.JavascriptInterface
@@ -991,14 +1033,17 @@ jobs:
                       handler.post(new Runnable(){@Override public void run(){
                           inputFocused=false;
                           imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
-                          // trả webView về không focusable để D-pad điều khiển cursor bình thường
-                          webView.setFocusable(false);
-                          webView.setFocusableInTouchMode(false);
+                          // Trả webView về không focusable → D-pad điều cursor bình thường
+                          handler.postDelayed(new Runnable(){@Override public void run(){
+                              if(!inputFocused){
+                                  webView.setFocusable(false);
+                                  webView.setFocusableInTouchMode(false);
+                              }
+                          }},100);
                       }});
                   }
               }
               private void moveCursor(float dx,float dy,int rep){
-                  // nếu đang có input focus thì không di chuyển cursor
                   if(inputFocused)return;
                   wakeC();
                   float t=Math.min(1f,(float)rep/ACCEL_TICKS);
@@ -1055,15 +1100,16 @@ jobs:
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  // khi đang nhập liệu: BACK thoát bàn phím, không chặn phím khác
                   if(inputFocused){
                       if(key==KeyEvent.KEYCODE_BACK){
-                          imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
+                          // BACK khi đang nhập: blur input + ẩn keyboard
                           webView.evaluateJavascript("if(document.activeElement)document.activeElement.blur();",null);
                           inputFocused=false;
+                          imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
                           webView.setFocusable(false);webView.setFocusableInTouchMode(false);
                           return true;
                       }
+                      // phím khác khi đang nhập: để WebView xử lý
                       return super.onKeyDown(key,e);
                   }
                   wakeC();
