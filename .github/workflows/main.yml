@@ -1108,20 +1108,24 @@ jobs:
                       +"_aioSubDiv.id='_aioSubOverlay';"
                       +"_aioSubDiv.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.82);color:#ffe066;font-size:28px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';"
                       +"document.body.appendChild(_aioSubDiv);"
-                      +"var _aioLastSub='',_aioSubTimer=null;"
+                      // _aioLastSub KHÔNG reset theo timer — chỉ reset khi có text MỚI khác hẳn
+                      +"var _aioLastSub='',_aioHideTimer=null,_aioDebounce=null;"
                       +"function _aioShowSub(txt){"
-                      +"  if(!txt||txt===_aioLastSub)return;"
-                      +"  _aioLastSub=txt;"
+                      +"  if(!txt){if(_aioHideTimer)clearTimeout(_aioHideTimer);"
+                      +"    _aioHideTimer=setTimeout(function(){_aioSubDiv.style.display='none';_aioLastSub='';},1500);return;}"
+                      // Chỉ xử lý nếu text KHÁC với lần trước (trim + lowercase để tránh false trigger)
+                      +"  var norm=txt.trim().toLowerCase();"
+                      +"  if(norm===_aioLastSub)return;"
+                      +"  _aioLastSub=norm;"
                       +"  _aioSubDiv.style.display='block';"
-                      +"  fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q='+encodeURIComponent(txt))"
-                      +"  .then(function(r){return r.json();})"
-                      +"  .then(function(d){"
-                      +"    var vn='';if(d&&d[0])d[0].forEach(function(s){if(s&&s[0])vn+=s[0];});"
-                      +"    _aioSubDiv.textContent=vn||txt;"
-                      +"    try{window.AIO.onSubText(vn||txt);}catch(ex){}"
-                      +"    if(_aioSubTimer)clearTimeout(_aioSubTimer);"
-                      +"    _aioSubTimer=setTimeout(function(){_aioSubDiv.style.display='none';_aioLastSub='';},6000);"
-                      +"  }).catch(function(){_aioSubDiv.textContent=txt;});"
+                      +"  if(_aioHideTimer)clearTimeout(_aioHideTimer);"
+                      +"  _aioSubDiv.textContent=txt;"
+                      // Gọi TTS một lần duy nhất qua debounce 200ms
+                      +"  if(_aioDebounce)clearTimeout(_aioDebounce);"
+                      +"  _aioDebounce=setTimeout(function(){try{window.AIO.onSubText(txt);}catch(ex){}},200);"
+                      // Ẩn overlay sau thời gian đọc xong (ước tính theo độ dài text)
+                      +"  var ms=Math.max(2500,txt.length*80);"
+                      +"  _aioHideTimer=setTimeout(function(){_aioSubDiv.style.display='none';},ms);"
                       +"}"
                       +"var _aioSubSels=['.subtitle','.subtitles','.sub-text','.player-subtitles','.caption','.captions','.vjs-text-track-display','[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-wrap\"]','[class*=\"lyric\"]','[id*=\"subtitle\"]','[id*=\"caption\"]'];"
                       +"new MutationObserver(function(){"
@@ -1306,6 +1310,9 @@ jobs:
                   if(!ttsReady||tts==null||text==null||text.isEmpty())return;
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
+                  // Không đọc lại nếu đang đọc câu này rồi
+                  if(text.trim().toLowerCase().equals(lastSubText))return;
+                  lastSubText=text.trim().toLowerCase();
                   subHandler.post(new Runnable(){@Override public void run(){
                       tts.stop();
                       tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"aio_sub");
