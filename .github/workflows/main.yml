@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="37" android:versionName="37.0">
+              package="com.allinone.app" android:versionCode="38" android:versionName="38.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -299,14 +299,23 @@ jobs:
                           android:background="#111133" android:padding="16dp"
                           android:layout_marginBottom="24dp" android:focusable="true"
                           android:focusableInTouchMode="true"/>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:orientation="horizontal" android:gravity="end" android:focusable="false"
+                          android:layout_marginTop="8dp">
+                          <!-- Nút LƯU - click được bằng chuột, hoặc nhấn OK trên remote -->
+                          <TextView android:id="@+id/dialogBtnSave"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"
+                              android:text="  LƯU  " android:textSize="16sp" android:textColor="#ffffff"
+                              android:background="#E50914" android:padding="14dp"
+                              android:clickable="true" android:focusable="false"/>
+                      </LinearLayout>
                       <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                          android:text="&#9166; Nhấn OK để lưu  |  Nhấn Back để huỷ"
-                          android:textSize="14sp" android:textColor="#aaaaff"
-                          android:gravity="center" android:focusable="false"
-                          android:layout_marginTop="4dp"/>
-                      <!-- Giữ ID ẩn để không lỗi R.java -->
+                          android:text="Remote: OK = lưu  |  Back = huỷ"
+                          android:textSize="12sp" android:textColor="#666688"
+                          android:gravity="end" android:focusable="false"
+                          android:layout_marginTop="6dp"/>
+                      <!-- ID ẩn cho Cancel (không hiển thị) -->
                       <View android:id="@+id/dialogBtnCancel" android:layout_width="0dp" android:layout_height="0dp"/>
-                      <View android:id="@+id/dialogBtnSave" android:layout_width="0dp" android:layout_height="0dp"/>
                   </LinearLayout>
               </FrameLayout>
               <!-- Con trỏ chuột nổi trên mọi thứ -->
@@ -411,19 +420,16 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited8",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited9",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
-                  "https://vieon.vn",
                   "https://www.netflix.com",
                   "https://pointnorth.io",
                   "https://fptplay.vn",
                   "https://www.youtube.com",
-                  "https://tv360.vn/tv/vtv1-hd?ch=2&c=0",
                   "https://www.google.com",
                   "https://vnexpress.net",
-                  "https://phimmoilam.com",
                   "https://tinnhac.com"
               };
               private static final int COLS=3;
@@ -656,7 +662,9 @@ jobs:
                       @Override public void onClick(View v){openDialog(null);}});
                   findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){doReset();}});
-                  // Dialog: OK=lưu, Back=huỷ (xử lý trong onKeyDown)
+                  // Nút LƯU bấm được bằng chuột cursor
+                  findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){saveFromDialog();}});
                   renderHistory();
               }
               // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
