@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="46" android:versionName="46.0">
+              package="com.allinone.app" android:versionCode="49" android:versionName="49.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -455,7 +455,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited17",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited20",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -746,14 +746,15 @@ jobs:
               }
               // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
               private void testSpeak(){
-                  String msg="Xin chào, đây là giọng đọc thử nghiệm của ALL IN ONE";
+                  String msg="Xin ch\u00e0o, \u0111\u00e2y l\u00e0 gi\u1ecdng \u0111\u1ecdc th\u1eed nghi\u1ec7m c\u1ee7a ALL IN ONE";
                   int voiceIdx=prefs.getInt(KEY_VOICE,0);
+                  int spd=prefs.getInt(KEY_SPEED,1);
+                  final float testRate=spd==0?0.75f:(spd==2?1.4f:1.0f);
                   if(voiceIdx<2){
-                      // Thu Edge TTS trong thread rieng
                       final String voice=voiceIdx==0?"vi-VN-HoaiMyNeural":"vi-VN-NamMinhNeural";
                       final String fmsg=msg;
                       new Thread(new Runnable(){@Override public void run(){
-                          testEdgeTts(fmsg,voice,1.0f);
+                          testEdgeTts(fmsg,voice,testRate);
                       }}).start();
                   } else {
                       if(settingsTtsReady&&settingsTts!=null)
@@ -763,8 +764,12 @@ jobs:
               private void testEdgeTts(String text,String voice,float rate){
                   java.net.HttpURLConnection conn=null;
                   try{
-                      String ssml="<speak version='1.0' xml:lang='vi-VN' xmlns='http://www.w3.org/2001/10/synthesis'>"
-                          +"<voice name='"+voice+"'><prosody rate='"+(int)((rate-1f)*100)+"%'>"+text+"</voice></speak>";
+                      int pct2=(int)((rate-1f)*100);
+                      String rs2=(pct2>=0?"+":"")+pct2+"%";
+                      String ssml="<speak version='1.0' xml:lang='vi-VN'>"
+                          +"<voice name='"+voice+"'><prosody rate='"+rs2+"'>"
+                          +text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                          +"</prosody></voice></speak>";
                       java.net.URL url=new java.net.URL("https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="+java.util.UUID.randomUUID().toString().replace("-",""));
                       conn=(java.net.HttpURLConnection)url.openConnection();
                       conn.setRequestMethod("POST");
@@ -1187,155 +1192,146 @@ jobs:
                   });
               }
               private void injectJs(WebView v){
-                  v.evaluateJavascript("(function(){"
-                      // Scroll mượt tức thì
-                      +"document.documentElement.style.scrollBehavior='auto';"
-                      +"if(document.body){document.body.style.overscrollBehavior='none';"
-                      +"document.body.style.webkitOverflowScrolling='touch';}"
-                      // _blank → _self
-                      +"document.querySelectorAll('a[target=\"_blank\"]').forEach(function(a){a.target='_self';});"
-                      +"window.open=function(u){if(u)location.href=u;return null;};"
-                      // Keyboard bridge
-                      +"if(!window._aioKbd){window._aioKbd=true;"
-                      +"document.addEventListener('focusin',function(e){"
-                      +"  var t=e.target;"
-                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
-                      +"    {try{window.AIO.onInputFocus();}catch(ex){}}},true);"
-                      +"document.addEventListener('focusout',function(e){"
-                      +"  var t=e.target;"
-                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
-                      +"    {try{window.AIO.onInputBlur();}catch(ex){}}},true);}"
-                      // Portrait fix (vtvgo.vn)
-                      +"try{Object.defineProperty(window,'innerWidth',{configurable:true,"
-                      +"  get:function(){return Math.max(screen.width||1920,screen.height||1080)+1;}});"
-                      +"Object.defineProperty(window,'innerHeight',{configurable:true,"
-                      +"  get:function(){return Math.min(screen.width||1920,screen.height||1080)-1;}});}catch(ex){}"
-                      +"try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){"
-                      +"  return{type:'landscape-primary',angle:0,"
-                      +"    lock:function(){return Promise.resolve();},"
-                      +"    unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};"
-                      +"}})}catch(ex){}"
-                      +"try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(ex){}"
-                      +"if(!document.getElementById('_aioS')){"
-                      +"  var _s=document.createElement('style');_s.id='_aioS';"
-                      +"  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
-                      +"[id*=\"rotate-\"],[id*=\"portrait-\"],[class*=\"landscape-guide\"],"
-                      +"[class*=\"screen-rotate\"],[class*=\"orientation-warn\"],[class*=\"orientation-over\"]"
-                      +"{display:none!important;}';"
-                      +"  (document.head||document.documentElement).appendChild(_s);}"
-                      +"if(!window._aioObs){window._aioObs=true;"
-                      +"  var _hn=function(n){if(!n||n.nodeType!==1)return;"
-                      +"    var c=(typeof n.className==='string'?n.className:'')+(n.id||'');"
-                      +"    if(/rotat|portrait|turn.dev|landscape.g|orient.warn|screen.rot/i.test(c))"
-                      +"      n.style.setProperty('display','none','important');};"
-                      +"  new MutationObserver(function(ms){ms.forEach(function(m){"
-                      +"    m.addedNodes.forEach(function(n){_hn(n);"
-                      +"      try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"]').forEach(_hn);}catch(ex){}});"
-                      +"  });}).observe(document.body||document.documentElement,{childList:true,subtree:true});}"
-                      +"try{window.dispatchEvent(new Event('resize'));}catch(ex){}"
-                      +"if(!window._aioHooked){window._aioHooked=true;"
-                      +"var _aioOrigFetch=window.fetch;"
-                      +"window.fetch=function(u,o){"
-                      +"  var r=_aioOrigFetch.apply(this,arguments);"
-                      +"  try{var us=typeof u==='string'?u:(u&&u.url?u.url:'');"
-                      +"    if(us&&(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1||us.indexOf('subtitle')>-1))"
-                      +"      r.then(function(res){return res.clone().text();}).then(function(t){_aioParseSubFile(us,t);}).catch(function(){});"
-                      +"  }catch(ex){}"
-                      +"  return r;"
-                      +"};"
-                      +"var _aioXhr=XMLHttpRequest.prototype.open;"
-                      +"XMLHttpRequest.prototype.open=function(m,u){"
-                      +"  this._aioUrl=u;"
-                      +"  return _aioXhr.apply(this,arguments);"
-                      +"};"
-                      +"var _aioXhrSend=XMLHttpRequest.prototype.send;"
-                      +"XMLHttpRequest.prototype.send=function(){"
-                      +"  var self=this;"
-                      +"  if(self._aioUrl&&(self._aioUrl.indexOf('.vtt')>-1||self._aioUrl.indexOf('.srt')>-1)){"
-                      +"    self.addEventListener('load',function(){try{_aioParseSubFile(self._aioUrl,self.responseText);}catch(ex){}});"
-                      +"  }"
-                      +"  return _aioXhrSend.apply(this,arguments);"
-                      +"};"
-                      +"var _aioCues=[];"
-                      +"function _aioParseSubFile(url,text){"
-                      +"  _aioCues=[];"
-                      +"  var lines=text.split('\n');"
-                      +"  var start=0,end=0,cueTxt='';"
-                      +"  for(var i=0;i<lines.length;i++){"
-                      +"    var l=lines[i].trim();"
-                      +"    var isTs=(l.indexOf('-->')>-1&&l.indexOf(':')>-1);"
-                      +"    if(isTs){"
-                      +"      var p=l.split(' --> ');"
-                      +"      start=_aioT(p[0].trim());end=_aioT(p[1].trim());cueTxt='';"
-                      +"    } else if(l&&isNaN(Number(l))&&start>0){"
-                      +"      cueTxt+=l+' ';"
-                      +"    } else if(!l&&cueTxt.trim()){"
-                      +"      _aioCues.push({s:start,e:end,t:cueTxt.trim()});cueTxt='';start=0;"
-                      +"    }"
-                      +"  }"
-                      +"  if(_aioCues.length>0)_aioStartCueSync();"
-                      +"}"
-                      +"function _aioT(s){"
-                      +"  var p=s.replace(',','.').split(':');"
-                      +"  if(p.length===3)return +p[0]*3600+(+p[1])*60+(+p[2]);"
-                      +"  return (+p[0])*60+(+p[1]);"
-                      +"}"
-                      +"var _aioCueTimer=null;"
-                      +"function _aioStartCueSync(){"
-                      +"  if(_aioCueTimer)clearInterval(_aioCueTimer);"
-                      +"  _aioCueTimer=setInterval(function(){"
-                      +"    var vid=document.querySelector('video');"
-                      +"    var ct=vid?vid.currentTime:0;"
-                      +"    if(!vid||vid.paused)return;"
-                      +"    for(var i=0;i<_aioCues.length;i++){"
-                      +"      if(ct>=_aioCues[i].s&&ct<=_aioCues[i].e){"
-                      +"        _aioShowSub(_aioCues[i].t);return;"
-                      +"      }"
-                      +"    }"
-                      +"  },300);"
-                      +"}"
-                      +"}"
-                      +"if(!window._aioSubInited){window._aioSubInited=true;"
-                      +"var _aioSubDiv=document.createElement('div');"
-                      +"_aioSubDiv.id='_aioSubOverlay';"
-                      +"_aioSubDiv.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.82);color:#ffe066;font-size:28px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';"
-                      +"document.body.appendChild(_aioSubDiv);"
-                      // _aioLastSub KHÔNG reset theo timer — chỉ reset khi có text MỚI khác hẳn
-                      +"var _aioLastSub='',_aioHideTimer=null,_aioDebounce=null;"
-                      +"function _aioShowSub(txt){"
-                      +"  if(!txt){if(_aioHideTimer)clearTimeout(_aioHideTimer);"
-                      +"    _aioHideTimer=setTimeout(function(){_aioSubDiv.style.display='none';_aioLastSub='';},1500);return;}"
-                      // Chỉ xử lý nếu text KHÁC với lần trước (trim + lowercase để tránh false trigger)
-                      +"  var norm=txt.trim().toLowerCase();"
-                      +"  if(norm===_aioLastSub)return;"
-                      +"  _aioLastSub=norm;"
-                      +"  _aioSubDiv.style.display='block';"
-                      +"  if(_aioHideTimer)clearTimeout(_aioHideTimer);"
-                      +"  _aioSubDiv.textContent=txt;"
-                      // Gọi TTS một lần duy nhất qua debounce 200ms
-                      +"  if(_aioDebounce)clearTimeout(_aioDebounce);"
-                      +"  _aioDebounce=setTimeout(function(){try{window.AIO.onSubText(txt);}catch(ex){}},200);"
-                      // Ẩn overlay sau thời gian đọc xong (ước tính theo độ dài text)
-                      +"  var ms=Math.max(2500,txt.length*80);"
-                      +"  _aioHideTimer=setTimeout(function(){_aioSubDiv.style.display='none';},ms);"
-                      +"}"
-                      +"var _aioSubSels=['.subtitle','.subtitles','.sub-text','.player-subtitles','.caption','.captions','.vjs-text-track-display','[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-wrap\"]','[class*=\"lyric\"]','[id*=\"subtitle\"]','[id*=\"caption\"]'];"
-                      +"new MutationObserver(function(){"
-                      +"  var found='';"
-                      +"  for(var i=0;i<_aioSubSels.length;i++){"
-                      +"    var el=document.querySelector(_aioSubSels[i]);"
-                      +"    if(el&&el.offsetParent!==null){var t=(el.innerText||el.textContent||'').trim();"
-                      +"      if(_aioOk(t)){found=t;break;}}"
-                      +"  }"
-                      +"  _aioShowSub(found);"
-                      +"}).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
-                      +"}"
-                      +"})();",null);
+                  String js = "(function(){\n"
+                  + "(function(){\n"
+                  + "document.documentElement.style.scrollBehavior='auto';\n"
+                  + "if(document.body){document.body.style.overscrollBehavior='none';}\n"
+                  + "document.querySelectorAll('a[target=\"_blank\"]').forEach(function(a){a.target='_self';});\n"
+                  + "window.open=function(u){if(u)location.href=u;return null;};\n"
+                  + "if(!window._aioKbd){window._aioKbd=true;\n"
+                  + "  document.addEventListener('focusin',function(e){\n"
+                  + "    var t=e.target;\n"
+                  + "    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))\n"
+                  + "      {try{window.AIO.onInputFocus();}catch(ex){}}},true);\n"
+                  + "  document.addEventListener('focusout',function(e){\n"
+                  + "    var t=e.target;\n"
+                  + "    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))\n"
+                  + "      {try{window.AIO.onInputBlur();}catch(ex){}}},true);\n"
+                  + "}\n"
+                  + "try{Object.defineProperty(window,'innerWidth',{configurable:true,\n"
+                  + "  get:function(){return Math.max(screen.width||1920,screen.height||1080)+1;}});\n"
+                  + "Object.defineProperty(window,'innerHeight',{configurable:true,\n"
+                  + "  get:function(){return Math.min(screen.width||1920,screen.height||1080)-1;}});}catch(ex){}\n"
+                  + "try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){\n"
+                  + "  return{type:'landscape-primary',angle:0,\n"
+                  + "    lock:function(){return Promise.resolve();},\n"
+                  + "    unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};\n"
+                  + "}})}catch(ex){}\n"
+                  + "try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(ex){}\n"
+                  + "if(!document.getElementById('_aioS')){\n"
+                  + "  var _s=document.createElement('style');_s.id='_aioS';\n"
+                  + "  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],[id*=\"rotate-\"],[id*=\"portrait-\"]{display:none!important;}';\n"
+                  + "  (document.head||document.documentElement).appendChild(_s);\n"
+                  + "}\n"
+                  + "if(!window._aioObs){window._aioObs=true;\n"
+                  + "  var _hn=function(n){if(!n||n.nodeType!==1)return;\n"
+                  + "    var c=(typeof n.className==='string'?n.className:'')+(n.id||'');\n"
+                  + "    if(/rotat|portrait|turn.dev/i.test(c))n.style.setProperty('display','none','important');};\n"
+                  + "  new MutationObserver(function(ms){ms.forEach(function(m){\n"
+                  + "    m.addedNodes.forEach(function(n){_hn(n);\n"
+                  + "      try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"]').forEach(_hn);}catch(ex){}});\n"
+                  + "  });}).observe(document.body||document.documentElement,{childList:true,subtree:true});\n"
+                  + "}\n"
+                  + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
+                  + "if(!window._aioSub){window._aioSub=true;\n"
+                  + "  var _sd=document.createElement('div');\n"
+                  + "  _sd.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.85);color:#ffe066;font-size:26px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';\n"
+                  + "  document.body.appendChild(_sd);\n"
+                  + "  var _ls='',_ht=null,_dt=null;\n"
+                  + "  function _ok(t){\n"
+                  + "    if(!t||t.length<4)return false;\n"
+                  + "    var lc=0,sp=0;\n"
+                  + "    for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);\n"
+                  + "      if((c>=65&&c<=90)||(c>=97&&c<=122)||(c>=192&&c<=696)||(c>=7680&&c<=7935))lc++;\n"
+                  + "      if(c===32)sp++;\n"
+                  + "    }\n"
+                  + "    return lc>=3&&sp>=1;\n"
+                  + "  }\n"
+                  + "  function _show(txt){\n"
+                  + "    if(!txt||!_ok(txt)){return;}\n"
+                  + "    var n=txt.toLowerCase();\n"
+                  + "    if(n===_ls)return;\n"
+                  + "    _ls=n;\n"
+                  + "    _sd.textContent=txt;\n"
+                  + "    _sd.style.display='block';\n"
+                  + "    if(_ht)clearTimeout(_ht);\n"
+                  + "    if(_dt)clearTimeout(_dt);\n"
+                  + "    _dt=setTimeout(function(){try{window.AIO.onSubText(txt);}catch(e){}},150);\n"
+                  + "    _ht=setTimeout(function(){_sd.style.display='none';},Math.max(2000,txt.length*70));\n"
+                  + "  }\n"
+                  + "  var _origFetch=window.fetch;\n"
+                  + "  if(typeof _origFetch==='function'){\n"
+                  + "    window.fetch=function(u,o){\n"
+                  + "      var res=_origFetch.apply(this,arguments);\n"
+                  + "      try{var us=typeof u==='string'?u:(u&&u.url?u.url:'');\n"
+                  + "        if(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1)\n"
+                  + "          res.then(function(r){return r.clone().text();}).then(function(t){_pvtt(t);}).catch(function(){});\n"
+                  + "      }catch(e){}\n"
+                  + "      return res;\n"
+                  + "    };\n"
+                  + "  }\n"
+                  + "  var _cues=[];\n"
+                  + "  function _pvtt(raw){\n"
+                  + "    _cues=[];\n"
+                  + "    var lines=raw.split('\\n'),s=0,e2=0,ct='';\n"
+                  + "    for(var i=0;i<lines.length;i++){\n"
+                  + "      var l=lines[i].trim();\n"
+                  + "      if(l.indexOf('-->')>-1){var pp=l.split('-->');s=_ts(pp[0]);e2=_ts(pp[1]);ct='';}\n"
+                  + "      else if(l.length>0&&s>0&&isNaN(+l)){ct=ct+(ct?' ':'')+l;}\n"
+                  + "      else if(l.length===0&&ct.length>0){_cues.push({s:s,e:e2,t:ct});ct='';s=0;}\n"
+                  + "    }\n"
+                  + "    if(ct.length>0&&s>0)_cues.push({s:s,e:e2,t:ct});\n"
+                  + "    if(_cues.length>0)_sync();\n"
+                  + "  }\n"
+                  + "  function _ts(str){\n"
+                  + "    var p=str.replace(',','.').trim().split(':');\n"
+                  + "    var sec=parseFloat(p[p.length-1]||0);\n"
+                  + "    var min=parseFloat(p.length>=2?p[p.length-2]:0);\n"
+                  + "    var hr=parseFloat(p.length>=3?p[p.length-3]:0);\n"
+                  + "    return hr*3600+min*60+sec;\n"
+                  + "  }\n"
+                  + "  var _st=null;\n"
+                  + "  function _sync(){\n"
+                  + "    if(_st)clearInterval(_st);\n"
+                  + "    _st=setInterval(function(){\n"
+                  + "      var v=document.querySelector('video');\n"
+                  + "      if(!v||v.paused)return;\n"
+                  + "      var ct=v.currentTime;\n"
+                  + "      for(var i=0;i<_cues.length;i++)\n"
+                  + "        if(ct>=_cues[i].s&&ct<=_cues[i].e){_show(_cues[i].t);return;}\n"
+                  + "    },250);\n"
+                  + "  }\n"
+                  + "  var _sels=['[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub\"]',\n"
+                  + "    '.vjs-text-track-display','[id*=\"subtitle\"]','[id*=\"caption\"]'];\n"
+                  + "  function _scan(doc){\n"
+                  + "    for(var i=0;i<_sels.length;i++){\n"
+                  + "      try{var el=doc.querySelector(_sels[i]);\n"
+                  + "        if(el&&el.offsetParent!==null){\n"
+                  + "          var t=(el.innerText||el.textContent||'').trim();\n"
+                  + "          if(_ok(t))return t;\n"
+                  + "        }\n"
+                  + "      }catch(e){}\n"
+                  + "    }return '';\n"
+                  + "  }\n"
+                  + "  new MutationObserver(function(){\n"
+                  + "    var f=_scan(document);\n"
+                  + "    if(!f){try{var ifs=document.querySelectorAll('iframe');\n"
+                  + "      for(var i=0;i<ifs.length&&!f;i++)\n"
+                  + "        try{f=_scan(ifs[i].contentDocument||ifs[i].contentWindow.document);}catch(e){}\n"
+                  + "    }catch(e){}}\n"
+                  + "    _show(f);\n"
+                  + "  }).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});\n"
+                  + "}\n"
+                  + "})();\n"
+                  + "})();";
+                  v.evaluateJavascript(js,null);
               }
-              private class KbdBridge {
+                            private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onSubText(final String text){
                       handler.post(new Runnable(){@Override public void run(){
+                          // Debug: hien toast ngan de biet co nhan duoc sub khong
+                          // android.widget.Toast.makeText(MainActivity.this,text,android.widget.Toast.LENGTH_SHORT).show();
                           speakVi(text);
                       }});
                   }
@@ -1487,9 +1483,9 @@ jobs:
               private float getSpeechRate(){
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   int s=p.getInt(SettingsActivity.KEY_SPEED,1);
-                  if(s==0)return 0.75f; // Cham
-                  if(s==2)return 1.4f;  // Nhanh
-                  return 1.0f;          // Vua
+                  if(s==0)return 0.75f;
+                  if(s==2)return 1.4f;
+                  return 1.0f;
               }
               private void setupTts(){
                   tts=new TextToSpeech(this,new TextToSpeech.OnInitListener(){
@@ -1497,73 +1493,60 @@ jobs:
                           if(status==TextToSpeech.SUCCESS){
                               java.util.Locale vi=new java.util.Locale("vi","VN");
                               int res=tts.isLanguageAvailable(vi);
-                              if(res>=TextToSpeech.LANG_AVAILABLE){
-                                  tts.setLanguage(vi);ttsReady=true;
-                              } else {
-                                  tts.setLanguage(java.util.Locale.ENGLISH);ttsReady=true;
-                              }
-                              tts.setSpeechRate(1.1f);
+                              if(res>=TextToSpeech.LANG_AVAILABLE)tts.setLanguage(vi);
+                              else tts.setLanguage(java.util.Locale.ENGLISH);
+                              tts.setSpeechRate(1.0f);
+                              ttsReady=true;
                           }}});
               }
-              // Edge TTS neural voices - mien phi, chat luong cao
               private static final String[]EDGE_VOICES={
-                  "vi-VN-HoaiMyNeural",  // 0: Giong Nu
-                  "vi-VN-NamMinhNeural", // 1: Giong Nam
-                  null                   // 2: Android TTS (Giong TV)
+                  "vi-VN-HoaiMyNeural",
+                  "vi-VN-NamMinhNeural",
+                  null
               };
               private void speakVi(final String text){
                   if(text==null||text.isEmpty())return;
-                  // Bo qua text chi co so, thoi luong, timestamp
-                  // Bo qua neu toan so/dau/timestamp
-                  String tt=text.trim();
-                  boolean allNumeric=true;
-                  for(char c:tt.toCharArray()){if(Character.isLetter(c)){allNumeric=false;break;}}
-                  if(allNumeric)return;
-                  if(tt.split(" ").length<2)return;
+                  // Kiem tra co chu cai khong
+                  boolean hasLetter=false;
+                  for(int ci=0;ci<text.length();ci++){
+                      if(Character.isLetter(text.charAt(ci))){hasLetter=true;break;}
+                  }
+                  if(!hasLetter)return;
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
                   if(text.trim().toLowerCase().equals(lastSubText))return;
                   lastSubText=text.trim().toLowerCase();
-                  final int voiceIdx=p.getInt(SettingsActivity.KEY_VOICE,0);
-                  final String voice=EDGE_VOICES[Math.min(voiceIdx,EDGE_VOICES.length-1)];
-                  if(voice!=null){
-                      final float spdRate=getSpeechRate();
+                  final int vi=p.getInt(SettingsActivity.KEY_VOICE,0);
+                  final float rate=getSpeechRate();
+                  if(vi<2){
+                      final String voice=EDGE_VOICES[vi];
                       edgeExec.execute(new Runnable(){@Override public void run(){
-                          playEdgeTts(text,voice,spdRate);
+                          playEdgeTts(text,voice,rate);
                       }});
                   } else {
-                      // Android TTS fallback
-                      if(ttsReady&&tts!=null){
-                          float spd=getSpeechRate();
-                          tts.setSpeechRate(spd);
-                          subHandler.post(new Runnable(){@Override public void run(){
-                              tts.stop();
-                              tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"aio_sub");
-                          }});
-                      }
+                      if(!ttsReady||tts==null)return;
+                      subHandler.post(new Runnable(){@Override public void run(){
+                          tts.setSpeechRate(rate);
+                          tts.stop();
+                          tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"sub");
+                      }});
                   }
               }
               private void playEdgeTts(String text,String voice,float rate){
-                  // Edge TTS dung SSML qua endpoint cong khai
-                  HttpURLConnection conn=null;
+                  java.net.HttpURLConnection conn=null;
                   try{
-                      // Lay token truoc
-                      URL tokenUrl=new URL("https://www.bing.com/tfeatured?setlang=vi");
-                      HttpURLConnection tc=(HttpURLConnection)tokenUrl.openConnection();
-                      tc.setConnectTimeout(3000);tc.setReadTimeout(3000);
-                      String token="";String cookie="";
-                      // Doc cookie
-                      java.util.List<String>cookies2=tc.getHeaderFields().get("Set-Cookie");
-                      if(cookies2!=null)for(String c:cookies2)if(c.contains("MUID")){cookie=c.split(";")[0];}
-                      tc.disconnect();
-                      // Goi Edge TTS API
-                      String ssml="<speak version='1.0' xml:lang='vi-VN' xmlns='http://www.w3.org/2001/10/synthesis'>"
-                          +"<voice name='"+voice+"'><prosody rate='"+(int)((rate-1f)*100)+"%'>"
+                      int pct=(int)((rate-1f)*100);
+                      String rateStr=(pct>=0?"+":"")+pct+"%";
+                      String ssml="<speak version='1.0' xml:lang='vi-VN'>"
+                          +"<voice name='"+voice+"'><prosody rate='"+rateStr+"'>"
                           +text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
                           +"</prosody></voice></speak>";
-                      String boundary="----WebKitFormBoundary";
-                      URL ttsUrl=new URL("https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="+java.util.UUID.randomUUID().toString().replace("-",""));
-                      conn=(HttpURLConnection)ttsUrl.openConnection();
+                      String uid=java.util.UUID.randomUUID().toString().replace("-","");
+                      java.net.URL url=new java.net.URL(
+                          "https://speech.platform.bing.com/consumer/speech/synthesize"
+                          +"/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4"
+                          +"&ConnectionId="+uid);
+                      conn=(java.net.HttpURLConnection)url.openConnection();
                       conn.setRequestMethod("POST");
                       conn.setRequestProperty("Content-Type","application/ssml+xml");
                       conn.setRequestProperty("X-Microsoft-OutputFormat","audio-24khz-48kbitrate-mono-mp3");
@@ -1573,33 +1556,30 @@ jobs:
                       byte[]body=ssml.getBytes("UTF-8");
                       conn.getOutputStream().write(body);
                       if(conn.getResponseCode()==200){
-                          // Luu tam vao file
-                          java.io.File tmp=java.io.File.createTempFile("edge_tts",".mp3",getCacheDir());
-                          InputStream is=conn.getInputStream();
+                          java.io.File tmp=java.io.File.createTempFile("tts",".mp3",getCacheDir());
+                          java.io.InputStream is=conn.getInputStream();
                           java.io.FileOutputStream fos=new java.io.FileOutputStream(tmp);
                           byte[]buf=new byte[4096];int n;
                           while((n=is.read(buf))!=-1)fos.write(buf,0,n);
                           fos.close();is.close();
-                          // Phat qua MediaPlayer tren main thread
                           final java.io.File ftmp=tmp;
                           subHandler.post(new Runnable(){@Override public void run(){
                               try{
                                   if(edgePlayer!=null){edgePlayer.stop();edgePlayer.release();}
                                   edgePlayer=new android.media.MediaPlayer();
                                   edgePlayer.setDataSource(ftmp.getAbsolutePath());
-                                  edgePlayer.prepare();
-                                  edgePlayer.start();
-                                  edgePlayer.setOnCompletionListener(new android.media.MediaPlayer.OnCompletionListener(){
-                                      @Override public void onCompletion(android.media.MediaPlayer mp){
-                                          mp.release();edgePlayer=null;ftmp.delete();
-                                      }});
-                              }catch(Exception e2){ftmp.delete();}
+                                  edgePlayer.prepare();edgePlayer.start();
+                                  edgePlayer.setOnCompletionListener(
+                                      new android.media.MediaPlayer.OnCompletionListener(){
+                                          @Override public void onCompletion(android.media.MediaPlayer mp){
+                                              mp.release();edgePlayer=null;ftmp.delete();}});
+                              }catch(Exception e){ftmp.delete();}
                           }});
                       }
                   }catch(Exception e){}
                   finally{if(conn!=null)conn.disconnect();}
               }
-              private void setupSpeech(){
+                            private void setupSpeech(){
                   if(!SpeechRecognizer.isRecognitionAvailable(this))return;
                   speechRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
                   speechRecognizer.setRecognitionListener(new RecognitionListener(){
