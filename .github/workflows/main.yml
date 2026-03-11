@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="43" android:versionName="43.0">
+              package="com.allinone.app" android:versionCode="45" android:versionName="45.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -280,6 +280,13 @@ jobs:
                           android:layout_weight="1" android:text="&#9654; Test"
                           android:textSize="13sp" android:textColor="#ffffff"
                           android:background="#2a2a1a" android:padding="14dp"
+                          android:gravity="center" android:layout_marginRight="6dp"
+                          android:clickable="true" android:focusable="false"/>
+                      <TextView android:id="@+id/btnSpeed"
+                          android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="Toc: Vua"
+                          android:textSize="13sp" android:textColor="#ffffff"
+                          android:background="#1a2a2a" android:padding="14dp"
                           android:gravity="center"
                           android:clickable="true" android:focusable="false"/>
                       <TextView android:id="@+id/btnReset"
@@ -448,7 +455,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited14",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited16",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -649,13 +656,14 @@ jobs:
           import java.util.List;
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_TTS="tts_key",KEY_SUB="sub_on",KEY_VOICE="voice_idx",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_TTS="tts_key",KEY_SUB="sub_on",KEY_VOICE="voice_idx",KEY_SPEED="spd_idx",DEF="https://vtvgo.vn",SEP="|||";
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private FrameLayout dialogOverlay;
               private EditText dialogInput;
               private TextView btnSubToggle;
               private TextView btnVoice;
+              private TextView btnSpeed;
               private TextToSpeech settingsTts;
               private boolean settingsTtsReady=false;
               private SharedPreferences prefs;
@@ -722,6 +730,13 @@ jobs:
                               else settingsTts.setLanguage(java.util.Locale.ENGLISH);
                               settingsTtsReady=true;
                           }}});
+                  btnSpeed=(TextView)findViewById(R.id.btnSpeed);
+                  refreshSpeedBtn();
+                  btnSpeed.setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){
+                          int cs=prefs.getInt(KEY_SPEED,1);
+                          prefs.edit().putInt(KEY_SPEED,(cs+1)%3).apply();
+                          refreshSpeedBtn();}});
                   findViewById(R.id.btnTestTts).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){testSpeak();}});
                   // Nút LƯU bấm được bằng chuột cursor
@@ -738,18 +753,18 @@ jobs:
                       final String voice=voiceIdx==0?"vi-VN-HoaiMyNeural":"vi-VN-NamMinhNeural";
                       final String fmsg=msg;
                       new Thread(new Runnable(){@Override public void run(){
-                          testEdgeTts(fmsg,voice);
+                          testEdgeTts(fmsg,voice,1.0f);
                       }}).start();
                   } else {
                       if(settingsTtsReady&&settingsTts!=null)
                           settingsTts.speak(msg,TextToSpeech.QUEUE_FLUSH,null,"test");
                   }
               }
-              private void testEdgeTts(String text,String voice){
+              private void testEdgeTts(String text,String voice,float rate){
                   java.net.HttpURLConnection conn=null;
                   try{
                       String ssml="<speak version='1.0' xml:lang='vi-VN' xmlns='http://www.w3.org/2001/10/synthesis'>"
-                          +"<voice name='"+voice+"'><prosody rate='0%'>"+text+"</voice></speak>";
+                          +"<voice name='"+voice+"'><prosody rate='"+(int)((rate-1f)*100)+"%'>"+text+"</voice></speak>";
                       java.net.URL url=new java.net.URL("https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="+java.util.UUID.randomUUID().toString().replace("-",""));
                       conn=(java.net.HttpURLConnection)url.openConnection();
                       conn.setRequestMethod("POST");
@@ -790,6 +805,11 @@ jobs:
                               settingsTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"test");
                       }});
                   }finally{if(conn!=null)conn.disconnect();}
+              }
+              private void refreshSpeedBtn(){
+                  int s=prefs.getInt(KEY_SPEED,1);
+                  String[]sp={"Toc: Cham","Toc: Vua","Toc: Nhanh"};
+                  btnSpeed.setText(sp[s]);
               }
               private void refreshVoiceBtn(){
                   int v=prefs.getInt(KEY_VOICE,0);
@@ -1213,6 +1233,68 @@ jobs:
                       +"      try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"]').forEach(_hn);}catch(ex){}});"
                       +"  });}).observe(document.body||document.documentElement,{childList:true,subtree:true});}"
                       +"try{window.dispatchEvent(new Event('resize'));}catch(ex){}"
+                      +"if(!window._aioHooked){window._aioHooked=true;"
+                      +"var _aioOrigFetch=window.fetch;"
+                      +"window.fetch=function(u,o){"
+                      +"  var r=_aioOrigFetch.apply(this,arguments);"
+                      +"  try{var us=typeof u==='string'?u:(u&&u.url?u.url:'');"
+                      +"    if(us&&(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1||us.indexOf('subtitle')>-1))"
+                      +"      r.then(function(res){return res.clone().text();}).then(function(t){_aioParseSubFile(us,t);}).catch(function(){});"
+                      +"  }catch(ex){}"
+                      +"  return r;"
+                      +"};"
+                      +"var _aioXhr=XMLHttpRequest.prototype.open;"
+                      +"XMLHttpRequest.prototype.open=function(m,u){"
+                      +"  this._aioUrl=u;"
+                      +"  return _aioXhr.apply(this,arguments);"
+                      +"};"
+                      +"var _aioXhrSend=XMLHttpRequest.prototype.send;"
+                      +"XMLHttpRequest.prototype.send=function(){"
+                      +"  var self=this;"
+                      +"  if(self._aioUrl&&(self._aioUrl.indexOf('.vtt')>-1||self._aioUrl.indexOf('.srt')>-1)){"
+                      +"    self.addEventListener('load',function(){try{_aioParseSubFile(self._aioUrl,self.responseText);}catch(ex){}});"
+                      +"  }"
+                      +"  return _aioXhrSend.apply(this,arguments);"
+                      +"};"
+                      +"var _aioCues=[];"
+                      +"function _aioParseSubFile(url,text){"
+                      +"  _aioCues=[];"
+                      +"  var lines=text.split('\n');"
+                      +"  var start=0,end=0,cueTxt='';"
+                      +"  for(var i=0;i<lines.length;i++){"
+                      +"    var l=lines[i].trim();"
+                      +"    var m=l.match(/(\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}\s*-->\s*(\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}/);"
+                      +"    if(m){"
+                      +"      var p=l.split(' --> ');"
+                      +"      start=_aioT(p[0].trim());end=_aioT(p[1].trim());cueTxt='';"
+                      +"    } else if(l&&!/^\d+$/.test(l)&&start>0){"
+                      +"      cueTxt+=l+' ';"
+                      +"    } else if(!l&&cueTxt.trim()){"
+                      +"      _aioCues.push({s:start,e:end,t:cueTxt.trim()});cueTxt='';start=0;"
+                      +"    }"
+                      +"  }"
+                      +"  if(_aioCues.length>0)_aioStartCueSync();"
+                      +"}"
+                      +"function _aioT(s){"
+                      +"  var p=s.replace(',','.').split(':');"
+                      +"  if(p.length===3)return +p[0]*3600+(+p[1])*60+(+p[2]);"
+                      +"  return (+p[0])*60+(+p[1]);"
+                      +"}"
+                      +"var _aioCueTimer=null;"
+                      +"function _aioStartCueSync(){"
+                      +"  if(_aioCueTimer)clearInterval(_aioCueTimer);"
+                      +"  _aioCueTimer=setInterval(function(){"
+                      +"    var vid=document.querySelector('video');"
+                      +"    var ct=vid?vid.currentTime:0;"
+                      +"    if(!vid||vid.paused)return;"
+                      +"    for(var i=0;i<_aioCues.length;i++){"
+                      +"      if(ct>=_aioCues[i].s&&ct<=_aioCues[i].e){"
+                      +"        _aioShowSub(_aioCues[i].t);return;"
+                      +"      }"
+                      +"    }"
+                      +"  },300);"
+                      +"}"
+                      +"}"
                       +"if(!window._aioSubInited){window._aioSubInited=true;"
                       +"var _aioSubDiv=document.createElement('div');"
                       +"_aioSubDiv.id='_aioSubOverlay';"
@@ -1238,34 +1320,20 @@ jobs:
                       +"  _aioHideTimer=setTimeout(function(){_aioSubDiv.style.display='none';},ms);"
                       +"}"
                       +"var _aioSubSels=['.subtitle','.subtitles','.sub-text','.player-subtitles','.caption','.captions','.vjs-text-track-display','[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-wrap\"]','[class*=\"lyric\"]','[id*=\"subtitle\"]','[id*=\"caption\"]'];"
-                      +"function _aioOk(t){"
-                      +"  t=t.replace(/\\d{1,2}:\\d{2}(:\\d{2})?/g,'').replace(/T\\u1eadp\\s*\\d+|Episode\\s*\\d+|Ep\\s*\\d+/gi,'').trim();"
-                      +"  var w=t.split(/\\s+/).filter(function(s){return s.length>0;});"
-                      +"  return w.length>=2&&/[\\u00C0-\\u024F\\u1E00-\\u1EFF\\w]/.test(t);"
-                      +"}"
-                      +"function _aioScan(doc){"
+                      +"new MutationObserver(function(){"
+                      +"  var found='';"
                       +"  for(var i=0;i<_aioSubSels.length;i++){"
-                      +"    try{var el=doc.querySelector(_aioSubSels[i]);"
+                      +"    var el=document.querySelector(_aioSubSels[i]);"
                       +"    if(el&&el.offsetParent!==null){var t=(el.innerText||el.textContent||'').trim();"
-                      +"      if(_aioOk(t))return t;}"
-                      +"    }catch(ex){}"
-                      +"  }return '';"
-                      +"}"
-                      +"function _aioCheck(){"
-                      +"  var f=_aioScan(document);"
-                      +"  if(!f){try{var iframes=document.querySelectorAll('iframe');"
-                      +"    for(var fi=0;fi<iframes.length&&!f;fi++){"
-                      +"      try{f=_aioScan(iframes[fi].contentDocument||iframes[fi].contentWindow.document);}catch(ex){}"
-                      +"    }}catch(ex){}}"
-                      +"  _aioShowSub(f);"
-                      +"}"
-                      +"new MutationObserver(_aioCheck).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
-                      +"setInterval(function(){"
-                      +"  try{document.querySelectorAll('iframe').forEach(function(fr){"
-                      +"    try{var fd=fr.contentDocument||fr.contentWindow.document;"
-                      +"      if(fd&&fd.body&&!fd._aioObs){fd._aioObs=true;"
-                      +"        new MutationObserver(_aioCheck).observe(fd.body,{childList:true,subtree:true,characterData:true});}"
-                      +"    }catch(ex){}});}catch(ex){}},1500);"
+                      +"      if(t.length>3&&/[a-zA-ZÀ-ɏḀ-ỿ]/.test(t)"
+                      +"        &&!/^[\\d:\\s\/\\-\.]+$/.test(t)"
+                      +"        &&!/^(Tập|Episode|Ep|Part|Phần)\\s*[\\d]+/i.test(t)"
+                      +"        &&t.split(' ').length>1"
+                      +"      ){found=t;break;}}"
+                      +"  }"
+                      +"  }"
+                      +"  _aioShowSub(found);"
+                      +"}).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
                       +"}"
                       +"})();",null);
               }
@@ -1421,6 +1489,13 @@ jobs:
                       float[]rc=wc();tDown(rc[0],rc[1]);cursorView.setMode(CursorView.MODE_DRAG);
                   }else{dragMode=false;float[]rc=wc();tUp(rc[0],rc[1],dragT);cursorView.setMode(CursorView.MODE_NORMAL);}
               }
+              private float getSpeechRate(){
+                  SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
+                  int s=p.getInt(SettingsActivity.KEY_SPEED,1);
+                  if(s==0)return 0.75f; // Cham
+                  if(s==2)return 1.4f;  // Nhanh
+                  return 1.0f;          // Vua
+              }
               private void setupTts(){
                   tts=new TextToSpeech(this,new TextToSpeech.OnInitListener(){
                       @Override public void onInit(int status){
@@ -1437,39 +1512,43 @@ jobs:
               }
               // Edge TTS neural voices - mien phi, chat luong cao
               private static final String[]EDGE_VOICES={
-                  "vi-VN-HoaiMyNeural",   // 0: Nu mien Nam
-                  "vi-VN-NamMinhNeural",  // 1: Nam mien Nam
-                  null                    // 2: Dung Android TTS co san
+                  "vi-VN-HoaiMyNeural",  // 0: Giong Nu
+                  "vi-VN-NamMinhNeural", // 1: Giong Nam
+                  null                   // 2: Android TTS (Giong TV)
               };
               private void speakVi(final String text){
                   if(text==null||text.isEmpty())return;
-                  // Bo qua neu toan so/dau/timestamp - dung loop thay vi regex
-                  String tt2=text.trim();
-                  boolean hasLetter=false;
-                  for(int ci=0;ci<tt2.length();ci++){if(Character.isLetter(tt2.charAt(ci))){hasLetter=true;break;}}
-                  if(!hasLetter)return;
-                  if(tt2.split(" ").length<2)return;
+                  // Bo qua text chi co so, thoi luong, timestamp
+                  // Bo qua neu toan so/dau/timestamp
+                  String tt=text.trim();
+                  boolean allNumeric=true;
+                  for(char c:tt.toCharArray()){if(Character.isLetter(c)){allNumeric=false;break;}}
+                  if(allNumeric)return;
+                  if(tt.split(" ").length<2)return;
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
                   if(text.trim().toLowerCase().equals(lastSubText))return;
                   lastSubText=text.trim().toLowerCase();
                   final int voiceIdx=p.getInt(SettingsActivity.KEY_VOICE,0);
-                  if(voiceIdx<2){
-                      // Dung Edge TTS neural
-                      final String voice=EDGE_VOICES[voiceIdx];
+                  final String voice=EDGE_VOICES[Math.min(voiceIdx,EDGE_VOICES.length-1)];
+                  if(voice!=null){
+                      final float spdRate=getSpeechRate();
                       edgeExec.execute(new Runnable(){@Override public void run(){
-                          playEdgeTts(text,voice);
+                          playEdgeTts(text,voice,spdRate);
                       }});
                   } else {
-                      // Fallback Android TTS
-                      if(!ttsReady||tts==null)return;
-                      subHandler.post(new Runnable(){@Override public void run(){
-                          tts.stop();
-                          tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"aio_sub");
-                      }});
+                      // Android TTS fallback
+                      if(ttsReady&&tts!=null){
+                          float spd=getSpeechRate();
+                          tts.setSpeechRate(spd);
+                          subHandler.post(new Runnable(){@Override public void run(){
+                              tts.stop();
+                              tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"aio_sub");
+                          }});
+                      }
                   }
               }
-              private void playEdgeTts(String text,String voice){
+              private void playEdgeTts(String text,String voice,float rate){
                   // Edge TTS dung SSML qua endpoint cong khai
                   HttpURLConnection conn=null;
                   try{
@@ -1484,7 +1563,7 @@ jobs:
                       tc.disconnect();
                       // Goi Edge TTS API
                       String ssml="<speak version='1.0' xml:lang='vi-VN' xmlns='http://www.w3.org/2001/10/synthesis'>"
-                          +"<voice name='"+voice+"'><prosody rate='0%'>"
+                          +"<voice name='"+voice+"'><prosody rate='"+(int)((rate-1f)*100)+"%'>"
                           +text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
                           +"</prosody></voice></speak>";
                       String boundary="----WebKitFormBoundary";
