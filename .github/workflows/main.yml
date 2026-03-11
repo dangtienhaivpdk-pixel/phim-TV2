@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="49" android:versionName="49.0">
+              package="com.allinone.app" android:versionCode="50" android:versionName="50.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -455,7 +455,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited20",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited21",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1181,6 +1181,18 @@ jobs:
                       @Override public void onPageFinished(WebView v,String u){
                           progressBar.setVisibility(View.GONE);injectJs(v);}
                       @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
+                      // Chặn .vtt/.srt ở tầng Java - hoạt động với cross-origin iframe
+                      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView v,android.webkit.WebResourceRequest r){
+                          if(r!=null&&r.getUrl()!=null){
+                              String u2=r.getUrl().toString();
+                              if(u2.contains(".vtt")||u2.contains(".srt")){
+                                  edgeExec.execute(new Runnable(){@Override public void run(){
+                                      fetchAndParseSub(u2);
+                                  }});
+                              }
+                          }
+                          return null; // null = WebView tự xử lý bình thường
+                      }
                   });
                   webView.setWebChromeClient(new WebChromeClient(){
                       @Override public void onProgressChanged(WebView v,int p){
@@ -1480,7 +1492,41 @@ jobs:
                       float[]rc=wc();tDown(rc[0],rc[1]);cursorView.setMode(CursorView.MODE_DRAG);
                   }else{dragMode=false;float[]rc=wc();tUp(rc[0],rc[1],dragT);cursorView.setMode(CursorView.MODE_NORMAL);}
               }
-              private float getSpeechRate(){
+              private void fetchAndParseSub(String url){
+                  java.net.HttpURLConnection conn=null;
+                  try{
+                      java.net.URL u=new java.net.URL(url);
+                      conn=(java.net.HttpURLConnection)u.openConnection();
+                      conn.setRequestMethod("GET");
+                      conn.setConnectTimeout(5000);conn.setReadTimeout(10000);
+                      conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                      conn.setRequestProperty("Referer","https://pointnorth.io/");
+                      if(conn.getResponseCode()==200){
+                          java.io.BufferedReader br=new java.io.BufferedReader(
+                              new java.io.InputStreamReader(conn.getInputStream(),"UTF-8"));
+                          StringBuilder sb=new StringBuilder();
+                          String line;
+                          while((line=br.readLine())!=null){sb.append(line).append("\n");}
+                          br.close();
+                          final String content=sb.toString();
+                          handler.post(new Runnable(){@Override public void run(){
+                              injectSubCues(content);
+                          }});
+                      }
+                  }catch(Exception e){}
+                  finally{if(conn!=null)conn.disconnect();}
+              }
+              private void injectSubCues(String vttContent){
+                  // Escape content de dua vao JS string
+                  String escaped=vttContent
+                      .replace("\\","\\\\")
+                      .replace("'","\\'")
+                      .replace("\n","\\n")
+                      .replace("\r","");
+                  String js="if(window._pvtt)window._pvtt('"+escaped+"');";
+                  webView.evaluateJavascript(js,null);
+              }
+                            private float getSpeechRate(){
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   int s=p.getInt(SettingsActivity.KEY_SPEED,1);
                   if(s==0)return 0.75f;
