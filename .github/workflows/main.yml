@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="42" android:versionName="42.0">
+              package="com.allinone.app" android:versionCode="43" android:versionName="43.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -448,7 +448,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited13",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited14",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1238,20 +1238,34 @@ jobs:
                       +"  _aioHideTimer=setTimeout(function(){_aioSubDiv.style.display='none';},ms);"
                       +"}"
                       +"var _aioSubSels=['.subtitle','.subtitles','.sub-text','.player-subtitles','.caption','.captions','.vjs-text-track-display','[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-wrap\"]','[class*=\"lyric\"]','[id*=\"subtitle\"]','[id*=\"caption\"]'];"
-                      +"new MutationObserver(function(){"
-                      +"  var found='';"
+                      +"function _aioOk(t){"
+                      +"  t=t.replace(/\\d{1,2}:\\d{2}(:\\d{2})?/g,'').replace(/T\\u1eadp\\s*\\d+|Episode\\s*\\d+|Ep\\s*\\d+/gi,'').trim();"
+                      +"  var w=t.split(/\\s+/).filter(function(s){return s.length>0;});"
+                      +"  return w.length>=2&&/[\\u00C0-\\u024F\\u1E00-\\u1EFF\\w]/.test(t);"
+                      +"}"
+                      +"function _aioScan(doc){"
                       +"  for(var i=0;i<_aioSubSels.length;i++){"
-                      +"    var el=document.querySelector(_aioSubSels[i]);"
+                      +"    try{var el=doc.querySelector(_aioSubSels[i]);"
                       +"    if(el&&el.offsetParent!==null){var t=(el.innerText||el.textContent||'').trim();"
-                      +"      if(t.length>3&&/[a-zA-ZÀ-ɏḀ-ỿ]/.test(t)"
-                      +"        &&!/^[\\d:\\s\/\\-\.]+$/.test(t)"
-                      +"        &&!/^(Tập|Episode|Ep|Part|Phần)\\s*[\\d]+/i.test(t)"
-                      +"        &&t.split(' ').length>1"
-                      +"      ){found=t;break;}}"
-                      +"  }"
-                      +"  }"
-                      +"  _aioShowSub(found);"
-                      +"}).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
+                      +"      if(_aioOk(t))return t;}"
+                      +"    }catch(ex){}"
+                      +"  }return '';"
+                      +"}"
+                      +"function _aioCheck(){"
+                      +"  var f=_aioScan(document);"
+                      +"  if(!f){try{var iframes=document.querySelectorAll('iframe');"
+                      +"    for(var fi=0;fi<iframes.length&&!f;fi++){"
+                      +"      try{f=_aioScan(iframes[fi].contentDocument||iframes[fi].contentWindow.document);}catch(ex){}"
+                      +"    }}catch(ex){}}"
+                      +"  _aioShowSub(f);"
+                      +"}"
+                      +"new MutationObserver(_aioCheck).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
+                      +"setInterval(function(){"
+                      +"  try{document.querySelectorAll('iframe').forEach(function(fr){"
+                      +"    try{var fd=fr.contentDocument||fr.contentWindow.document;"
+                      +"      if(fd&&fd.body&&!fd._aioObs){fd._aioObs=true;"
+                      +"        new MutationObserver(_aioCheck).observe(fd.body,{childList:true,subtree:true,characterData:true});}"
+                      +"    }catch(ex){}});}catch(ex){}},1500);"
                       +"}"
                       +"})();",null);
               }
@@ -1429,9 +1443,12 @@ jobs:
               };
               private void speakVi(final String text){
                   if(text==null||text.isEmpty())return;
-                  // Bo qua text chi co so, thoi luong, timestamp
-                  if(text.trim().matches("[\\d:\\s/\\-\\.]+"))return;
-                  if(text.trim().split("\\s+").length<2)return; // phai co it nhat 2 tu
+                  // Bo qua neu toan so/dau/timestamp - dung loop thay vi regex
+                  String tt2=text.trim();
+                  boolean hasLetter=false;
+                  for(int ci=0;ci<tt2.length();ci++){if(Character.isLetter(tt2.charAt(ci))){hasLetter=true;break;}}
+                  if(!hasLetter)return;
+                  if(tt2.split(" ").length<2)return;
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
                   if(text.trim().toLowerCase().equals(lastSubText))return;
