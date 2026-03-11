@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="35" android:versionName="35.0">
+              package="com.allinone.app" android:versionCode="37" android:versionName="37.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -299,20 +299,14 @@ jobs:
                           android:background="#111133" android:padding="16dp"
                           android:layout_marginBottom="24dp" android:focusable="true"
                           android:focusableInTouchMode="true"/>
-                      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                          android:orientation="horizontal" android:gravity="end" android:focusable="false">
-                          <TextView android:id="@+id/dialogBtnCancel"
-                              android:layout_width="wrap_content" android:layout_height="wrap_content"
-                              android:text="  HUỶ  " android:textSize="16sp" android:textColor="#aaaaaa"
-                              android:background="#333344" android:padding="14dp"
-                              android:layout_marginRight="16dp"
-                              android:clickable="true" android:focusable="false"/>
-                          <TextView android:id="@+id/dialogBtnSave"
-                              android:layout_width="wrap_content" android:layout_height="wrap_content"
-                              android:text="  LƯU  " android:textSize="16sp" android:textColor="#ffffff"
-                              android:background="#E50914" android:padding="14dp"
-                              android:clickable="true" android:focusable="false"/>
-                      </LinearLayout>
+                      <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:text="&#9166; Nhấn OK để lưu  |  Nhấn Back để huỷ"
+                          android:textSize="14sp" android:textColor="#aaaaff"
+                          android:gravity="center" android:focusable="false"
+                          android:layout_marginTop="4dp"/>
+                      <!-- Giữ ID ẩn để không lỗi R.java -->
+                      <View android:id="@+id/dialogBtnCancel" android:layout_width="0dp" android:layout_height="0dp"/>
+                      <View android:id="@+id/dialogBtnSave" android:layout_width="0dp" android:layout_height="0dp"/>
                   </LinearLayout>
               </FrameLayout>
               <!-- Con trỏ chuột nổi trên mọi thứ -->
@@ -417,16 +411,20 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited6",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited8",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
+                  "https://vuila.xyz",
                   "https://vtvgo.vn",
+                  "https://vieon.vn",
+                  "https://www.netflix.com",
                   "https://pointnorth.io",
-                  "https://phimmoilam.com",
                   "https://fptplay.vn",
                   "https://www.youtube.com",
                   "https://tv360.vn/tv/vtv1-hd?ch=2&c=0",
                   "https://www.google.com",
-                  "https://vnexpress.net"
+                  "https://vnexpress.net",
+                  "https://phimmoilam.com",
+                  "https://tinnhac.com"
               };
               private static final int COLS=3;
               private static final int CLR_NORM=0xff141428,CLR_ACT=0xff1f1f40;
@@ -658,24 +656,21 @@ jobs:
                       @Override public void onClick(View v){openDialog(null);}});
                   findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){doReset();}});
-                  // Dialog buttons
-                  findViewById(R.id.dialogBtnCancel).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){closeDialog();}});
-                  findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){saveFromDialog();}});
+                  // Dialog: OK=lưu, Back=huỷ (xử lý trong onKeyDown)
                   renderHistory();
               }
               // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
               private void openDialog(String prefill){
                   dialogPrefill=prefill;
-                  dialogInput.setText(prefill!=null?prefill:"");
-                  if(prefill!=null)dialogInput.setSelection(prefill.length());
-                  else dialogInput.setText("https://");
+                  dialogInput.setText(prefill!=null?prefill:"https://");
+                  if(prefill!=null&&!prefill.isEmpty())dialogInput.setSelection(prefill.length());
+                  else dialogInput.setSelection(dialogInput.getText().length());
                   dialogOverlay.setVisibility(View.VISIBLE);
-                  // Hiện bàn phím
-                  dialogInput.requestFocus();
+                  wakeC(); // cursor luôn hiển thị khi dialog mở
+                  // Hiện bàn phím mà không lấy focus khỏi Activity
                   handler.postDelayed(new Runnable(){@Override public void run(){
-                      imm.showSoftInput(dialogInput,InputMethodManager.SHOW_FORCED);}},100);
+                      dialogInput.requestFocus();
+                      imm.showSoftInput(dialogInput,InputMethodManager.SHOW_FORCED);}},80);
               }
               private void closeDialog(){
                   dialogOverlay.setVisibility(View.GONE);
@@ -806,18 +801,13 @@ jobs:
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   // Khi dialog mở: BACK đóng dialog, OK = click tại cursor
                   if(isDialogOpen()){
-                      if(key==KeyEvent.KEYCODE_BACK){closeDialog();return true;}
-                      // D-pad vẫn di cursor trong dialog để bấm LƯU/HUỶ
-                      int rep=e.getRepeatCount();
                       switch(key){
-                          case KeyEvent.KEYCODE_DPAD_UP:   moveCursor(0,-1,rep);return true;
-                          case KeyEvent.KEYCODE_DPAD_DOWN: moveCursor(0, 1,rep);return true;
-                          case KeyEvent.KEYCODE_DPAD_LEFT: moveCursor(-1,0,rep);return true;
-                          case KeyEvent.KEYCODE_DPAD_RIGHT:moveCursor( 1,0,rep);return true;
                           case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
-                              if(e.getRepeatCount()==0)clickAtCursor();return true;
+                              if(e.getRepeatCount()==0)saveFromDialog();return true;
+                          case KeyEvent.KEYCODE_BACK:
+                              closeDialog();return true;
                       }
-                      return true; // chặn mọi key khác khi dialog mở
+                      return super.onKeyDown(key,e);
                   }
                   int rep=e.getRepeatCount();
                   switch(key){
