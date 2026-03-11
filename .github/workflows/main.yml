@@ -1100,12 +1100,7 @@ jobs:
                       +"    _aioSubTimer=setTimeout(function(){_aioSubDiv.style.display='none';_aioLastSub='';},6000);"
                       +"  }).catch(function(){_aioSubDiv.textContent=txt;});"
                       +"}"
-                      +"var _aioSubSels=["
-                      +"  '.subtitle','.subtitles','.sub-text','.player-subtitles',
-                      +''.caption','.captions','.vjs-text-track-display',
-                      +'[class*="subtitle"],[class*="caption"],[class*="sub-wrap"],'
-                      +'[class*="lyric"],[id*="subtitle"],[id*="caption"]'
-                      +"];"
+                      +"var _aioSubSels=['.subtitle','.subtitles','.sub-text','.player-subtitles','.caption','.captions','.vjs-text-track-display','[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-wrap\"]','[class*=\"lyric\"]','[id*=\"subtitle\"]','[id*=\"caption\"]'];"
                       +"new MutationObserver(function(){"
                       +"  var found='';"
                       +"  for(var i=0;i<_aioSubSels.length;i++){"
