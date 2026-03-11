@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="38" android:versionName="38.0">
+              package="com.allinone.app" android:versionCode="39" android:versionName="39.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -249,16 +249,30 @@ jobs:
                       android:orientation="horizontal" android:padding="24dp" android:focusable="false">
                       <TextView android:id="@+id/btnAddUrl"
                           android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1" android:text="&#10133; Thêm URL mới"
-                          android:textSize="16sp" android:textColor="#ffffff"
-                          android:background="#1a3a1a" android:padding="16dp"
-                          android:gravity="center" android:layout_marginRight="12dp"
+                          android:layout_weight="1" android:text="&#10133; Thêm URL"
+                          android:textSize="13sp" android:textColor="#ffffff"
+                          android:background="#1a3a1a" android:padding="14dp"
+                          android:gravity="center" android:layout_marginRight="6dp"
+                          android:clickable="true" android:focusable="false"/>
+                      <TextView android:id="@+id/btnSubToggle"
+                          android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="Sub VI: BAT"
+                          android:textSize="13sp" android:textColor="#ffffff"
+                          android:background="#1a3a2a" android:padding="14dp"
+                          android:gravity="center" android:layout_marginRight="6dp"
+                          android:clickable="true" android:focusable="false"/>
+                      <TextView android:id="@+id/btnTtsKey"
+                          android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="TTS Key"
+                          android:textSize="13sp" android:textColor="#aaaaaa"
+                          android:background="#2a1a1a" android:padding="14dp"
+                          android:gravity="center" android:layout_marginRight="6dp"
                           android:clickable="true" android:focusable="false"/>
                       <TextView android:id="@+id/btnReset"
                           android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1" android:text="&#8635; Reset mặc định"
-                          android:textSize="16sp" android:textColor="#aaaaaa"
-                          android:background="#1a1a2e" android:padding="16dp" android:gravity="center"
+                          android:layout_weight="1" android:text="&#8635; Reset"
+                          android:textSize="13sp" android:textColor="#aaaaaa"
+                          android:background="#1a1a2e" android:padding="14dp" android:gravity="center"
                           android:clickable="true" android:focusable="false"/>
                   </LinearLayout>
                   <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -420,7 +434,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited9",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited10",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -620,15 +634,17 @@ jobs:
           import java.util.List;
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_TTS="tts_key",KEY_SUB="sub_on",DEF="https://vtvgo.vn",SEP="|||";
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private FrameLayout dialogOverlay;
               private EditText dialogInput;
+              private TextView btnSubToggle;
               private SharedPreferences prefs;
               private Handler handler=new Handler();
               private InputMethodManager imm;
-              private String dialogPrefill=null; // null = thêm mới, có giá trị = sửa
+              private String dialogPrefill=null;
+              private boolean dialogModeTts=false;
               // Cursor
               private CursorView cursor;
               private float scW=1920,scH=1080;
@@ -662,6 +678,15 @@ jobs:
                       @Override public void onClick(View v){openDialog(null);}});
                   findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){doReset();}});
+                  btnSubToggle=(TextView)findViewById(R.id.btnSubToggle);
+                  refreshSubBtn();
+                  btnSubToggle.setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){
+                          boolean was=prefs.getBoolean(KEY_SUB,true);
+                          prefs.edit().putBoolean(KEY_SUB,!was).apply();
+                          refreshSubBtn();}});
+                  findViewById(R.id.btnTtsKey).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){openTtsDialog();}});
                   // Nút LƯU bấm được bằng chuột cursor
                   findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){saveFromDialog();}});
@@ -681,6 +706,7 @@ jobs:
                       imm.showSoftInput(dialogInput,InputMethodManager.SHOW_FORCED);}},80);
               }
               private void closeDialog(){
+                  dialogModeTts=false;
                   dialogOverlay.setVisibility(View.GONE);
                   imm.hideSoftInputFromWindow(dialogInput.getWindowToken(),0);
                   wakeC();
@@ -848,6 +874,8 @@ jobs:
           import android.os.Handler;
           import android.os.SystemClock;
           import android.speech.RecognitionListener;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
           import android.speech.RecognizerIntent;
           import android.speech.SpeechRecognizer;
           import android.app.Activity;
@@ -959,7 +987,7 @@ jobs:
                       @Override public void onClick(View v){
                           savedCX=cursorView.getCX();savedCY=cursorView.getCY();
                           startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
-                  setupSpeech();setupWebView();webView.loadUrl(loadUrl);
+                  setupSpeech();setupTts();setupWebView();webView.loadUrl(loadUrl);
               }
               private void wakeC(){
                   if(!cursorVisible){cursorView.setVisibility(View.VISIBLE);cursorVisible=true;}
@@ -1052,9 +1080,51 @@ jobs:
                       +"      try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"]').forEach(_hn);}catch(ex){}});"
                       +"  });}).observe(document.body||document.documentElement,{childList:true,subtree:true});}"
                       +"try{window.dispatchEvent(new Event('resize'));}catch(ex){}"
+                      +"if(!window._aioSubInited){window._aioSubInited=true;"
+                      +"var _aioSubDiv=document.createElement('div');"
+                      +"_aioSubDiv.id='_aioSubOverlay';"
+                      +"_aioSubDiv.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.82);color:#ffe066;font-size:28px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';"
+                      +"document.body.appendChild(_aioSubDiv);"
+                      +"var _aioLastSub='',_aioSubTimer=null;"
+                      +"function _aioShowSub(txt){"
+                      +"  if(!txt||txt===_aioLastSub)return;"
+                      +"  _aioLastSub=txt;"
+                      +"  _aioSubDiv.style.display='block';"
+                      +"  fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q='+encodeURIComponent(txt))"
+                      +"  .then(function(r){return r.json();})"
+                      +"  .then(function(d){"
+                      +"    var vn='';if(d&&d[0])d[0].forEach(function(s){if(s&&s[0])vn+=s[0];});"
+                      +"    _aioSubDiv.textContent=vn||txt;"
+                      +"    try{window.AIO.onSubText(vn||txt);}catch(ex){}"
+                      +"    if(_aioSubTimer)clearTimeout(_aioSubTimer);"
+                      +"    _aioSubTimer=setTimeout(function(){_aioSubDiv.style.display='none';_aioLastSub='';},6000);"
+                      +"  }).catch(function(){_aioSubDiv.textContent=txt;});"
+                      +"}"
+                      +"var _aioSubSels=["
+                      +"  '.subtitle','.subtitles','.sub-text','.player-subtitles',
+                      +''.caption','.captions','.vjs-text-track-display',
+                      +'[class*="subtitle"],[class*="caption"],[class*="sub-wrap"],'
+                      +'[class*="lyric"],[id*="subtitle"],[id*="caption"]'
+                      +"];"
+                      +"new MutationObserver(function(){"
+                      +"  var found='';"
+                      +"  for(var i=0;i<_aioSubSels.length;i++){"
+                      +"    var el=document.querySelector(_aioSubSels[i]);"
+                      +"    if(el&&el.offsetParent!==null){var t=(el.innerText||el.textContent||'').trim();"
+                      +"      if(t.length>2){found=t;break;}}"
+                      +"  }"
+                      +"  _aioShowSub(found);"
+                      +"}).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
+                      +"}"
                       +"})();",null);
               }
               private class KbdBridge {
+                  @android.webkit.JavascriptInterface
+                  public void onSubText(final String text){
+                      handler.post(new Runnable(){@Override public void run(){
+                          speakVi(text);
+                      }});
+                  }
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
                       imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);}});}
@@ -1199,6 +1269,29 @@ jobs:
                   if(!dragMode){dragMode=true;dragT=SystemClock.uptimeMillis();
                       float[]rc=wc();tDown(rc[0],rc[1]);cursorView.setMode(CursorView.MODE_DRAG);
                   }else{dragMode=false;float[]rc=wc();tUp(rc[0],rc[1],dragT);cursorView.setMode(CursorView.MODE_NORMAL);}
+              }
+              private void setupTts(){
+                  tts=new TextToSpeech(this,new TextToSpeech.OnInitListener(){
+                      @Override public void onInit(int status){
+                          if(status==TextToSpeech.SUCCESS){
+                              java.util.Locale vi=new java.util.Locale("vi","VN");
+                              int res=tts.isLanguageAvailable(vi);
+                              if(res>=TextToSpeech.LANG_AVAILABLE){
+                                  tts.setLanguage(vi);ttsReady=true;
+                              } else {
+                                  tts.setLanguage(java.util.Locale.ENGLISH);ttsReady=true;
+                              }
+                              tts.setSpeechRate(1.1f);
+                          }}});
+              }
+              private void speakVi(final String text){
+                  if(!ttsReady||tts==null||text==null||text.isEmpty())return;
+                  SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
+                  if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
+                  subHandler.post(new Runnable(){@Override public void run(){
+                      tts.stop();
+                      tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"aio_sub");
+                  }});
               }
               private void setupSpeech(){
                   if(!SpeechRecognizer.isRecognitionAvailable(this))return;
