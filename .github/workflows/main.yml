@@ -907,6 +907,11 @@ jobs:
               private CursorView cursorView;
               private SpeechRecognizer speechRecognizer;
               private InputMethodManager imm;
+              // Sub dich + TTS
+              private TextToSpeech tts;
+              private boolean ttsReady=false;
+              private String lastSubText="";
+              private android.os.Handler subHandler=new android.os.Handler();
               private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://vtvgo.vn";
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
@@ -1331,7 +1336,8 @@ jobs:
                   stopEdge();handler.removeCallbacksAndMessages(null);}
               @Override protected void onResume(){super.onResume();webView.onResume();wakeC();}
               @Override protected void onDestroy(){
-                  handler.removeCallbacksAndMessages(null);
+                  handler.removeCallbacksAndMessages(null);subHandler.removeCallbacksAndMessages(null);
+                  if(tts!=null){tts.stop();tts.shutdown();tts=null;}
                   if(speechRecognizer!=null)speechRecognizer.destroy();
                   webView.destroy();super.onDestroy();}
           }
