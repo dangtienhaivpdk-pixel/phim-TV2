@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="51" android:versionName="51.0">
+              package="com.allinone.app" android:versionCode="52" android:versionName="52.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited22",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited23",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1303,22 +1303,64 @@ jobs:
                   + "    var hr=parseFloat(p.length>=3?p[p.length-3]:0);\n"
                   + "    return hr*3600+min*60+sec;\n"
                   + "  }\n"
-                  // DOM sub scan (fallback cho trang không dùng .vtt)
-                  + "  var _sels=['[class*=\"subtitle\"]','[class*=\"caption\"]','.vjs-text-track-display',\n"
-                  + "    '[id*=\"subtitle\"]','[id*=\"caption\"]'];\n"
+                  // DOM sub scan - quét trang chính + tất cả iframe (same + cross origin cùng domain)
+                  + "  var _sels=[\n"
+                  + "    '.vjs-text-track-cue span','.vjs-text-track-cue','.vjs-text-track-display',\n"
+                  + "    '.jw-text-track-cue','.jw-captions-item','.jw-captions-text',\n"
+                  + "    '.fp-captions p','.fp-captions',\n"
+                  + "    '.vid-subtitles__text','.vid-subtitles',\n"
+                  + "    '.plyr__captions .plyr__caption','.plyr__captions',\n"
+                  + "    '[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-text\"]',\n"
+                  + "    '[class*=\"lyric\"]','[class*=\"cue\"]',\n"
+                  + "    '[id*=\"subtitle\"]','[id*=\"caption\"]','[id*=\"cue\"]'\n"
+                  + "  ];\n"
                   + "  function _scan(doc){\n"
+                  + "    if(!doc)return '';\n"
                   + "    for(var i=0;i<_sels.length;i++){\n"
-                  + "      try{var el=doc.querySelector(_sels[i]);\n"
-                  + "        if(el&&el.offsetParent!==null){\n"
-                  + "          var t=(el.innerText||el.textContent||'').trim();\n"
-                  + "          if(_ok(t))return t;\n"
+                  + "      try{\n"
+                  + "        var els=doc.querySelectorAll(_sels[i]);\n"
+                  + "        for(var j=0;j<els.length;j++){\n"
+                  + "          var el=els[j];\n"
+                  + "          if(el&&el.offsetParent!==null){\n"
+                  + "            var t=(el.innerText||el.textContent||'').trim();\n"
+                  + "            if(_ok(t))return t;\n"
+                  + "          }\n"
                   + "        }\n"
                   + "      }catch(e){}\n"
                   + "    }return '';\n"
                   + "  }\n"
-                  + "  new MutationObserver(function(){\n"
-                  + "    _show(_scan(document));\n"
-                  + "  }).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});\n"
+                  + "  function _scanAll(){\n"
+                  + "    var f=_scan(document);\n"
+                  + "    if(f){_show(f);return;}\n"
+                  + "    try{\n"
+                  + "      var iframes=document.querySelectorAll('iframe');\n"
+                  + "      for(var i=0;i<iframes.length;i++){\n"
+                  + "        try{\n"
+                  + "          var idoc=iframes[i].contentDocument||iframes[i].contentWindow.document;\n"
+                  + "          var g=_scan(idoc);\n"
+                  + "          if(g){_show(g);return;}\n"
+                  + "        }catch(e){}\n"
+                  + "      }\n"
+                  + "    }catch(e){}\n"
+                  + "  }\n"
+                  // MutationObserver cho trang chính
+                  + "  new MutationObserver(_scanAll)\n"
+                  + "    .observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});\n"
+                  // setInterval attach observer vào iframe khi chúng load xong
+                  + "  setInterval(function(){\n"
+                  + "    try{\n"
+                  + "      document.querySelectorAll('iframe').forEach(function(fr){\n"
+                  + "        try{\n"
+                  + "          var fd=fr.contentDocument||fr.contentWindow.document;\n"
+                  + "          if(fd&&fd.body&&!fd._aioMO){\n"
+                  + "            fd._aioMO=true;\n"
+                  + "            new MutationObserver(_scanAll)\n"
+                  + "              .observe(fd.body,{childList:true,subtree:true,characterData:true});\n"
+                  + "          }\n"
+                  + "        }catch(e){}\n"
+                  + "      });\n"
+                  + "    }catch(e){}\n"
+                  + "  },1000);\n"
                   + "}\n"
                   + "})();";
                   v.evaluateJavascript(js, null);
