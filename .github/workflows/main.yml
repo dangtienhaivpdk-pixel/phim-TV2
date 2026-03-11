@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="45" android:versionName="45.0">
+              package="com.allinone.app" android:versionCode="46" android:versionName="46.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -455,7 +455,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited16",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited17",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1263,11 +1263,11 @@ jobs:
                       +"  var start=0,end=0,cueTxt='';"
                       +"  for(var i=0;i<lines.length;i++){"
                       +"    var l=lines[i].trim();"
-                      +"    var m=l.match(/(\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}\s*-->\s*(\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}/);"
-                      +"    if(m){"
+                      +"    var isTs=(l.indexOf('-->')>-1&&l.indexOf(':')>-1);"
+                      +"    if(isTs){"
                       +"      var p=l.split(' --> ');"
                       +"      start=_aioT(p[0].trim());end=_aioT(p[1].trim());cueTxt='';"
-                      +"    } else if(l&&!/^\d+$/.test(l)&&start>0){"
+                      +"    } else if(l&&isNaN(Number(l))&&start>0){"
                       +"      cueTxt+=l+' ';"
                       +"    } else if(!l&&cueTxt.trim()){"
                       +"      _aioCues.push({s:start,e:end,t:cueTxt.trim()});cueTxt='';start=0;"
@@ -1325,12 +1325,7 @@ jobs:
                       +"  for(var i=0;i<_aioSubSels.length;i++){"
                       +"    var el=document.querySelector(_aioSubSels[i]);"
                       +"    if(el&&el.offsetParent!==null){var t=(el.innerText||el.textContent||'').trim();"
-                      +"      if(t.length>3&&/[a-zA-ZÀ-ɏḀ-ỿ]/.test(t)"
-                      +"        &&!/^[\\d:\\s\/\\-\.]+$/.test(t)"
-                      +"        &&!/^(Tập|Episode|Ep|Part|Phần)\\s*[\\d]+/i.test(t)"
-                      +"        &&t.split(' ').length>1"
-                      +"      ){found=t;break;}}"
-                      +"  }"
+                      +"      if(_aioOk(t)){found=t;break;}}"
                       +"  }"
                       +"  _aioShowSub(found);"
                       +"}).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
