@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="39" android:versionName="39.0">
+              package="com.allinone.app" android:versionCode="40" android:versionName="40.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -268,6 +268,13 @@ jobs:
                           android:background="#2a1a1a" android:padding="14dp"
                           android:gravity="center" android:layout_marginRight="6dp"
                           android:clickable="true" android:focusable="false"/>
+                      <TextView android:id="@+id/btnVoice"
+                          android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="Giong: Nu"
+                          android:textSize="13sp" android:textColor="#ffffff"
+                          android:background="#1a1a3a" android:padding="14dp"
+                          android:gravity="center" android:layout_marginRight="6dp"
+                          android:clickable="true" android:focusable="false"/>
                       <TextView android:id="@+id/btnReset"
                           android:layout_width="0dp" android:layout_height="wrap_content"
                           android:layout_weight="1" android:text="&#8635; Reset"
@@ -434,7 +441,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited10",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited11",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -634,12 +641,13 @@ jobs:
           import java.util.List;
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_TTS="tts_key",KEY_SUB="sub_on",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_TTS="tts_key",KEY_SUB="sub_on",KEY_VOICE="voice_idx",DEF="https://vtvgo.vn",SEP="|||";
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private FrameLayout dialogOverlay;
               private EditText dialogInput;
               private TextView btnSubToggle;
+              private TextView btnVoice;
               private SharedPreferences prefs;
               private Handler handler=new Handler();
               private InputMethodManager imm;
@@ -687,12 +695,24 @@ jobs:
                           refreshSubBtn();}});
                   findViewById(R.id.btnTtsKey).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){openTtsDialog();}});
+                  btnVoice=(TextView)findViewById(R.id.btnVoice);
+                  refreshVoiceBtn();
+                  btnVoice.setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){
+                          int cur=prefs.getInt(KEY_VOICE,0);
+                          prefs.edit().putInt(KEY_VOICE,(cur+1)%3).apply();
+                          refreshVoiceBtn();}});
                   // Nút LƯU bấm được bằng chuột cursor
                   findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){saveFromDialog();}});
                   renderHistory();
               }
               // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
+              private void refreshVoiceBtn(){
+                  int v=prefs.getInt(KEY_VOICE,0);
+                  String[]names={"Giong: Nu","Giong: Nam","Giong: TV"};
+                  btnVoice.setText(names[v]);
+              }
               private void refreshSubBtn(){
                   boolean on=prefs.getBoolean(KEY_SUB,true);
                   btnSubToggle.setText("Sub VI: "+(on?"BAT":"TAT"));
@@ -915,6 +935,9 @@ jobs:
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           import android.view.inputmethod.InputMethodManager;
+          import java.io.InputStream;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
           import java.util.ArrayList;
           public class MainActivity extends Activity {
               private ScrollWebView webView;
@@ -930,6 +953,8 @@ jobs:
               private boolean ttsReady=false;
               private String lastSubText="";
               private android.os.Handler subHandler=new android.os.Handler();
+              private android.media.MediaPlayer edgePlayer=null;
+              private java.util.concurrent.ExecutorService edgeExec=java.util.concurrent.Executors.newSingleThreadExecutor();
               private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://vtvgo.vn";
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
@@ -1306,17 +1331,89 @@ jobs:
                               tts.setSpeechRate(1.1f);
                           }}});
               }
+              // Edge TTS neural voices - mien phi, chat luong cao
+              private static final String[]EDGE_VOICES={
+                  "vi-VN-HoaiMyNeural",   // 0: Nu mien Nam
+                  "vi-VN-NamMinhNeural",  // 1: Nam mien Nam
+                  null                    // 2: Dung Android TTS co san
+              };
               private void speakVi(final String text){
-                  if(!ttsReady||tts==null||text==null||text.isEmpty())return;
+                  if(text==null||text.isEmpty())return;
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
-                  // Không đọc lại nếu đang đọc câu này rồi
                   if(text.trim().toLowerCase().equals(lastSubText))return;
                   lastSubText=text.trim().toLowerCase();
-                  subHandler.post(new Runnable(){@Override public void run(){
-                      tts.stop();
-                      tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"aio_sub");
-                  }});
+                  final int voiceIdx=p.getInt(SettingsActivity.KEY_VOICE,0);
+                  if(voiceIdx<2){
+                      // Dung Edge TTS neural
+                      final String voice=EDGE_VOICES[voiceIdx];
+                      edgeExec.execute(new Runnable(){@Override public void run(){
+                          playEdgeTts(text,voice);
+                      }});
+                  } else {
+                      // Fallback Android TTS
+                      if(!ttsReady||tts==null)return;
+                      subHandler.post(new Runnable(){@Override public void run(){
+                          tts.stop();
+                          tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"aio_sub");
+                      }});
+                  }
+              }
+              private void playEdgeTts(String text,String voice){
+                  // Edge TTS dung SSML qua endpoint cong khai
+                  HttpURLConnection conn=null;
+                  try{
+                      // Lay token truoc
+                      URL tokenUrl=new URL("https://www.bing.com/tfeatured?setlang=vi");
+                      HttpURLConnection tc=(HttpURLConnection)tokenUrl.openConnection();
+                      tc.setConnectTimeout(3000);tc.setReadTimeout(3000);
+                      String token="";String cookie="";
+                      // Doc cookie
+                      java.util.List<String>cookies2=tc.getHeaderFields().get("Set-Cookie");
+                      if(cookies2!=null)for(String c:cookies2)if(c.contains("MUID")){cookie=c.split(";")[0];}
+                      tc.disconnect();
+                      // Goi Edge TTS API
+                      String ssml="<speak version='1.0' xml:lang='vi-VN'>"
+                          +"<voice name='"+voice+"'>"
+                          +text.replace("<","&lt;").replace(">","&gt;")
+                          +"</voice></speak>";
+                      String boundary="----WebKitFormBoundary";
+                      URL ttsUrl=new URL("https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="+java.util.UUID.randomUUID().toString().replace("-",""));
+                      conn=(HttpURLConnection)ttsUrl.openConnection();
+                      conn.setRequestMethod("POST");
+                      conn.setRequestProperty("Content-Type","application/ssml+xml");
+                      conn.setRequestProperty("X-Microsoft-OutputFormat","audio-24khz-48kbitrate-mono-mp3");
+                      conn.setRequestProperty("User-Agent","Mozilla/5.0");
+                      conn.setDoOutput(true);
+                      conn.setConnectTimeout(5000);conn.setReadTimeout(10000);
+                      byte[]body=ssml.getBytes("UTF-8");
+                      conn.getOutputStream().write(body);
+                      if(conn.getResponseCode()==200){
+                          // Luu tam vao file
+                          java.io.File tmp=java.io.File.createTempFile("edge_tts",".mp3",getCacheDir());
+                          InputStream is=conn.getInputStream();
+                          java.io.FileOutputStream fos=new java.io.FileOutputStream(tmp);
+                          byte[]buf=new byte[4096];int n;
+                          while((n=is.read(buf))!=-1)fos.write(buf,0,n);
+                          fos.close();is.close();
+                          // Phat qua MediaPlayer tren main thread
+                          final java.io.File ftmp=tmp;
+                          subHandler.post(new Runnable(){@Override public void run(){
+                              try{
+                                  if(edgePlayer!=null){edgePlayer.stop();edgePlayer.release();}
+                                  edgePlayer=new android.media.MediaPlayer();
+                                  edgePlayer.setDataSource(ftmp.getAbsolutePath());
+                                  edgePlayer.prepare();
+                                  edgePlayer.start();
+                                  edgePlayer.setOnCompletionListener(new android.media.MediaPlayer.OnCompletionListener(){
+                                      @Override public void onCompletion(android.media.MediaPlayer mp){
+                                          mp.release();edgePlayer=null;ftmp.delete();
+                                      }});
+                              }catch(Exception e2){ftmp.delete();}
+                          }});
+                      }
+                  }catch(Exception e){}
+                  finally{if(conn!=null)conn.disconnect();}
               }
               private void setupSpeech(){
                   if(!SpeechRecognizer.isRecognitionAvailable(this))return;
@@ -1362,6 +1459,8 @@ jobs:
               @Override protected void onResume(){super.onResume();webView.onResume();wakeC();}
               @Override protected void onDestroy(){
                   handler.removeCallbacksAndMessages(null);subHandler.removeCallbacksAndMessages(null);
+                  if(edgePlayer!=null){edgePlayer.stop();edgePlayer.release();edgePlayer=null;}
+                  edgeExec.shutdownNow();
                   if(tts!=null){tts.stop();tts.shutdown();tts=null;}
                   if(speechRecognizer!=null)speechRecognizer.destroy();
                   webView.destroy();super.onDestroy();}
