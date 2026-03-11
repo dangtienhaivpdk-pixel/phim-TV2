@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="50" android:versionName="50.0">
+              package="com.allinone.app" android:versionCode="51" android:versionName="51.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -428,7 +428,6 @@ jobs:
           }
           JEOF
 
-          # ── HomeActivity ───────────────────────────────────────────────────────────
           cat > src/com/allinone/app/HomeActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -455,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited21",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited22",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -626,10 +625,6 @@ jobs:
           }
           JEOF
 
-          # ── SettingsActivity v35 ─────────────────────────────────────────────────
-          # Bỏ AlertDialog (chiếm focus, cursor mất) → dùng dialog nội tuyến trong layout
-          # Cursor hoạt động cả khi dialog mở: click LƯU/HUỶ bình thường
-          # Thay bilutv/phimhay → pointnorth.io
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -1010,6 +1005,7 @@ jobs:
                   handler.removeCallbacksAndMessages(null);super.onDestroy();}
           }
           JEOF
+
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
           import android.annotation.TargetApi;
@@ -1022,13 +1018,11 @@ jobs:
           import android.os.Handler;
           import android.os.SystemClock;
           import android.speech.RecognitionListener;
-          import android.speech.tts.TextToSpeech;
-          import android.speech.tts.UtteranceProgressListener;
           import android.speech.RecognizerIntent;
           import android.speech.SpeechRecognizer;
+          import android.speech.tts.TextToSpeech;
           import android.app.Activity;
           import android.util.DisplayMetrics;
-          import android.view.InputDevice;
           import android.view.KeyEvent;
           import android.view.MotionEvent;
           import android.view.View;
@@ -1045,11 +1039,9 @@ jobs:
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           import android.view.inputmethod.InputMethodManager;
-          import java.io.InputStream;
-          import java.net.HttpURLConnection;
-          import java.net.URL;
           import java.util.ArrayList;
           public class MainActivity extends Activity {
+              // Views
               private ScrollWebView webView;
               private ProgressBar progressBar;
               private LinearLayout bottomBar;
@@ -1058,154 +1050,178 @@ jobs:
               private CursorView cursorView;
               private SpeechRecognizer speechRecognizer;
               private InputMethodManager imm;
-              // Sub dich + TTS
+              // TTS / Sub
               private TextToSpeech tts;
-              private boolean ttsReady=false;
-              private String lastSubText="";
-              private android.os.Handler subHandler=new android.os.Handler();
-              private android.media.MediaPlayer edgePlayer=null;
-              private java.util.concurrent.ExecutorService edgeExec=java.util.concurrent.Executors.newSingleThreadExecutor();
-              private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://vtvgo.vn";
-              private Handler handler=new Handler();
-              private float screenW=1920,screenH=1080;
-              private static float savedCX=-1,savedCY=-1;
-              // Cursor
-              private static final float STEP_MIN=12f,STEP_MAX=100f,ACCEL=15f;
-              private static final int BAR_W=100,BAR_H=70;
-              private static final long HIDE_DELAY=4000;
-              private boolean barVisible=false,cursorVisible=true;
+              private boolean ttsReady = false;
+              private String lastSubText = "";
+              private android.os.Handler subHandler = new android.os.Handler();
+              private android.media.MediaPlayer edgePlayer = null;
+              private java.util.concurrent.ExecutorService edgeExec =
+                  java.util.concurrent.Executors.newSingleThreadExecutor();
+              private static final String[] EDGE_VOICES = {
+                  "vi-VN-HoaiMyNeural",
+                  "vi-VN-NamMinhNeural",
+                  null
+              };
+              // State
+              private static final String PREF = "aio_prefs", KEY_URL = "custom_url", DEF = "https://vtvgo.vn";
+              private Handler handler = new Handler();
+              private float screenW = 1920, screenH = 1080;
+              private static float savedCX = -1, savedCY = -1;
+              // Cursor constants
+              private static final float STEP_MIN = 12f, STEP_MAX = 100f, ACCEL = 15f;
+              private static final int BAR_W = 100, BAR_H = 70;
+              private static final long HIDE_DELAY = 4000;
+              private boolean barVisible = false, cursorVisible = true;
               // Edge scroll
-              private static final int EDGE_MS=80,EDGE_MIN=50,EDGE_MAX=400;
-              private int edgeDir=0,edgeTick=0;
-              private Runnable edgeRun=new Runnable(){
-                  @Override public void run(){
-                      if(edgeDir==0)return;
-                      edgeTick=Math.min(edgeTick+1,10);
-                      pgScroll(edgeDir*(EDGE_MIN+(EDGE_MAX-EDGE_MIN)*edgeTick/10));
-                      handler.postDelayed(this,EDGE_MS);}};
+              private static final int EDGE_MS = 80, EDGE_MIN = 50, EDGE_MAX = 400;
+              private int edgeDir = 0, edgeTick = 0;
+              private Runnable edgeRun = new Runnable() {
+                  @Override public void run() {
+                      if (edgeDir == 0) return;
+                      edgeTick = Math.min(edgeTick + 1, 10);
+                      pgScroll(edgeDir * (EDGE_MIN + (EDGE_MAX - EDGE_MIN) * edgeTick / 10));
+                      handler.postDelayed(this, EDGE_MS);
+                  }
+              };
               // Drag/click/hold
-              private boolean dragMode=false;
-              private boolean okDown=false;
-              private long okT=0;
-              private float okX=0,okY=0;
-              private long dragT=0;
-              // HOLD_MS: giữ OK >= 600ms → long press → copy/paste context menu
-              private static final long HOLD_MS=600;
-              private static final int SCR_AMT=250;
-              private Runnable hideBarRun=new Runnable(){
-                  @Override public void run(){bottomBar.setVisibility(View.GONE);barVisible=false;}};
-              private Runnable hideCursorRun=new Runnable(){
-                  @Override public void run(){cursorView.setVisibility(View.GONE);cursorVisible=false;}};
-              // Sau HOLD_MS: gửi ACTION_DOWN → WebView nhận long press → copy/paste menu
-              private Runnable holdRun=new Runnable(){
-                  @Override public void run(){
-                      if(!okDown)return;
-                      float[]rc=wc();
-                      tDown(rc[0],rc[1]);       // ACTION_DOWN không có UP
+              private boolean dragMode = false;
+              private boolean okDown = false;
+              private long okT = 0;
+              private float okX = 0, okY = 0;
+              private long dragT = 0;
+              private static final long HOLD_MS = 600;
+              private static final int SCR_AMT = 250;
+              private Runnable hideBarRun = new Runnable() {
+                  @Override public void run() { bottomBar.setVisibility(View.GONE); barVisible = false; }
+              };
+              private Runnable hideCursorRun = new Runnable() {
+                  @Override public void run() { cursorView.setVisibility(View.GONE); cursorVisible = false; }
+              };
+              private Runnable holdRun = new Runnable() {
+                  @Override public void run() {
+                      if (!okDown) return;
+                      float[] rc = wc();
+                      tDown(rc[0], rc[1]);
                       cursorView.setMode(CursorView.MODE_HOLD);
                   }
               };
-              private Runnable clrScrollMode=new Runnable(){
-                  @Override public void run(){
-                      if(cursorView.getMode()==CursorView.MODE_SCROLL)
-                          cursorView.setMode(CursorView.MODE_NORMAL);}};
-              @Override protected void onCreate(Bundle s){
+              private Runnable clrScrollMode = new Runnable() {
+                  @Override public void run() {
+                      if (cursorView.getMode() == CursorView.MODE_SCROLL)
+                          cursorView.setMode(CursorView.MODE_NORMAL);
+                  }
+              };
+
+              @Override protected void onCreate(Bundle s) {
                   super.onCreate(s);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                   setContentView(R.layout.main);
-                  imm=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
-                  DisplayMetrics dm=new DisplayMetrics();
+                  imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                  DisplayMetrics dm = new DisplayMetrics();
                   getWindowManager().getDefaultDisplay().getMetrics(dm);
-                  screenW=dm.widthPixels;screenH=dm.heightPixels;
-                  cursorView=(CursorView)findViewById(R.id.cursor);
-                  float ix=savedCX>0?savedCX:screenW/2f,iy=savedCY>0?savedCY:screenH/2f;
-                  cursorView.setPos(ix,iy);savedCX=ix;savedCY=iy;
-                  handler.postDelayed(hideCursorRun,HIDE_DELAY);
-                  SharedPreferences prefs=getSharedPreferences(PREF,Context.MODE_PRIVATE);
-                  String url=prefs.getString(KEY_URL,DEF);
-                  if(getIntent().hasExtra("url"))url=getIntent().getStringExtra("url");
-                  webView=(ScrollWebView)findViewById(R.id.webview);
-                  progressBar=(ProgressBar)findViewById(R.id.progress);
-                  bottomBar=(LinearLayout)findViewById(R.id.bottomBar);
-                  voiceOverlay=(RelativeLayout)findViewById(R.id.voiceOverlay);
-                  voiceResult=(TextView)findViewById(R.id.voiceResult);
-                  webView.setFocusable(false);webView.setFocusableInTouchMode(false);
-                  final String loadUrl=url;
-                  findViewById(R.id.btnHome).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){finish();}});
-                  findViewById(R.id.btnWebBack).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){if(webView.canGoBack())webView.goBack();}});
-                  findViewById(R.id.btnWebForward).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){if(webView.canGoForward())webView.goForward();}});
-                  findViewById(R.id.btnRefresh).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){webView.reload();}});
-                  // Nút cài đặt: lưu vị trí cursor rồi mở Settings
-                  // Settings sẽ finish() và quay về đây, hoặc start MainActivity mới
-                  findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener(){
-                      @Override public void onClick(View v){
-                          savedCX=cursorView.getCX();savedCY=cursorView.getCY();
-                          startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
-                  setupSpeech();setupTts();setupWebView();webView.loadUrl(loadUrl);
+                  screenW = dm.widthPixels; screenH = dm.heightPixels;
+                  cursorView = (CursorView) findViewById(R.id.cursor);
+                  float ix = savedCX > 0 ? savedCX : screenW / 2f;
+                  float iy = savedCY > 0 ? savedCY : screenH / 2f;
+                  cursorView.setPos(ix, iy); savedCX = ix; savedCY = iy;
+                  handler.postDelayed(hideCursorRun, HIDE_DELAY);
+                  SharedPreferences prefs = getSharedPreferences(PREF, Context.MODE_PRIVATE);
+                  String url = prefs.getString(KEY_URL, DEF);
+                  if (getIntent().hasExtra("url")) url = getIntent().getStringExtra("url");
+                  webView = (ScrollWebView) findViewById(R.id.webview);
+                  progressBar = (ProgressBar) findViewById(R.id.progress);
+                  bottomBar = (LinearLayout) findViewById(R.id.bottomBar);
+                  voiceOverlay = (RelativeLayout) findViewById(R.id.voiceOverlay);
+                  voiceResult = (TextView) findViewById(R.id.voiceResult);
+                  webView.setFocusable(false); webView.setFocusableInTouchMode(false);
+                  final String loadUrl = url;
+                  findViewById(R.id.btnHome).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { finish(); }});
+                  findViewById(R.id.btnWebBack).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { if (webView.canGoBack()) webView.goBack(); }});
+                  findViewById(R.id.btnWebForward).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { if (webView.canGoForward()) webView.goForward(); }});
+                  findViewById(R.id.btnRefresh).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { webView.reload(); }});
+                  findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) {
+                          savedCX = cursorView.getCX(); savedCY = cursorView.getCY();
+                          startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                      }});
+                  setupTts(); setupSpeech(); setupWebView(); webView.loadUrl(loadUrl);
               }
-              private void wakeC(){
-                  if(!cursorVisible){cursorView.setVisibility(View.VISIBLE);cursorVisible=true;}
-                  handler.removeCallbacks(hideCursorRun);handler.postDelayed(hideCursorRun,HIDE_DELAY);
-              }
-              private boolean isHttp(String u){return u!=null&&(u.startsWith("http://")||u.startsWith("https://"));}
-              private void setupWebView(){
-                  WebSettings ws=webView.getSettings();
-                  ws.setJavaScriptEnabled(true);ws.setDomStorageEnabled(true);ws.setDatabaseEnabled(true);
-                  ws.setGeolocationEnabled(false);ws.setMediaPlaybackRequiresUserGesture(false);
-                  ws.setUseWideViewPort(true);ws.setLoadWithOverviewMode(true);
+
+              // ── WebView setup ──────────────────────────────────────────────────────
+              private void setupWebView() {
+                  WebSettings ws = webView.getSettings();
+                  ws.setJavaScriptEnabled(true); ws.setDomStorageEnabled(true); ws.setDatabaseEnabled(true);
+                  ws.setGeolocationEnabled(false); ws.setMediaPlaybackRequiresUserGesture(false);
+                  ws.setUseWideViewPort(true); ws.setLoadWithOverviewMode(true);
                   ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-                  ws.setBuiltInZoomControls(false);ws.setDisplayZoomControls(false);
+                  ws.setBuiltInZoomControls(false); ws.setDisplayZoomControls(false);
                   ws.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
                   ws.setAppCacheEnabled(true);
-                  ws.setSupportMultipleWindows(false);ws.setAllowFileAccess(false);ws.setAllowContentAccess(false);
-                  ws.setNeedInitialFocus(false);ws.setLoadsImagesAutomatically(true);ws.setBlockNetworkImage(false);
+                  ws.setSupportMultipleWindows(false); ws.setAllowFileAccess(false);
+                  ws.setNeedInitialFocus(false); ws.setLoadsImagesAutomatically(true);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
-                  if(Build.VERSION.SDK_INT>=26)ws.setSafeBrowsingEnabled(false);
+                  if (Build.VERSION.SDK_INT >= 26) ws.setSafeBrowsingEnabled(false);
                   ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
-                  webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
+                  webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
                   webView.setLongClickable(true);
-                  webView.addJavascriptInterface(new KbdBridge(),"AIO");
-                  webView.setWebViewClient(new WebViewClient(){
-                      @Override public boolean shouldOverrideUrlLoading(WebView v,String u){
-                          if(u==null)return true;if(!isHttp(u))return true;return false;}
+                  webView.addJavascriptInterface(new KbdBridge(), "AIO");
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override public boolean shouldOverrideUrlLoading(WebView v, String u) {
+                          if (u == null) return true; if (!isHttp(u)) return true; return false;
+                      }
                       @Override @TargetApi(Build.VERSION_CODES.N)
-                      public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
-                          if(r==null||r.getUrl()==null)return true;
-                          if(!isHttp(r.getUrl().toString()))return true;return false;}
-                      @Override public void onPageStarted(WebView v,String u,Bitmap f){
-                          progressBar.setVisibility(View.VISIBLE);}
-                      @Override public void onPageFinished(WebView v,String u){
-                          progressBar.setVisibility(View.GONE);injectJs(v);}
-                      @Override public void onReceivedSslError(WebView v,SslErrorHandler h,SslError e){h.proceed();}
-                      // Chặn .vtt/.srt ở tầng Java - hoạt động với cross-origin iframe
-                      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView v,android.webkit.WebResourceRequest r){
-                          if(r!=null&&r.getUrl()!=null){
-                              String u2=r.getUrl().toString();
-                              if(u2.contains(".vtt")||u2.contains(".srt")){
-                                  edgeExec.execute(new Runnable(){@Override public void run(){
-                                      fetchAndParseSub(u2);
-                                  }});
+                      public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+                          if (r == null || r.getUrl() == null) return true;
+                          if (!isHttp(r.getUrl().toString())) return true; return false;
+                      }
+                      @Override public void onPageStarted(WebView v, String u, Bitmap f) {
+                          progressBar.setVisibility(View.VISIBLE);
+                      }
+                      @Override public void onPageFinished(WebView v, String u) {
+                          progressBar.setVisibility(View.GONE); injectJs(v);
+                      }
+                      @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
+                          h.proceed();
+                      }
+                      // Bắt file .vtt/.srt ở tầng Java - hoạt động với cross-origin iframe
+                      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(
+                              WebView v, android.webkit.WebResourceRequest r) {
+                          if (r != null && r.getUrl() != null) {
+                              final String u2 = r.getUrl().toString();
+                              if (u2.contains(".vtt") || u2.contains(".srt")) {
+                                  edgeExec.execute(new Runnable() {
+                                      @Override public void run() { fetchAndParseSub(u2); }
+                                  });
                               }
                           }
-                          return null; // null = WebView tự xử lý bình thường
+                          return null;
                       }
                   });
-                  webView.setWebChromeClient(new WebChromeClient(){
-                      @Override public void onProgressChanged(WebView v,int p){
+                  webView.setWebChromeClient(new WebChromeClient() {
+                      @Override public void onProgressChanged(WebView v, int p) {
                           progressBar.setProgress(p);
-                          progressBar.setVisibility(p<100?View.VISIBLE:View.GONE);}
-                      @Override public boolean onCreateWindow(WebView v,boolean d,boolean u,android.os.Message m){
-                          WebView.HitTestResult hr=v.getHitTestResult();
-                          if(hr!=null&&isHttp(hr.getExtra()))v.loadUrl(hr.getExtra());return false;}
+                          progressBar.setVisibility(p < 100 ? View.VISIBLE : View.GONE);
+                      }
+                      @Override public boolean onCreateWindow(WebView v, boolean d, boolean u, android.os.Message m) {
+                          WebView.HitTestResult hr = v.getHitTestResult();
+                          if (hr != null && isHttp(hr.getExtra())) v.loadUrl(hr.getExtra());
+                          return false;
+                      }
                   });
               }
-              private void injectJs(WebView v){
+
+              private boolean isHttp(String u) {
+                  return u != null && (u.startsWith("http://") || u.startsWith("https://"));
+              }
+
+              // ── JS inject ──────────────────────────────────────────────────────────
+              private void injectJs(WebView v) {
                   String js = "(function(){\n"
-                  + "(function(){\n"
                   + "document.documentElement.style.scrollBehavior='auto';\n"
                   + "if(document.body){document.body.style.overscrollBehavior='none';}\n"
                   + "document.querySelectorAll('a[target=\"_blank\"]').forEach(function(a){a.target='_self';});\n"
@@ -1232,35 +1248,24 @@ jobs:
                   + "try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(ex){}\n"
                   + "if(!document.getElementById('_aioS')){\n"
                   + "  var _s=document.createElement('style');_s.id='_aioS';\n"
-                  + "  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],[id*=\"rotate-\"],[id*=\"portrait-\"]{display:none!important;}';\n"
-                  + "  (document.head||document.documentElement).appendChild(_s);\n"
-                  + "}\n"
-                  + "if(!window._aioObs){window._aioObs=true;\n"
-                  + "  var _hn=function(n){if(!n||n.nodeType!==1)return;\n"
-                  + "    var c=(typeof n.className==='string'?n.className:'')+(n.id||'');\n"
-                  + "    if(/rotat|portrait|turn.dev/i.test(c))n.style.setProperty('display','none','important');};\n"
-                  + "  new MutationObserver(function(ms){ms.forEach(function(m){\n"
-                  + "    m.addedNodes.forEach(function(n){_hn(n);\n"
-                  + "      try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"]').forEach(_hn);}catch(ex){}});\n"
-                  + "  });}).observe(document.body||document.documentElement,{childList:true,subtree:true});\n"
-                  + "}\n"
+                  + "  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"]{display:none!important;}';\n"
+                  + "  (document.head||document.documentElement).appendChild(_s);}\n"
                   + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
+                  // Sub overlay
                   + "if(!window._aioSub){window._aioSub=true;\n"
                   + "  var _sd=document.createElement('div');\n"
                   + "  _sd.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.85);color:#ffe066;font-size:26px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';\n"
                   + "  document.body.appendChild(_sd);\n"
                   + "  var _ls='',_ht=null,_dt=null;\n"
                   + "  function _ok(t){\n"
-                  + "    if(!t||t.length<4)return false;\n"
-                  + "    var lc=0,sp=0;\n"
+                  + "    if(!t||t.length<3)return false;\n"
+                  + "    var lc=0;\n"
                   + "    for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);\n"
-                  + "      if((c>=65&&c<=90)||(c>=97&&c<=122)||(c>=192&&c<=696)||(c>=7680&&c<=7935))lc++;\n"
-                  + "      if(c===32)sp++;\n"
-                  + "    }\n"
-                  + "    return lc>=3&&sp>=1;\n"
+                  + "      if((c>=65&&c<=90)||(c>=97&&c<=122)||(c>=192&&c<=696)||(c>=7680&&c<=7935))lc++;}\n"
+                  + "    return lc>=2;\n"
                   + "  }\n"
                   + "  function _show(txt){\n"
-                  + "    if(!txt||!_ok(txt)){return;}\n"
+                  + "    if(!txt||!_ok(txt))return;\n"
                   + "    var n=txt.toLowerCase();\n"
                   + "    if(n===_ls)return;\n"
                   + "    _ls=n;\n"
@@ -1269,32 +1274,28 @@ jobs:
                   + "    if(_ht)clearTimeout(_ht);\n"
                   + "    if(_dt)clearTimeout(_dt);\n"
                   + "    _dt=setTimeout(function(){try{window.AIO.onSubText(txt);}catch(e){}},150);\n"
-                  + "    _ht=setTimeout(function(){_sd.style.display='none';},Math.max(2000,txt.length*70));\n"
+                  + "    _ht=setTimeout(function(){_sd.style.display='none';_ls='';},Math.max(2500,txt.length*80));\n"
                   + "  }\n"
-                  + "  var _origFetch=window.fetch;\n"
-                  + "  if(typeof _origFetch==='function'){\n"
-                  + "    window.fetch=function(u,o){\n"
-                  + "      var res=_origFetch.apply(this,arguments);\n"
-                  + "      try{var us=typeof u==='string'?u:(u&&u.url?u.url:'');\n"
-                  + "        if(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1)\n"
-                  + "          res.then(function(r){return r.clone().text();}).then(function(t){_pvtt(t);}).catch(function(){});\n"
-                  + "      }catch(e){}\n"
-                  + "      return res;\n"
-                  + "    };\n"
-                  + "  }\n"
-                  + "  var _cues=[];\n"
-                  + "  function _pvtt(raw){\n"
-                  + "    _cues=[];\n"
-                  + "    var lines=raw.split('\\n'),s=0,e2=0,ct='';\n"
+                  // _pvtt: parse VTT và sync với video - được gọi từ Java khi bắt .vtt request
+                  + "  window._pvtt=function(raw){\n"
+                  + "    var cues=[],lines=raw.split('\\n'),s=0,e=0,ct='';\n"
                   + "    for(var i=0;i<lines.length;i++){\n"
                   + "      var l=lines[i].trim();\n"
-                  + "      if(l.indexOf('-->')>-1){var pp=l.split('-->');s=_ts(pp[0]);e2=_ts(pp[1]);ct='';}\n"
+                  + "      if(l.indexOf('-->')>-1){var pp=l.split('-->');s=_ts(pp[0]);e=_ts(pp[1]);ct='';}\n"
                   + "      else if(l.length>0&&s>0&&isNaN(+l)){ct=ct+(ct?' ':'')+l;}\n"
-                  + "      else if(l.length===0&&ct.length>0){_cues.push({s:s,e:e2,t:ct});ct='';s=0;}\n"
+                  + "      else if(l.length===0&&ct.length>0){cues.push({s:s,e:e,t:ct});ct='';s=0;}\n"
                   + "    }\n"
-                  + "    if(ct.length>0&&s>0)_cues.push({s:s,e:e2,t:ct});\n"
-                  + "    if(_cues.length>0)_sync();\n"
-                  + "  }\n"
+                  + "    if(ct.length>0&&s>0)cues.push({s:s,e:e,t:ct});\n"
+                  + "    if(cues.length===0)return;\n"
+                  + "    if(window._aioSyncT)clearInterval(window._aioSyncT);\n"
+                  + "    window._aioSyncT=setInterval(function(){\n"
+                  + "      var vid=document.querySelector('video');\n"
+                  + "      if(!vid||vid.paused)return;\n"
+                  + "      var ct2=vid.currentTime;\n"
+                  + "      for(var j=0;j<cues.length;j++)\n"
+                  + "        if(ct2>=cues[j].s&&ct2<=cues[j].e){_show(cues[j].t);return;}\n"
+                  + "    },250);\n"
+                  + "  };\n"
                   + "  function _ts(str){\n"
                   + "    var p=str.replace(',','.').trim().split(':');\n"
                   + "    var sec=parseFloat(p[p.length-1]||0);\n"
@@ -1302,19 +1303,9 @@ jobs:
                   + "    var hr=parseFloat(p.length>=3?p[p.length-3]:0);\n"
                   + "    return hr*3600+min*60+sec;\n"
                   + "  }\n"
-                  + "  var _st=null;\n"
-                  + "  function _sync(){\n"
-                  + "    if(_st)clearInterval(_st);\n"
-                  + "    _st=setInterval(function(){\n"
-                  + "      var v=document.querySelector('video');\n"
-                  + "      if(!v||v.paused)return;\n"
-                  + "      var ct=v.currentTime;\n"
-                  + "      for(var i=0;i<_cues.length;i++)\n"
-                  + "        if(ct>=_cues[i].s&&ct<=_cues[i].e){_show(_cues[i].t);return;}\n"
-                  + "    },250);\n"
-                  + "  }\n"
-                  + "  var _sels=['[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub\"]',\n"
-                  + "    '.vjs-text-track-display','[id*=\"subtitle\"]','[id*=\"caption\"]'];\n"
+                  // DOM sub scan (fallback cho trang không dùng .vtt)
+                  + "  var _sels=['[class*=\"subtitle\"]','[class*=\"caption\"]','.vjs-text-track-display',\n"
+                  + "    '[id*=\"subtitle\"]','[id*=\"caption\"]'];\n"
                   + "  function _scan(doc){\n"
                   + "    for(var i=0;i<_sels.length;i++){\n"
                   + "      try{var el=doc.querySelector(_sels[i]);\n"
@@ -1326,355 +1317,387 @@ jobs:
                   + "    }return '';\n"
                   + "  }\n"
                   + "  new MutationObserver(function(){\n"
-                  + "    var f=_scan(document);\n"
-                  + "    if(!f){try{var ifs=document.querySelectorAll('iframe');\n"
-                  + "      for(var i=0;i<ifs.length&&!f;i++)\n"
-                  + "        try{f=_scan(ifs[i].contentDocument||ifs[i].contentWindow.document);}catch(e){}\n"
-                  + "    }catch(e){}}\n"
-                  + "    _show(f);\n"
+                  + "    _show(_scan(document));\n"
                   + "  }).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});\n"
                   + "}\n"
-                  + "})();\n"
                   + "})();";
-                  v.evaluateJavascript(js,null);
+                  v.evaluateJavascript(js, null);
               }
-                            private class KbdBridge {
+
+              // ── KbdBridge ──────────────────────────────────────────────────────────
+              private class KbdBridge {
                   @android.webkit.JavascriptInterface
-                  public void onSubText(final String text){
-                      handler.post(new Runnable(){@Override public void run(){
-                          // Debug: hien toast ngan de biet co nhan duoc sub khong
-                          // android.widget.Toast.makeText(MainActivity.this,text,android.widget.Toast.LENGTH_SHORT).show();
-                          speakVi(text);
-                      }});
+                  public void onSubText(final String text) {
+                      handler.post(new Runnable() {
+                          @Override public void run() { speakVi(text); }
+                      });
                   }
                   @android.webkit.JavascriptInterface
-                  public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
-                      imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);}});}
-                  @android.webkit.JavascriptInterface
-                  public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
-                      imm.hideSoftInputFromWindow(webView.getWindowToken(),0);}});}
-              }
-              // ── Touch helpers ────────────────────────────────────────────────────
-              private float[] wc(){
-                  int[]l=new int[2];webView.getLocationOnScreen(l);
-                  return new float[]{cursorView.getCX()-l[0],cursorView.getCY()-l[1]};
-              }
-              private void tDown(float x,float y){
-                  long t=SystemClock.uptimeMillis();
-                  MotionEvent e=MotionEvent.obtain(t,t,MotionEvent.ACTION_DOWN,x,y,0);
-                  webView.dispatchTouchEvent(e);e.recycle();
-              }
-              private void tUp(float x,float y,long dt){
-                  long t=SystemClock.uptimeMillis();
-                  MotionEvent e=MotionEvent.obtain(dt,t,MotionEvent.ACTION_UP,x,y,0);
-                  webView.dispatchTouchEvent(e);e.recycle();
-              }
-              private void tMove(float x,float y,long dt){
-                  long t=SystemClock.uptimeMillis();
-                  MotionEvent e=MotionEvent.obtain(dt,t,MotionEvent.ACTION_MOVE,x,y,0);
-                  webView.dispatchTouchEvent(e);e.recycle();
-              }
-              private void click(){
-                  wakeC();stopEdge();
-                  float[]rc=wc();final float rx=rc[0],ry=rc[1];
-                  final long t0=SystemClock.uptimeMillis();
-                  MotionEvent dn=MotionEvent.obtain(t0,t0,MotionEvent.ACTION_DOWN,rx,ry,0);
-                  webView.dispatchTouchEvent(dn);dn.recycle();
-                  handler.postDelayed(new Runnable(){@Override public void run(){tUp(rx,ry,t0);}},80);
-              }
-              private void pgScroll(int dy){
-                  webView.scrollBy(0,dy);
-                  float sx=cursorView.getCX(),sy=cursorView.getCY();
-                  int[]l=new int[2];webView.getLocationOnScreen(l);
-                  float rx=sx-l[0],ry=sy-l[1];long t=SystemClock.uptimeMillis();
-                  MotionEvent.PointerProperties[]pp=new MotionEvent.PointerProperties[1];
-                  pp[0]=new MotionEvent.PointerProperties();pp[0].id=0;pp[0].toolType=MotionEvent.TOOL_TYPE_MOUSE;
-                  MotionEvent.PointerCoords[]pc=new MotionEvent.PointerCoords[1];
-                  pc[0]=new MotionEvent.PointerCoords();pc[0].x=rx;pc[0].y=ry;
-                  pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-3f:3f);
-                  MotionEvent ev=MotionEvent.obtain(t,t,MotionEvent.ACTION_SCROLL,1,pp,pc,
-                      0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
-                  webView.dispatchGenericMotionEvent(ev);ev.recycle();
-              }
-              // ── Cursor ──────────────────────────────────────────────────────────
-              private void moveCursor(float dx,float dy,int rep){
-                  wakeC();
-                  float t=Math.min(1f,rep/ACCEL);
-                  float step=STEP_MIN+(STEP_MAX-STEP_MIN)*t;
-                  float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
-                  float ny=cursorView.getCY()+dy*step;
-                  int nd=0;if(ny>=screenH-10)nd=1;else if(ny<=10)nd=-1;
-                  ny=Math.max(0,Math.min(screenH-2,ny));
-                  cursorView.setPos(nx,ny);savedCX=nx;savedCY=ny;
-                  if(dragMode){int[]l=new int[2];webView.getLocationOnScreen(l);tMove(nx-l[0],ny-l[1],dragT);}
-                  if(nd!=edgeDir){edgeDir=nd;edgeTick=0;handler.removeCallbacks(edgeRun);if(nd!=0)handler.post(edgeRun);}
-                  boolean inZ=nx<=BAR_W&&ny>=screenH-BAR_H;
-                  if(inZ&&!barVisible){bottomBar.setVisibility(View.VISIBLE);barVisible=true;handler.removeCallbacks(hideBarRun);}
-                  else if(!inZ&&barVisible){handler.removeCallbacks(hideBarRun);handler.postDelayed(hideBarRun,1800);}
-              }
-              private void stopEdge(){edgeDir=0;edgeTick=0;handler.removeCallbacks(edgeRun);}
-              // ── Keys ────────────────────────────────────────────────────────────
-              @Override public boolean onKeyDown(int key,KeyEvent e){
-                  wakeC();
-                  if(voiceOverlay.getVisibility()==View.VISIBLE){
-                      if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
-                  int rep=e.getRepeatCount();
-                  switch(key){
-                      case KeyEvent.KEYCODE_DPAD_UP:   moveCursor(0,-1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_DOWN: moveCursor(0, 1,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_LEFT: moveCursor(-1,0,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_RIGHT:moveCursor( 1,0,rep);return true;
-                      case KeyEvent.KEYCODE_DPAD_CENTER:
-                      case KeyEvent.KEYCODE_ENTER:
-                          if(rep==0){
-                              okDown=true;okT=SystemClock.uptimeMillis();
-                              float[]rc=wc();okX=rc[0];okY=rc[1];
-                              if(dragMode){toggleDrag();}
-                              else{handler.postDelayed(holdRun,HOLD_MS);}
+                  public void onInputFocus() {
+                      handler.post(new Runnable() {
+                          @Override public void run() {
+                              imm.showSoftInput(webView, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
                           }
-                          return true;
-                      // MENU = bật/tắt drag (kéo giữ chuột trái)
-                      case KeyEvent.KEYCODE_MENU:if(rep==0)toggleDrag();return true;
-                      // Scroll lên
-                      case KeyEvent.KEYCODE_BUTTON_L1:case KeyEvent.KEYCODE_CHANNEL_DOWN:case KeyEvent.KEYCODE_PAGE_UP:
-                          cursorView.setMode(CursorView.MODE_SCROLL);pgScroll(-SCR_AMT);
-                          handler.removeCallbacks(clrScrollMode);handler.postDelayed(clrScrollMode,300);return true;
-                      // Scroll xuống
-                      case KeyEvent.KEYCODE_BUTTON_R1:case KeyEvent.KEYCODE_CHANNEL_UP:case KeyEvent.KEYCODE_PAGE_DOWN:
-                          cursorView.setMode(CursorView.MODE_SCROLL);pgScroll(SCR_AMT);
-                          handler.removeCallbacks(clrScrollMode);handler.postDelayed(clrScrollMode,300);return true;
-                      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:case KeyEvent.KEYCODE_MEDIA_PLAY:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();}",null);return true;
-                      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);return true;
-                      case KeyEvent.KEYCODE_MEDIA_REWIND:
-                          webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);return true;
-                      case KeyEvent.KEYCODE_SEARCH:case KeyEvent.KEYCODE_VOICE_ASSIST:showVoice();return true;
-                      case KeyEvent.KEYCODE_BACK:
-                          if(dragMode){dragMode=false;cursorView.setMode(CursorView.MODE_NORMAL);return true;}
-                          if(webView.canGoBack()){webView.goBack();return true;}
-                          finish();return true;
+                      });
                   }
-                  return super.onKeyDown(key,e);
+                  @android.webkit.JavascriptInterface
+                  public void onInputBlur() {
+                      handler.post(new Runnable() {
+                          @Override public void run() {
+                              imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
+                          }
+                      });
+                  }
               }
-              @Override public boolean onKeyUp(int key,KeyEvent e){
-                  if(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
-                      ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT)stopEdge();
-                  if((key==KeyEvent.KEYCODE_DPAD_CENTER||key==KeyEvent.KEYCODE_ENTER)&&okDown){
-                      okDown=false;handler.removeCallbacks(holdRun);
-                      long held=SystemClock.uptimeMillis()-okT;
-                      if(!dragMode){
-                          if(held<HOLD_MS){
-                              // Nhấn nhanh = click trái
-                              clickAtBarOrWeb();
-                          }else{
-                              // Long press: gửi UP để kết thúc → copy/paste menu đã xuất hiện từ DOWN
-                              tUp(okX,okY,okT);
-                              cursorView.setMode(CursorView.MODE_NORMAL);
+
+              // ── Sub fetch (Java network layer, bypass cross-origin) ────────────────
+              private void fetchAndParseSub(String url) {
+                  java.net.HttpURLConnection conn = null;
+                  try {
+                      java.net.URL u = new java.net.URL(url);
+                      conn = (java.net.HttpURLConnection) u.openConnection();
+                      conn.setRequestMethod("GET");
+                      conn.setConnectTimeout(5000); conn.setReadTimeout(10000);
+                      conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+                      conn.setRequestProperty("Referer", "https://pointnorth.io/");
+                      if (conn.getResponseCode() == 200) {
+                          java.io.BufferedReader br = new java.io.BufferedReader(
+                              new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+                          StringBuilder sb = new StringBuilder();
+                          String line;
+                          while ((line = br.readLine()) != null) { sb.append(line).append("\n"); }
+                          br.close();
+                          final String content = sb.toString();
+                          handler.post(new Runnable() {
+                              @Override public void run() { injectSubCues(content); }
+                          });
+                      }
+                  } catch (Exception e) {}
+                  finally { if (conn != null) conn.disconnect(); }
+              }
+
+              private void injectSubCues(String vttContent) {
+                  String escaped = vttContent
+                      .replace("\\", "\\\\")
+                      .replace("'", "\\'")
+                      .replace("\n", "\\n")
+                      .replace("\r", "");
+                  webView.evaluateJavascript("if(window._pvtt)window._pvtt('" + escaped + "');", null);
+              }
+
+              // ── TTS ────────────────────────────────────────────────────────────────
+              private float getSpeechRate() {
+                  SharedPreferences p = getSharedPreferences(SettingsActivity.PREF, Context.MODE_PRIVATE);
+                  int s = p.getInt(SettingsActivity.KEY_SPEED, 1);
+                  if (s == 0) return 0.75f;
+                  if (s == 2) return 1.4f;
+                  return 1.0f;
+              }
+
+              private void setupTts() {
+                  tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+                      @Override public void onInit(int status) {
+                          if (status == TextToSpeech.SUCCESS) {
+                              java.util.Locale vi = new java.util.Locale("vi", "VN");
+                              int res = tts.isLanguageAvailable(vi);
+                              if (res >= TextToSpeech.LANG_AVAILABLE) tts.setLanguage(vi);
+                              else tts.setLanguage(java.util.Locale.ENGLISH);
+                              ttsReady = true;
                           }
                       }
-                      return true;
-                  }
-                  return super.onKeyUp(key,e);
+                  });
               }
-              private void clickAtBarOrWeb(){
-                  wakeC();stopEdge();
-                  float sx=cursorView.getCX(),sy=cursorView.getCY();
-                  if(barVisible){
-                      int[]ids={R.id.btnHome,R.id.btnWebBack,R.id.btnWebForward,R.id.btnRefresh,R.id.btnSettingsWeb};
-                      for(int id:ids){View b=findViewById(id);int[]loc=new int[2];b.getLocationOnScreen(loc);
-                          if(sx>=loc[0]&&sx<loc[0]+b.getWidth()&&sy>=loc[1]&&sy<loc[1]+b.getHeight()){b.performClick();return;}}
+
+              private void speakVi(final String text) {
+                  if (text == null || text.isEmpty()) return;
+                  boolean hasLetter = false;
+                  for (int ci = 0; ci < text.length(); ci++) {
+                      if (Character.isLetter(text.charAt(ci))) { hasLetter = true; break; }
+                  }
+                  if (!hasLetter) return;
+                  SharedPreferences p = getSharedPreferences(SettingsActivity.PREF, Context.MODE_PRIVATE);
+                  if (!p.getBoolean(SettingsActivity.KEY_SUB, true)) return;
+                  String norm = text.trim().toLowerCase();
+                  if (norm.equals(lastSubText)) return;
+                  lastSubText = norm;
+                  final int vi = p.getInt(SettingsActivity.KEY_VOICE, 0);
+                  final float rate = getSpeechRate();
+                  if (vi < 2) {
+                      final String voice = EDGE_VOICES[vi];
+                      edgeExec.execute(new Runnable() {
+                          @Override public void run() { playEdgeTts(text, voice, rate); }
+                      });
+                  } else {
+                      if (!ttsReady || tts == null) return;
+                      subHandler.post(new Runnable() {
+                          @Override public void run() {
+                              tts.setSpeechRate(rate);
+                              tts.stop();
+                              tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "sub");
+                          }
+                      });
+                  }
+              }
+
+              private void playEdgeTts(String text, String voice, float rate) {
+                  java.net.HttpURLConnection conn = null;
+                  try {
+                      int pct = (int) ((rate - 1f) * 100);
+                      String rateStr = (pct >= 0 ? "+" : "") + pct + "%";
+                      String ssml = "<speak version='1.0' xml:lang='vi-VN'>"
+                          + "<voice name='" + voice + "'><prosody rate='" + rateStr + "'>"
+                          + text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                          + "</prosody></voice></speak>";
+                      String uid = java.util.UUID.randomUUID().toString().replace("-", "");
+                      java.net.URL url = new java.net.URL(
+                          "https://speech.platform.bing.com/consumer/speech/synthesize"
+                          + "/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4"
+                          + "&ConnectionId=" + uid);
+                      conn = (java.net.HttpURLConnection) url.openConnection();
+                      conn.setRequestMethod("POST");
+                      conn.setRequestProperty("Content-Type", "application/ssml+xml");
+                      conn.setRequestProperty("X-Microsoft-OutputFormat", "audio-24khz-48kbitrate-mono-mp3");
+                      conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+                      conn.setDoOutput(true);
+                      conn.setConnectTimeout(5000); conn.setReadTimeout(10000);
+                      conn.getOutputStream().write(ssml.getBytes("UTF-8"));
+                      if (conn.getResponseCode() == 200) {
+                          java.io.File tmp = java.io.File.createTempFile("tts", ".mp3", getCacheDir());
+                          java.io.InputStream is = conn.getInputStream();
+                          java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp);
+                          byte[] buf = new byte[4096]; int n;
+                          while ((n = is.read(buf)) != -1) fos.write(buf, 0, n);
+                          fos.close(); is.close();
+                          final java.io.File ftmp = tmp;
+                          subHandler.post(new Runnable() {
+                              @Override public void run() {
+                                  try {
+                                      if (edgePlayer != null) { edgePlayer.stop(); edgePlayer.release(); }
+                                      edgePlayer = new android.media.MediaPlayer();
+                                      edgePlayer.setDataSource(ftmp.getAbsolutePath());
+                                      edgePlayer.prepare(); edgePlayer.start();
+                                      edgePlayer.setOnCompletionListener(
+                                          new android.media.MediaPlayer.OnCompletionListener() {
+                                              @Override public void onCompletion(android.media.MediaPlayer mp) {
+                                                  mp.release(); edgePlayer = null; ftmp.delete();
+                                              }
+                                          });
+                                  } catch (Exception e) { ftmp.delete(); }
+                              }
+                          });
+                      }
+                  } catch (Exception e) {}
+                  finally { if (conn != null) conn.disconnect(); }
+              }
+
+              // ── Speech recognition ─────────────────────────────────────────────────
+              private void setupSpeech() {
+                  if (!SpeechRecognizer.isRecognitionAvailable(this)) return;
+                  speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+                  speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                      @Override public void onReadyForSpeech(Bundle p) { voiceResult.setText("Đang nghe..."); }
+                      @Override public void onResults(Bundle r) {
+                          ArrayList<String> m = r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                          if (m != null && !m.isEmpty()) {
+                              final String tt = m.get(0).toLowerCase();
+                              voiceResult.setText(m.get(0));
+                              handler.postDelayed(new Runnable() { @Override public void run() { hideVoice(); } }, 800);
+                              handleVoice(tt);
+                          } else hideVoice();
+                      }
+                      @Override public void onError(int err) {
+                          voiceResult.setText("Loi nhan giong");
+                          handler.postDelayed(new Runnable() { @Override public void run() { hideVoice(); } }, 1500);
+                      }
+                      @Override public void onBeginningOfSpeech() {}
+                      @Override public void onRmsChanged(float v) {}
+                      @Override public void onBufferReceived(byte[] b) {}
+                      @Override public void onEndOfSpeech() {}
+                      @Override public void onPartialResults(Bundle b) {}
+                      @Override public void onEvent(int t, Bundle b) {}
+                  });
+              }
+
+              private void handleVoice(String t) {
+                  if (t.contains("phat") || t.contains("play"))
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();", null);
+                  else if (t.contains("dung") || t.contains("pause"))
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();", null);
+                  else if (t.contains("tua toi"))
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
+                  else if (t.contains("tua lui"))
+                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
+                  else if (t.contains("trang chu") || t.contains("home")) finish();
+                  else if (t.contains("cai dat"))
+                      startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+              }
+
+              private void showVoice() {
+                  if (speechRecognizer == null) return;
+                  voiceOverlay.setVisibility(View.VISIBLE); voiceResult.setText("");
+                  Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN");
+                  i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+                  speechRecognizer.startListening(i);
+              }
+
+              private void hideVoice() {
+                  if (speechRecognizer != null) speechRecognizer.stopListening();
+                  voiceOverlay.setVisibility(View.GONE);
+              }
+
+              // ── Cursor helpers ─────────────────────────────────────────────────────
+              private void wakeC() {
+                  if (!cursorVisible) { cursorView.setVisibility(View.VISIBLE); cursorVisible = true; }
+                  handler.removeCallbacks(hideCursorRun);
+                  handler.postDelayed(hideCursorRun, HIDE_DELAY);
+              }
+
+              private float[] wc() {
+                  return new float[]{cursorView.getCX(), cursorView.getCY()};
+              }
+
+              private void tDown(float x, float y) {
+                  long t = android.os.SystemClock.uptimeMillis();
+                  webView.dispatchTouchEvent(MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, x, y, 0));
+              }
+
+              private void tUp(float x, float y, long dt) {
+                  long t = android.os.SystemClock.uptimeMillis();
+                  webView.dispatchTouchEvent(MotionEvent.obtain(dt, t, MotionEvent.ACTION_UP, x, y, 0));
+              }
+
+              private void tMove(float x, float y, long dt) {
+                  long t = android.os.SystemClock.uptimeMillis();
+                  webView.dispatchTouchEvent(MotionEvent.obtain(dt, t, MotionEvent.ACTION_MOVE, x, y, 0));
+              }
+
+              private void click() {
+                  float[] rc = wc();
+                  long t = android.os.SystemClock.uptimeMillis();
+                  tDown(rc[0], rc[1]); tUp(rc[0], rc[1], t);
+              }
+
+              private void pgScroll(int dy) {
+                  webView.evaluateJavascript("window.scrollBy(0," + dy + ");", null);
+              }
+
+              private void moveCursor(float dx, float dy, int rep) {
+                  float factor = Math.min(1f, rep / ACCEL);
+                  float step = STEP_MIN + (STEP_MAX - STEP_MIN) * factor;
+                  float nx = Math.max(0, Math.min(screenW - 1, cursorView.getCX() + dx * step));
+                  float ny = Math.max(0, Math.min(screenH - 1, cursorView.getCY() + dy * step));
+                  cursorView.setPos(nx, ny);
+                  if (dragMode) tMove(nx, ny, dragT);
+                  wakeC();
+              }
+
+              private void stopEdge() { edgeDir = 0; edgeTick = 0; handler.removeCallbacks(edgeRun); }
+
+              private void clickAtBarOrWeb() {
+                  if (barVisible) {
+                      float cx = cursorView.getCX(), cy = cursorView.getCY();
+                      float barTop = screenH - BAR_H;
+                      if (cy >= barTop && cy <= screenH && cx >= screenW / 2f - BAR_W && cx <= screenW / 2f + BAR_W) {
+                          click(); return;
+                      }
                   }
                   click();
               }
-              private void toggleDrag(){
-                  if(!dragMode){dragMode=true;dragT=SystemClock.uptimeMillis();
-                      float[]rc=wc();tDown(rc[0],rc[1]);cursorView.setMode(CursorView.MODE_DRAG);
-                  }else{dragMode=false;float[]rc=wc();tUp(rc[0],rc[1],dragT);cursorView.setMode(CursorView.MODE_NORMAL);}
-              }
-              private void fetchAndParseSub(String url){
-                  java.net.HttpURLConnection conn=null;
-                  try{
-                      java.net.URL u=new java.net.URL(url);
-                      conn=(java.net.HttpURLConnection)u.openConnection();
-                      conn.setRequestMethod("GET");
-                      conn.setConnectTimeout(5000);conn.setReadTimeout(10000);
-                      conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-                      conn.setRequestProperty("Referer","https://pointnorth.io/");
-                      if(conn.getResponseCode()==200){
-                          java.io.BufferedReader br=new java.io.BufferedReader(
-                              new java.io.InputStreamReader(conn.getInputStream(),"UTF-8"));
-                          StringBuilder sb=new StringBuilder();
-                          String line;
-                          while((line=br.readLine())!=null){sb.append(line).append("\n");}
-                          br.close();
-                          final String content=sb.toString();
-                          handler.post(new Runnable(){@Override public void run(){
-                              injectSubCues(content);
-                          }});
-                      }
-                  }catch(Exception e){}
-                  finally{if(conn!=null)conn.disconnect();}
-              }
-              private void injectSubCues(String vttContent){
-                  // Escape content de dua vao JS string
-                  String escaped=vttContent
-                      .replace("\\","\\\\")
-                      .replace("'","\\'")
-                      .replace("\n","\\n")
-                      .replace("\r","");
-                  String js="if(window._pvtt)window._pvtt('"+escaped+"');";
-                  webView.evaluateJavascript(js,null);
-              }
-                            private float getSpeechRate(){
-                  SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
-                  int s=p.getInt(SettingsActivity.KEY_SPEED,1);
-                  if(s==0)return 0.75f;
-                  if(s==2)return 1.4f;
-                  return 1.0f;
-              }
-              private void setupTts(){
-                  tts=new TextToSpeech(this,new TextToSpeech.OnInitListener(){
-                      @Override public void onInit(int status){
-                          if(status==TextToSpeech.SUCCESS){
-                              java.util.Locale vi=new java.util.Locale("vi","VN");
-                              int res=tts.isLanguageAvailable(vi);
-                              if(res>=TextToSpeech.LANG_AVAILABLE)tts.setLanguage(vi);
-                              else tts.setLanguage(java.util.Locale.ENGLISH);
-                              tts.setSpeechRate(1.0f);
-                              ttsReady=true;
-                          }}});
-              }
-              private static final String[]EDGE_VOICES={
-                  "vi-VN-HoaiMyNeural",
-                  "vi-VN-NamMinhNeural",
-                  null
-              };
-              private void speakVi(final String text){
-                  if(text==null||text.isEmpty())return;
-                  // Kiem tra co chu cai khong
-                  boolean hasLetter=false;
-                  for(int ci=0;ci<text.length();ci++){
-                      if(Character.isLetter(text.charAt(ci))){hasLetter=true;break;}
-                  }
-                  if(!hasLetter)return;
-                  SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
-                  if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
-                  if(text.trim().toLowerCase().equals(lastSubText))return;
-                  lastSubText=text.trim().toLowerCase();
-                  final int vi=p.getInt(SettingsActivity.KEY_VOICE,0);
-                  final float rate=getSpeechRate();
-                  if(vi<2){
-                      final String voice=EDGE_VOICES[vi];
-                      edgeExec.execute(new Runnable(){@Override public void run(){
-                          playEdgeTts(text,voice,rate);
-                      }});
+
+              private void toggleDrag() {
+                  if (!dragMode) {
+                      dragMode = true; dragT = android.os.SystemClock.uptimeMillis();
+                      float[] rc = wc(); tDown(rc[0], rc[1]);
+                      cursorView.setMode(CursorView.MODE_DRAG);
                   } else {
-                      if(!ttsReady||tts==null)return;
-                      subHandler.post(new Runnable(){@Override public void run(){
-                          tts.setSpeechRate(rate);
-                          tts.stop();
-                          tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"sub");
-                      }});
+                      dragMode = false; float[] rc = wc(); tUp(rc[0], rc[1], dragT);
+                      cursorView.setMode(CursorView.MODE_NORMAL);
                   }
               }
-              private void playEdgeTts(String text,String voice,float rate){
-                  java.net.HttpURLConnection conn=null;
-                  try{
-                      int pct=(int)((rate-1f)*100);
-                      String rateStr=(pct>=0?"+":"")+pct+"%";
-                      String ssml="<speak version='1.0' xml:lang='vi-VN'>"
-                          +"<voice name='"+voice+"'><prosody rate='"+rateStr+"'>"
-                          +text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                          +"</prosody></voice></speak>";
-                      String uid=java.util.UUID.randomUUID().toString().replace("-","");
-                      java.net.URL url=new java.net.URL(
-                          "https://speech.platform.bing.com/consumer/speech/synthesize"
-                          +"/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4"
-                          +"&ConnectionId="+uid);
-                      conn=(java.net.HttpURLConnection)url.openConnection();
-                      conn.setRequestMethod("POST");
-                      conn.setRequestProperty("Content-Type","application/ssml+xml");
-                      conn.setRequestProperty("X-Microsoft-OutputFormat","audio-24khz-48kbitrate-mono-mp3");
-                      conn.setRequestProperty("User-Agent","Mozilla/5.0");
-                      conn.setDoOutput(true);
-                      conn.setConnectTimeout(5000);conn.setReadTimeout(10000);
-                      byte[]body=ssml.getBytes("UTF-8");
-                      conn.getOutputStream().write(body);
-                      if(conn.getResponseCode()==200){
-                          java.io.File tmp=java.io.File.createTempFile("tts",".mp3",getCacheDir());
-                          java.io.InputStream is=conn.getInputStream();
-                          java.io.FileOutputStream fos=new java.io.FileOutputStream(tmp);
-                          byte[]buf=new byte[4096];int n;
-                          while((n=is.read(buf))!=-1)fos.write(buf,0,n);
-                          fos.close();is.close();
-                          final java.io.File ftmp=tmp;
-                          subHandler.post(new Runnable(){@Override public void run(){
-                              try{
-                                  if(edgePlayer!=null){edgePlayer.stop();edgePlayer.release();}
-                                  edgePlayer=new android.media.MediaPlayer();
-                                  edgePlayer.setDataSource(ftmp.getAbsolutePath());
-                                  edgePlayer.prepare();edgePlayer.start();
-                                  edgePlayer.setOnCompletionListener(
-                                      new android.media.MediaPlayer.OnCompletionListener(){
-                                          @Override public void onCompletion(android.media.MediaPlayer mp){
-                                              mp.release();edgePlayer=null;ftmp.delete();}});
-                              }catch(Exception e){ftmp.delete();}
-                          }});
+
+              // ── Key handling ───────────────────────────────────────────────────────
+              @Override public boolean onKeyDown(int key, KeyEvent e) {
+                  wakeC(); stopEdge();
+                  int rep = e.getRepeatCount();
+                  switch (key) {
+                      case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0, -1, rep); return true;
+                      case KeyEvent.KEYCODE_DPAD_DOWN:  moveCursor(0, 1, rep); return true;
+                      case KeyEvent.KEYCODE_DPAD_LEFT:  moveCursor(-1, 0, rep); return true;
+                      case KeyEvent.KEYCODE_DPAD_RIGHT: moveCursor(1, 0, rep); return true;
+                      case KeyEvent.KEYCODE_DPAD_CENTER:
+                      case KeyEvent.KEYCODE_ENTER:
+                          if (!okDown) {
+                              okDown = true; okT = e.getDownTime();
+                              float[] rc = wc(); okX = rc[0]; okY = rc[1];
+                              handler.postDelayed(holdRun, HOLD_MS);
+                          }
+                          return true;
+                      case KeyEvent.KEYCODE_MENU:
+                          toggleDrag(); return true;
+                      case KeyEvent.KEYCODE_CHANNEL_UP:
+                      case KeyEvent.KEYCODE_PAGE_UP:
+                          pgScroll(-SCR_AMT);
+                          cursorView.setMode(CursorView.MODE_SCROLL);
+                          handler.removeCallbacks(clrScrollMode);
+                          handler.postDelayed(clrScrollMode, 800);
+                          return true;
+                      case KeyEvent.KEYCODE_CHANNEL_DOWN:
+                      case KeyEvent.KEYCODE_PAGE_DOWN:
+                          pgScroll(SCR_AMT);
+                          cursorView.setMode(CursorView.MODE_SCROLL);
+                          handler.removeCallbacks(clrScrollMode);
+                          handler.postDelayed(clrScrollMode, 800);
+                          return true;
+                      case KeyEvent.KEYCODE_SEARCH:
+                      case KeyEvent.KEYCODE_VOICE_ASSIST:
+                          showVoice(); return true;
+                      case KeyEvent.KEYCODE_BACK:
+                          if (dragMode) { toggleDrag(); return true; }
+                          if (webView.canGoBack()) { webView.goBack(); return true; }
+                          finish(); return true;
+                  }
+                  return super.onKeyDown(key, e);
+              }
+
+              @Override public boolean onKeyUp(int key, KeyEvent e) {
+                  if ((key == KeyEvent.KEYCODE_DPAD_CENTER || key == KeyEvent.KEYCODE_ENTER) && okDown) {
+                      okDown = false;
+                      handler.removeCallbacks(holdRun);
+                      if (cursorView.getMode() == CursorView.MODE_HOLD) {
+                          cursorView.setMode(CursorView.MODE_NORMAL);
+                      } else {
+                          long dur = e.getEventTime() - okT;
+                          if (dur < HOLD_MS) click();
                       }
-                  }catch(Exception e){}
-                  finally{if(conn!=null)conn.disconnect();}
+                      return true;
+                  }
+                  return super.onKeyUp(key, e);
               }
-                            private void setupSpeech(){
-                  if(!SpeechRecognizer.isRecognitionAvailable(this))return;
-                  speechRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
-                  speechRecognizer.setRecognitionListener(new RecognitionListener(){
-                      @Override public void onReadyForSpeech(Bundle p){voiceResult.setText("Đang nghe...");}
-                      @Override public void onResults(Bundle r){
-                          ArrayList<String>m=r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                          if(m!=null&&!m.isEmpty()){final String tt=m.get(0).toLowerCase();
-                          voiceResult.setText(m.get(0));
-                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},800);
-                          handleVoice(tt);}else hideVoice();}
-                      @Override public void onError(int err){voiceResult.setText("Lỗi nhận giọng");
-                          handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},1500);}
-                      @Override public void onBeginningOfSpeech(){}@Override public void onRmsChanged(float v){}
-                      @Override public void onBufferReceived(byte[]b){}@Override public void onEndOfSpeech(){}
-                      @Override public void onPartialResults(Bundle b){}@Override public void onEvent(int t,Bundle b){}
-                  });
+
+              @Override protected void onPause() {
+                  super.onPause(); webView.onPause();
+                  savedCX = cursorView.getCX(); savedCY = cursorView.getCY();
+                  if (dragMode) { dragMode = false; float[] rc = wc(); tUp(rc[0], rc[1], dragT); }
+                  stopEdge(); handler.removeCallbacksAndMessages(null);
               }
-              private void handleVoice(String t){
-                  if(t.contains("phát")||t.contains("play"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
-                  else if(t.contains("dừng")||t.contains("pause"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
-                  else if(t.contains("tua tới"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
-                  else if(t.contains("tua lùi"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
-                  else if(t.contains("trang chủ")||t.contains("home"))finish();
-                  else if(t.contains("cài đặt"))startActivity(new Intent(MainActivity.this,SettingsActivity.class));
-              }
-              private void showVoice(){
-                  if(speechRecognizer==null)return;
-                  voiceOverlay.setVisibility(View.VISIBLE);voiceResult.setText("");
-                  Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"vi-VN");
-                  i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3);
-                  speechRecognizer.startListening(i);
-              }
-              private void hideVoice(){if(speechRecognizer!=null)speechRecognizer.stopListening();voiceOverlay.setVisibility(View.GONE);}
-              @Override protected void onPause(){
-                  super.onPause();webView.onPause();
-                  savedCX=cursorView.getCX();savedCY=cursorView.getCY();
-                  if(dragMode){dragMode=false;float[]rc=wc();tUp(rc[0],rc[1],dragT);}
-                  stopEdge();handler.removeCallbacksAndMessages(null);}
-              @Override protected void onResume(){super.onResume();webView.onResume();wakeC();}
-              @Override protected void onDestroy(){
-                  handler.removeCallbacksAndMessages(null);subHandler.removeCallbacksAndMessages(null);
-                  if(edgePlayer!=null){edgePlayer.stop();edgePlayer.release();edgePlayer=null;}
+
+              @Override protected void onResume() { super.onResume(); webView.onResume(); wakeC(); }
+
+              @Override protected void onDestroy() {
+                  handler.removeCallbacksAndMessages(null);
+                  subHandler.removeCallbacksAndMessages(null);
+                  if (edgePlayer != null) { edgePlayer.stop(); edgePlayer.release(); edgePlayer = null; }
                   edgeExec.shutdownNow();
-                  if(tts!=null){tts.stop();tts.shutdown();tts=null;}
-                  if(speechRecognizer!=null)speechRecognizer.destroy();
-                  webView.destroy();super.onDestroy();}
+                  if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
+                  if (speechRecognizer != null) speechRecognizer.destroy();
+                  super.onDestroy();
+              }
           }
+
+          JEOF
+
           JEOF
 
       - name: Build APK
