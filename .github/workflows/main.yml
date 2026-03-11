@@ -1740,8 +1740,6 @@ jobs:
 
           JEOF
 
-          JEOF
-
       - name: Build APK
         run: |
           mkdir -p build/classes build/gen
