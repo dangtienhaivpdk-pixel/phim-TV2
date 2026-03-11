@@ -693,6 +693,24 @@ jobs:
                   renderHistory();
               }
               // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
+              private void refreshSubBtn(){
+                  boolean on=prefs.getBoolean(KEY_SUB,true);
+                  btnSubToggle.setText("Sub VI: "+(on?"BAT":"TAT"));
+                  btnSubToggle.setBackgroundColor(on?0xff1a3a2a:0xff3a1a1a);
+              }
+              private void openTtsDialog(){
+                  dialogModeTts=true;
+                  String cur=prefs.getString(KEY_TTS,"");
+                  dialogInput.setText(cur);
+                  if(!cur.isEmpty())dialogInput.setSelection(cur.length());
+                  ((TextView)findViewById(R.id.dialogTitle)).setText("Google Cloud TTS API Key");
+                  ((TextView)findViewById(R.id.dialogHint)).setText("De trong = chi hien chu, khong doc");
+                  dialogOverlay.setVisibility(View.VISIBLE);
+                  wakeC();
+                  handler.postDelayed(new Runnable(){@Override public void run(){
+                      dialogInput.requestFocus();
+                      imm.showSoftInput(dialogInput,InputMethodManager.SHOW_FORCED);}},80);
+              }
               private void openDialog(String prefill){
                   dialogPrefill=prefill;
                   dialogInput.setText(prefill!=null?prefill:"https://");
