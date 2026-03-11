@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="40" android:versionName="40.0">
+              package="com.allinone.app" android:versionCode="41" android:versionName="41.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -275,6 +275,13 @@ jobs:
                           android:background="#1a1a3a" android:padding="14dp"
                           android:gravity="center" android:layout_marginRight="6dp"
                           android:clickable="true" android:focusable="false"/>
+                      <TextView android:id="@+id/btnTestTts"
+                          android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="&#9654; Test"
+                          android:textSize="13sp" android:textColor="#ffffff"
+                          android:background="#2a2a1a" android:padding="14dp"
+                          android:gravity="center"
+                          android:clickable="true" android:focusable="false"/>
                       <TextView android:id="@+id/btnReset"
                           android:layout_width="0dp" android:layout_height="wrap_content"
                           android:layout_weight="1" android:text="&#8635; Reset"
@@ -441,7 +448,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited11",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited12",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -631,6 +638,7 @@ jobs:
           import android.view.ViewGroup;
           import android.view.WindowManager;
           import android.view.inputmethod.InputMethodManager;
+               import android.speech.tts.TextToSpeech;
           import android.widget.EditText;
           import android.widget.FrameLayout;
           import android.widget.LinearLayout;
@@ -648,6 +656,8 @@ jobs:
               private EditText dialogInput;
               private TextView btnSubToggle;
               private TextView btnVoice;
+              private TextToSpeech settingsTts;
+              private boolean settingsTtsReady=false;
               private SharedPreferences prefs;
               private Handler handler=new Handler();
               private InputMethodManager imm;
@@ -702,12 +712,85 @@ jobs:
                           int cur=prefs.getInt(KEY_VOICE,0);
                           prefs.edit().putInt(KEY_VOICE,(cur+1)%3).apply();
                           refreshVoiceBtn();}});
+                  // Init TTS cho Settings
+                  settingsTts=new TextToSpeech(this,new TextToSpeech.OnInitListener(){
+                      @Override public void onInit(int status){
+                          if(status==TextToSpeech.SUCCESS){
+                              java.util.Locale vi=new java.util.Locale("vi","VN");
+                              if(settingsTts.isLanguageAvailable(vi)>=TextToSpeech.LANG_AVAILABLE)
+                                  settingsTts.setLanguage(vi);
+                              else settingsTts.setLanguage(java.util.Locale.ENGLISH);
+                              settingsTtsReady=true;
+                          }}});
+                  findViewById(R.id.btnTestTts).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){testSpeak();}});
                   // Nút LƯU bấm được bằng chuột cursor
                   findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){saveFromDialog();}});
                   renderHistory();
               }
               // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
+              private void testSpeak(){
+                  String msg="Xin chao, day la giong doc thu nghiem cua ALL IN ONE";
+                  int voiceIdx=prefs.getInt(KEY_VOICE,0);
+                  if(voiceIdx<2){
+                      // Thu Edge TTS trong thread rieng
+                      final String voice=voiceIdx==0?"vi-VN-HoaiMyNeural":"vi-VN-NamMinhNeural";
+                      final String fmsg=msg;
+                      new Thread(new Runnable(){@Override public void run(){
+                          testEdgeTts(fmsg,voice);
+                      }}).start();
+                  } else {
+                      if(settingsTtsReady&&settingsTts!=null)
+                          settingsTts.speak(msg,TextToSpeech.QUEUE_FLUSH,null,"test");
+                  }
+              }
+              private void testEdgeTts(String text,String voice){
+                  java.net.HttpURLConnection conn=null;
+                  try{
+                      String ssml="<speak version='1.0' xml:lang='vi-VN'>"
+                          +"<voice name='"+voice+"'>"+text+"</voice></speak>";
+                      java.net.URL url=new java.net.URL("https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="+java.util.UUID.randomUUID().toString().replace("-",""));
+                      conn=(java.net.HttpURLConnection)url.openConnection();
+                      conn.setRequestMethod("POST");
+                      conn.setRequestProperty("Content-Type","application/ssml+xml");
+                      conn.setRequestProperty("X-Microsoft-OutputFormat","audio-24khz-48kbitrate-mono-mp3");
+                      conn.setRequestProperty("User-Agent","Mozilla/5.0");
+                      conn.setDoOutput(true);
+                      conn.setConnectTimeout(5000);conn.setReadTimeout(10000);
+                      conn.getOutputStream().write(ssml.getBytes("UTF-8"));
+                      if(conn.getResponseCode()==200){
+                          java.io.File tmp=java.io.File.createTempFile("tts_test",".mp3",getCacheDir());
+                          java.io.InputStream is=conn.getInputStream();
+                          java.io.FileOutputStream fos=new java.io.FileOutputStream(tmp);
+                          byte[]buf=new byte[4096];int n;
+                          while((n=is.read(buf))!=-1)fos.write(buf,0,n);
+                          fos.close();is.close();
+                          final java.io.File ftmp=tmp;
+                          runOnUiThread(new Runnable(){@Override public void run(){
+                              try{
+                                  android.media.MediaPlayer mp=new android.media.MediaPlayer();
+                                  mp.setDataSource(ftmp.getAbsolutePath());
+                                  mp.prepare();mp.start();
+                                  mp.setOnCompletionListener(new android.media.MediaPlayer.OnCompletionListener(){
+                                      @Override public void onCompletion(android.media.MediaPlayer m2){
+                                          m2.release();ftmp.delete();}});
+                              }catch(Exception e){ftmp.delete();}
+                          }});
+                      } else {
+                          // Edge TTS that bai, fallback Android TTS
+                          runOnUiThread(new Runnable(){@Override public void run(){
+                              if(settingsTtsReady&&settingsTts!=null)
+                                  settingsTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"test");
+                          }});
+                      }
+                  }catch(Exception e){
+                      runOnUiThread(new Runnable(){@Override public void run(){
+                          if(settingsTtsReady&&settingsTts!=null)
+                              settingsTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"test");
+                      }});
+                  }finally{if(conn!=null)conn.disconnect();}
+              }
               private void refreshVoiceBtn(){
                   int v=prefs.getInt(KEY_VOICE,0);
                   String[]names={"Giong: Nu","Giong: Nam","Giong: TV"};
@@ -897,7 +980,9 @@ jobs:
                   super.onPause();savedCX=cursor.getCX();savedCY=cursor.getCY();
                   handler.removeCallbacksAndMessages(null);}
               @Override protected void onResume(){super.onResume();wakeC();}
-              @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);super.onDestroy();}
+              @Override protected void onDestroy(){
+                  if(settingsTts!=null){settingsTts.stop();settingsTts.shutdown();}
+                  handler.removeCallbacksAndMessages(null);super.onDestroy();}
           }
           JEOF
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
