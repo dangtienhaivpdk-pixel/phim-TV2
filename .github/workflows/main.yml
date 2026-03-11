@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="41" android:versionName="41.0">
+              package="com.allinone.app" android:versionCode="42" android:versionName="42.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -448,7 +448,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited12",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited13",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -731,7 +731,7 @@ jobs:
               }
               // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
               private void testSpeak(){
-                  String msg="Xin chao, day la giong doc thu nghiem cua ALL IN ONE";
+                  String msg="Xin chào, đây là giọng đọc thử nghiệm của ALL IN ONE";
                   int voiceIdx=prefs.getInt(KEY_VOICE,0);
                   if(voiceIdx<2){
                       // Thu Edge TTS trong thread rieng
@@ -748,8 +748,8 @@ jobs:
               private void testEdgeTts(String text,String voice){
                   java.net.HttpURLConnection conn=null;
                   try{
-                      String ssml="<speak version='1.0' xml:lang='vi-VN'>"
-                          +"<voice name='"+voice+"'>"+text+"</voice></speak>";
+                      String ssml="<speak version='1.0' xml:lang='vi-VN' xmlns='http://www.w3.org/2001/10/synthesis'>"
+                          +"<voice name='"+voice+"'><prosody rate='0%'>"+text+"</voice></speak>";
                       java.net.URL url=new java.net.URL("https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="+java.util.UUID.randomUUID().toString().replace("-",""));
                       conn=(java.net.HttpURLConnection)url.openConnection();
                       conn.setRequestMethod("POST");
@@ -1243,7 +1243,12 @@ jobs:
                       +"  for(var i=0;i<_aioSubSels.length;i++){"
                       +"    var el=document.querySelector(_aioSubSels[i]);"
                       +"    if(el&&el.offsetParent!==null){var t=(el.innerText||el.textContent||'').trim();"
-                      +"      if(t.length>2){found=t;break;}}"
+                      +"      if(t.length>3&&/[a-zA-ZÀ-ɏḀ-ỿ]/.test(t)"
+                      +"        &&!/^[\\d:\\s\/\\-\.]+$/.test(t)"
+                      +"        &&!/^(Tập|Episode|Ep|Part|Phần)\\s*[\\d]+/i.test(t)"
+                      +"        &&t.split(' ').length>1"
+                      +"      ){found=t;break;}}"
+                      +"  }"
                       +"  }"
                       +"  _aioShowSub(found);"
                       +"}).observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});"
@@ -1424,6 +1429,9 @@ jobs:
               };
               private void speakVi(final String text){
                   if(text==null||text.isEmpty())return;
+                  // Bo qua text chi co so, thoi luong, timestamp
+                  if(text.trim().matches("[\\d:\\s/\\-\\.]+"))return;
+                  if(text.trim().split("\\s+").length<2)return; // phai co it nhat 2 tu
                   SharedPreferences p=getSharedPreferences(SettingsActivity.PREF,Context.MODE_PRIVATE);
                   if(!p.getBoolean(SettingsActivity.KEY_SUB,true))return;
                   if(text.trim().toLowerCase().equals(lastSubText))return;
@@ -1458,10 +1466,10 @@ jobs:
                       if(cookies2!=null)for(String c:cookies2)if(c.contains("MUID")){cookie=c.split(";")[0];}
                       tc.disconnect();
                       // Goi Edge TTS API
-                      String ssml="<speak version='1.0' xml:lang='vi-VN'>"
-                          +"<voice name='"+voice+"'>"
-                          +text.replace("<","&lt;").replace(">","&gt;")
-                          +"</voice></speak>";
+                      String ssml="<speak version='1.0' xml:lang='vi-VN' xmlns='http://www.w3.org/2001/10/synthesis'>"
+                          +"<voice name='"+voice+"'><prosody rate='0%'>"
+                          +text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                          +"</prosody></voice></speak>";
                       String boundary="----WebKitFormBoundary";
                       URL ttsUrl=new URL("https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="+java.util.UUID.randomUUID().toString().replace("-",""));
                       conn=(HttpURLConnection)ttsUrl.openConnection();
