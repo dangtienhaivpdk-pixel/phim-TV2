@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="60" android:versionName="60.0">
+              package="com.allinone.app" android:versionCode="62" android:versionName="62.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited31",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited33",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1192,13 +1192,10 @@ jobs:
                                       android.widget.Toast.LENGTH_SHORT).show();
                               }
                           });
-                          // Re-inject sau 3s để đảm bảo iframe cũng nhận được
-                          handler.postDelayed(new Runnable() {
-                              @Override public void run() { injectJs(v); }
-                          }, 3000);
-                          handler.postDelayed(new Runnable() {
-                              @Override public void run() { injectJs(v); }
-                          }, 8000);
+                          // Re-inject định kỳ - player load sau trang chính
+                          handler.postDelayed(new Runnable() { @Override public void run() { injectJs(v); } }, 2000);
+                          handler.postDelayed(new Runnable() { @Override public void run() { injectJs(v); } }, 5000);
+                          handler.postDelayed(new Runnable() { @Override public void run() { injectJs(v); } }, 10000);
                       }
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
                           h.proceed();
@@ -1411,7 +1408,6 @@ jobs:
                   + "    return '';\n"
                   + "  }\n"
                   + "  function _scanAll(){\n"
-                  + "    if(!_hasVideo())return;\n"
                   + "    var f=_scan(document);\n"
                   + "    if(f){_show(f);return;}\n"
                   + "    try{\n"
@@ -1425,6 +1421,8 @@ jobs:
                   + "  }\n"
                   + "  new MutationObserver(_scanAll)\n"
                   + "    .observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});\n"
+                  // Scan định kỳ 500ms - backup cho MutationObserver
+                  + "  setInterval(_scanAll,500);\n"
                   + "  setInterval(function(){\n"
                   + "    try{document.querySelectorAll('iframe').forEach(function(fr){\n"
                   + "      try{var fd=fr.contentDocument||fr.contentWindow.document;\n"
