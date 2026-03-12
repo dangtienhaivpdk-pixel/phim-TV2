@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="59" android:versionName="59.0">
+              package="com.allinone.app" android:versionCode="60" android:versionName="60.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited30",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited31",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1344,54 +1344,44 @@ jobs:
                   + "  }\n"
                   // Auto-detect sub element: không cần biết trước selector
                   + "  var _knownEl=null,_knownDoc=null;\n"
-                  // Hàm chấm điểm element: càng giống sub càng cao điểm
                   + "  function _score(el){\n"
                   + "    try{\n"
-                  + "      if(!el||el.offsetParent===null)return 0;\n"
+                  + "      if(!el)return 0;\n"
                   + "      var t=(el.innerText||el.textContent||'').trim();\n"
                   + "      if(!_ok(t))return 0;\n"
                   + "      if(t.length<2||t.length>300)return 0;\n"
-                  // Bỏ qua element là toàn bộ trang (body, main, article lớn)
+                  + "      try{if(window.getComputedStyle(el).display==='none')return 0;}catch(e){}\n"
+                  + "      var sc=0;\n"
                   + "      var r=el.getBoundingClientRect();\n"
                   + "      var vw=window.innerWidth||document.documentElement.clientWidth||1280;\n"
                   + "      var vh=window.innerHeight||document.documentElement.clientHeight||720;\n"
-                  + "      if(r.width>vw*0.98&&r.height>vh*0.5)return 0;\n"
-                  + "      var sc=0;\n"
-                  // Nằm ở 40% dưới màn hình → điểm rất cao
-                  + "      if(r.top>vh*0.6)sc+=50;\n"
-                  + "      else if(r.top>vh*0.4)sc+=25;\n"
-                  // Nằm giữa theo chiều ngang
-                  + "      var cx=r.left+r.width/2;\n"
-                  + "      if(cx>vw*0.25&&cx<vw*0.75)sc+=25;\n"
-                  // Chiều rộng vừa phải
-                  + "      if(r.width>vw*0.15&&r.width<vw*0.92)sc+=10;\n"
-                  // Số từ ít (sub thường 2-20 từ)
+                  + "      if(r.width>0&&r.height>0){\n"
+                  + "        if(r.width>vw*0.98&&r.height>vh*0.5)return 0;\n"
+                  + "        if(r.top>vh*0.6)sc+=50;else if(r.top>vh*0.4)sc+=25;\n"
+                  + "        var cx=r.left+r.width/2;\n"
+                  + "        if(cx>vw*0.15&&cx<vw*0.85)sc+=25;\n"
+                  + "        if(r.width>vw*0.1&&r.width<vw*0.95)sc+=10;\n"
+                  + "      }\n"
                   + "      var wc=t.split(/\\s+/).length;\n"
-                  + "      if(wc>=2&&wc<=20)sc+=20;\n"
-                  + "      else if(wc>20)sc-=20;\n"
-                  // z-index cao → overlay
+                  + "      if(wc>=2&&wc<=20)sc+=20;else if(wc>20)sc-=10;\n"
                   + "      try{var zi=parseInt(window.getComputedStyle(el).zIndex)||0;\n"
-                  + "        if(zi>100)sc+=20;else if(zi>10)sc+=10;}catch(e){}\n"
-                  // Màu chữ trắng/vàng (điển hình của sub)
+                  + "        if(zi>100)sc+=20;else if(zi>5)sc+=10;}catch(e){}\n"
                   + "      try{var col=window.getComputedStyle(el).color;\n"
-                  + "        if(col&&(col.indexOf('255, 255, 255')>-1||col.indexOf('255,255,255')>-1))sc+=20;\n"
-                  + "        if(col&&(col.indexOf('255, 230')>-1||col.indexOf('255,230')>-1))sc+=20;}catch(e){}\n"
-                  // font-weight bold
+                  + "        if(col&&col.indexOf('255, 255, 255')>-1)sc+=25;}catch(e){}\n"
                   + "      try{var fw=window.getComputedStyle(el).fontWeight;\n"
-                  + "        if(fw==='bold'||parseInt(fw)>=700)sc+=10;}catch(e){}\n"
-                  // text-shadow (sub thường có shadow để đọc trên nền bất kỳ)
+                  + "        if(fw==='bold'||parseInt(fw)>=600)sc+=15;}catch(e){}\n"
                   + "      try{var ts=window.getComputedStyle(el).textShadow;\n"
-                  + "        if(ts&&ts!=='none')sc+=15;}catch(e){}\n"
-                  // Class/id có từ sub/caption/cue/lyric
+                  + "        if(ts&&ts!=='none'&&ts!=='')sc+=20;}catch(e){}\n"
+                  + "      try{var pos=window.getComputedStyle(el).position;\n"
+                  + "        if(pos==='absolute'||pos==='fixed')sc+=15;}catch(e){}\n"
                   + "      var nm=(el.className||'')+(el.id||'');\n"
                   + "      if(/sub|caption|cue|lyric|track/i.test(nm))sc+=30;\n"
                   + "      return sc;\n"
                   + "    }catch(e){return 0;}\n"
                   + "  }\n"
-                  // Quét toàn bộ visible text elements, chọn element điểm cao nhất
                   + "  function _findBest(doc){\n"
                   + "    if(!doc||!doc.body)return null;\n"
-                  + "    var best=null,bestSc=35;\n"
+                  + "    var best=null,bestSc=25;\n"
                   + "    var all=doc.querySelectorAll('p,span,div,li');\n"
                   + "    for(var i=0;i<all.length;i++){\n"
                   + "      var sc=_score(all[i]);\n"
@@ -1401,24 +1391,21 @@ jobs:
                   + "  }\n"
                   + "  function _scan(doc){\n"
                   + "    if(!doc)return '';\n"
-                  // Nếu đã biết element cụ thể, đọc thẳng (nhanh)
                   + "    if(_knownEl&&_knownDoc===doc){\n"
                   + "      try{\n"
-                  + "        if(_knownEl.offsetParent!==null){\n"
-                  + "          var kt=((_knownEl.innerText||_knownEl.textContent||'').trim());\n"
+                  + "        var ds=window.getComputedStyle(_knownEl).display;\n"
+                  + "        if(ds!=='none'){\n"
+                  + "          var kt=(_knownEl.innerText||_knownEl.textContent||'').trim();\n"
                   + "          if(_ok(kt))return kt;\n"
                   + "        }\n"
-                  // Element bị ẩn/remove → reset để tìm lại
                   + "        _knownEl=null;_knownDoc=null;\n"
                   + "      }catch(e){_knownEl=null;_knownDoc=null;}\n"
                   + "    }\n"
-                  // Tìm element tốt nhất
                   + "    var best=_findBest(doc);\n"
                   + "    if(best){\n"
                   + "      _knownEl=best;_knownDoc=doc;\n"
                   + "      var bt=(best.innerText||best.textContent||'').trim();\n"
-                  // Debug: thông báo tìm được element gì
-                  + "      try{window.AIO.onDebug('FOUND:'+best.tagName+'.'+best.className.substring(0,20)+' = '+bt.substring(0,30));}catch(e){}\n"
+                  + "      try{window.AIO.onDebug('FOUND:'+best.tagName+'.'+String(best.className).substring(0,20)+'='+bt.substring(0,25));}catch(e){}\n"
                   + "      return bt;\n"
                   + "    }\n"
                   + "    return '';\n"
@@ -1427,7 +1414,8 @@ jobs:
                   + "    if(!_hasVideo())return;\n"
                   + "    var f=_scan(document);\n"
                   + "    if(f){_show(f);return;}\n"
-                  + "    try{var iframes=document.querySelectorAll('iframe');\n"
+                  + "    try{\n"
+                  + "      var iframes=document.querySelectorAll('iframe');\n"
                   + "      for(var i=0;i<iframes.length;i++){try{\n"
                   + "        var idoc=iframes[i].contentDocument||iframes[i].contentWindow.document;\n"
                   + "        var g=_scan(idoc);\n"
