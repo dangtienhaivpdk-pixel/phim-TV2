@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="56" android:versionName="56.0">
+              package="com.allinone.app" android:versionCode="57" android:versionName="57.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited27",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited28",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1323,42 +1323,75 @@ jobs:
                   + "    var hr=parseFloat(p.length>=3?p[p.length-3]:0);\n"
                   + "    return hr*3600+min*60+sec;\n"
                   + "  }\n"
-                  // DOM scan - CHỈ khi có video đang phát, không đọc web thường
-                  + "  var _sels=[\n"
-                  + "    '.vjs-text-track-cue span','.vjs-text-track-cue','.vjs-text-track-display',\n"
-                  + "    '.jw-text-track-cue','.jw-captions-item','.jw-captions-text',\n"
-                  + "    '.fp-captions p','.fp-captions',\n"
-                  + "    '.vid-subtitles__text','.vid-subtitles',\n"
-                  + "    '.plyr__captions .plyr__caption','.plyr__captions',\n"
-                  + "    '[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-text\"]',\n"
-                  + "    '[class*=\"cue\"]','[id*=\"subtitle\"]','[id*=\"caption\"]'\n"
-                  + "  ];\n"
-                  + "  function _hasVideo(){\n"
-                  + "    var vids=document.querySelectorAll('video');\n"
-                  + "    for(var i=0;i<vids.length;i++){if(!vids[i].paused&&vids[i].readyState>=2)return true;}\n"
-                  + "    try{var frs=document.querySelectorAll('iframe');\n"
-                  + "      for(var i=0;i<frs.length;i++){try{\n"
-                  + "        var fv=frs[i].contentDocument.querySelectorAll('video');\n"
-                  + "        for(var j=0;j<fv.length;j++){if(!fv[j].paused&&fv[j].readyState>=2)return true;}\n"
-                  + "      }catch(e){}}\n"
-                  + "    }catch(e){}\n"
-                  + "    return false;\n"
+                  // Auto-detect sub element: không cần biết trước selector
+                  + "  var _knownEl=null,_knownDoc=null;\n"
+                  // Hàm chấm điểm element: càng giống sub càng cao điểm
+                  + "  function _score(el,doc){\n"
+                  + "    try{\n"
+                  + "      if(!el||!el.offsetParent)return 0;\n"
+                  + "      var t=(el.innerText||el.textContent||'').trim();\n"
+                  + "      if(!_ok(t))return 0;\n"
+                  // Độ dài hợp lý của sub: 2-200 ký tự
+                  + "      if(t.length<2||t.length>200)return 0;\n"
+                  + "      var sc=0;\n"
+                  + "      var r=el.getBoundingClientRect();\n"
+                  + "      var vw=window.innerWidth||1920,vh=window.innerHeight||1080;\n"
+                  // Nằm ở nửa dưới màn hình → cộng điểm cao
+                  + "      if(r.top>vh*0.5)sc+=40;\n"
+                  // Nằm giữa theo chiều ngang
+                  + "      var cx=r.left+r.width/2;\n"
+                  + "      if(cx>vw*0.2&&cx<vw*0.8)sc+=20;\n"
+                  // Không quá rộng, không quá hẹp
+                  + "      if(r.width>vw*0.1&&r.width<vw*0.95)sc+=10;\n"
+                  // Số từ ít (sub thường 2-20 từ)
+                  + "      var wc=t.split(/\\s+/).length;\n"
+                  + "      if(wc>=2&&wc<=25)sc+=20;\n"
+                  // z-index cao → overlay
+                  + "      var zi=parseInt(window.getComputedStyle(el).zIndex)||0;\n"
+                  + "      if(zi>10)sc+=10;\n"
+                  // Class/id có từ sub/caption
+                  + "      var nm=(el.className||'')+(el.id||'');\n"
+                  + "      if(/sub|caption|cue|lyric/i.test(nm))sc+=30;\n"
+                  + "      return sc;\n"
+                  + "    }catch(e){return 0;}\n"
+                  + "  }\n"
+                  // Quét toàn bộ visible text elements trong doc, chọn element điểm cao nhất
+                  + "  function _findBest(doc){\n"
+                  + "    if(!doc||!doc.body)return null;\n"
+                  + "    var best=null,bestSc=30;\n"
+                  // Quét tất cả elements có text
+                  + "    var tags=['p','span','div','li','td','label'];\n"
+                  + "    for(var ti=0;ti<tags.length;ti++){\n"
+                  + "      var els=doc.getElementsByTagName(tags[ti]);\n"
+                  + "      for(var i=0;i<els.length;i++){\n"
+                  + "        var sc=_score(els[i],doc);\n"
+                  + "        if(sc>bestSc){bestSc=sc;best=els[i];}\n"
+                  + "      }\n"
+                  + "    }\n"
+                  + "    return best;\n"
                   + "  }\n"
                   + "  function _scan(doc){\n"
                   + "    if(!doc)return '';\n"
-                  + "    for(var i=0;i<_sels.length;i++){\n"
-                  + "      try{var els=doc.querySelectorAll(_sels[i]);\n"
-                  + "        for(var j=0;j<els.length;j++){var el=els[j];\n"
-                  + "          if(el&&el.offsetParent!==null){\n"
-                  + "            var t=(el.innerText||el.textContent||'').trim();\n"
-                  + "            if(_ok(t))return t;\n"
-                  + "          }\n"
+                  // Nếu đã biết element cụ thể, đọc thẳng (nhanh)
+                  + "    if(_knownEl&&_knownDoc===doc){\n"
+                  + "      try{\n"
+                  + "        if(_knownEl.offsetParent!==null){\n"
+                  + "          var kt=((_knownEl.innerText||_knownEl.textContent||'').trim());\n"
+                  + "          if(_ok(kt))return kt;\n"
                   + "        }\n"
-                  + "      }catch(e){}\n"
-                  + "    }return '';\n"
+                  // Element bị ẩn/remove → reset để tìm lại
+                  + "        _knownEl=null;_knownDoc=null;\n"
+                  + "      }catch(e){_knownEl=null;_knownDoc=null;}\n"
+                  + "    }\n"
+                  // Tìm element tốt nhất
+                  + "    var best=_findBest(doc);\n"
+                  + "    if(best){\n"
+                  + "      _knownEl=best;_knownDoc=doc;\n"
+                  + "      return (best.innerText||best.textContent||'').trim();\n"
+                  + "    }\n"
+                  + "    return '';\n"
                   + "  }\n"
                   + "  function _scanAll(){\n"
-                  // GUARD: không đọc nội dung web khi không có video đang phát
                   + "    if(!_hasVideo())return;\n"
                   + "    var f=_scan(document);\n"
                   + "    if(f){_show(f);return;}\n"
