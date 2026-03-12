@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="53" android:versionName="53.0">
+              package="com.allinone.app" android:versionCode="54" android:versionName="54.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited24",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited25",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1442,12 +1442,30 @@ jobs:
                           if (status == TextToSpeech.SUCCESS) {
                               java.util.Locale vi = new java.util.Locale("vi", "VN");
                               int res = tts.isLanguageAvailable(vi);
-                              if (res >= TextToSpeech.LANG_AVAILABLE) tts.setLanguage(vi);
-                              else tts.setLanguage(java.util.Locale.ENGLISH);
+                              if (res >= TextToSpeech.LANG_AVAILABLE) {
+                                  tts.setLanguage(vi);
+                              } else {
+                                  // Thử locale mặc định của hệ thống
+                                  try { tts.setLanguage(java.util.Locale.getDefault()); }
+                                  catch (Exception ex) { tts.setLanguage(java.util.Locale.ENGLISH); }
+                              }
+                              tts.setSpeechRate(1.0f);
+                              tts.setPitch(1.0f);
                               ttsReady = true;
                           }
                       }
                   });
+                  // Đặt volume kênh audio lên cao nhất
+                  try {
+                      android.media.AudioManager am = (android.media.AudioManager)
+                          getSystemService(Context.AUDIO_SERVICE);
+                      if (am != null) {
+                          int max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+                          int cur = am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+                          // Chỉ tăng nếu đang ở 0
+                          if (cur == 0) am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, max / 2, 0);
+                      }
+                  } catch (Exception e) {}
               }
 
               private void speakVi(final String text) {
@@ -1465,17 +1483,22 @@ jobs:
                   final int vi = p.getInt(SettingsActivity.KEY_VOICE, 0);
                   final float rate = getSpeechRate();
                   if (vi < 2) {
+                      // Edge TTS neural - chạy trong background thread
                       final String voice = EDGE_VOICES[vi];
                       edgeExec.execute(new Runnable() {
                           @Override public void run() { playEdgeTts(text, voice, rate); }
                       });
                   } else {
+                      // Android TTS fallback
                       if (!ttsReady || tts == null) return;
                       subHandler.post(new Runnable() {
                           @Override public void run() {
                               tts.setSpeechRate(rate);
                               tts.stop();
-                              tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "sub");
+                              android.os.Bundle params = new android.os.Bundle();
+                              params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM,
+                                  android.media.AudioManager.STREAM_MUSIC);
+                              tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "sub");
                           }
                       });
                   }
@@ -1501,9 +1524,10 @@ jobs:
                       conn.setRequestProperty("X-Microsoft-OutputFormat", "audio-24khz-48kbitrate-mono-mp3");
                       conn.setRequestProperty("User-Agent", "Mozilla/5.0");
                       conn.setDoOutput(true);
-                      conn.setConnectTimeout(5000); conn.setReadTimeout(10000);
+                      conn.setConnectTimeout(6000); conn.setReadTimeout(12000);
                       conn.getOutputStream().write(ssml.getBytes("UTF-8"));
-                      if (conn.getResponseCode() == 200) {
+                      int rc = conn.getResponseCode();
+                      if (rc == 200) {
                           java.io.File tmp = java.io.File.createTempFile("tts", ".mp3", getCacheDir());
                           java.io.InputStream is = conn.getInputStream();
                           java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp);
@@ -1514,22 +1538,106 @@ jobs:
                           subHandler.post(new Runnable() {
                               @Override public void run() {
                                   try {
-                                      if (edgePlayer != null) { edgePlayer.stop(); edgePlayer.release(); }
+                                      if (edgePlayer != null) {
+                                          try { edgePlayer.stop(); } catch (Exception ex) {}
+                                          edgePlayer.release(); edgePlayer = null;
+                                      }
                                       edgePlayer = new android.media.MediaPlayer();
+                                      edgePlayer.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
                                       edgePlayer.setDataSource(ftmp.getAbsolutePath());
-                                      edgePlayer.prepare(); edgePlayer.start();
+                                      edgePlayer.prepare();
+                                      edgePlayer.start();
                                       edgePlayer.setOnCompletionListener(
                                           new android.media.MediaPlayer.OnCompletionListener() {
                                               @Override public void onCompletion(android.media.MediaPlayer mp) {
                                                   mp.release(); edgePlayer = null; ftmp.delete();
                                               }
                                           });
-                                  } catch (Exception e) { ftmp.delete(); }
+                                  } catch (Exception e) { ftmp.delete(); fallbackTts(text, rate); }
                               }
                           });
+                      } else {
+                          // Edge TTS trả lỗi (rc != 200) → thử Google TTS
+                          playGoogleTts(text, rate);
                       }
-                  } catch (Exception e) {}
-                  finally { if (conn != null) conn.disconnect(); }
+                  } catch (Exception e) {
+                      // Mạng lỗi → thử Google TTS
+                      playGoogleTts(text, rate);
+                  } finally { if (conn != null) conn.disconnect(); }
+              }
+
+              // Google TTS API - miễn phí, hỗ trợ tiếng Việt tốt
+              private void playGoogleTts(final String text, final float rate) {
+                  edgeExec.execute(new Runnable() {
+                      @Override public void run() {
+                          java.net.HttpURLConnection conn2 = null;
+                          try {
+                              String encoded = java.net.URLEncoder.encode(text, "UTF-8");
+                              // Giới hạn 200 ký tự mỗi lần
+                              if (encoded.length() > 300) encoded = java.net.URLEncoder.encode(
+                                  text.substring(0, Math.min(text.length(), 150)), "UTF-8");
+                              String ttsUrl = "https://translate.google.com/translate_tts"
+                                  + "?ie=UTF-8&q=" + encoded
+                                  + "&tl=vi&total=1&idx=0&client=tw-ob&ttsspeed=" + rate;
+                              java.net.URL u2 = new java.net.URL(ttsUrl);
+                              conn2 = (java.net.HttpURLConnection) u2.openConnection();
+                              conn2.setRequestMethod("GET");
+                              conn2.setConnectTimeout(6000); conn2.setReadTimeout(10000);
+                              conn2.setRequestProperty("User-Agent",
+                                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                              conn2.setRequestProperty("Referer", "https://translate.google.com/");
+                              if (conn2.getResponseCode() == 200) {
+                                  java.io.File tmp2 = java.io.File.createTempFile("gtts", ".mp3", getCacheDir());
+                                  java.io.InputStream is2 = conn2.getInputStream();
+                                  java.io.FileOutputStream fos2 = new java.io.FileOutputStream(tmp2);
+                                  byte[] buf2 = new byte[4096]; int n2;
+                                  while ((n2 = is2.read(buf2)) != -1) fos2.write(buf2, 0, n2);
+                                  fos2.close(); is2.close();
+                                  final java.io.File ftmp2 = tmp2;
+                                  subHandler.post(new Runnable() {
+                                      @Override public void run() {
+                                          try {
+                                              if (edgePlayer != null) {
+                                                  try { edgePlayer.stop(); } catch (Exception ex) {}
+                                                  edgePlayer.release(); edgePlayer = null;
+                                              }
+                                              edgePlayer = new android.media.MediaPlayer();
+                                              edgePlayer.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
+                                              edgePlayer.setDataSource(ftmp2.getAbsolutePath());
+                                              edgePlayer.prepare(); edgePlayer.start();
+                                              edgePlayer.setOnCompletionListener(
+                                                  new android.media.MediaPlayer.OnCompletionListener() {
+                                                      @Override public void onCompletion(android.media.MediaPlayer mp) {
+                                                          mp.release(); edgePlayer = null; ftmp2.delete();
+                                                      }
+                                                  });
+                                          } catch (Exception e) { ftmp2.delete(); fallbackTts(text, rate); }
+                                      }
+                                  });
+                              } else { fallbackTts(text, rate); }
+                          } catch (Exception e) { fallbackTts(text, rate); }
+                          finally { if (conn2 != null) conn2.disconnect(); }
+                      }
+                  });
+              }
+
+              private void fallbackTts(final String text, final float rate) {
+                  subHandler.post(new Runnable() {
+                      @Override public void run() {
+                          if (!ttsReady || tts == null) return;
+                          // Xin audio focus để không bị video át
+                          try {
+                              android.media.AudioManager am = (android.media.AudioManager)
+                                  getSystemService(Context.AUDIO_SERVICE);
+                              if (am != null) am.requestAudioFocus(null,
+                                  android.media.AudioManager.STREAM_MUSIC,
+                                  android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                          } catch (Exception e) {}
+                          tts.setSpeechRate(rate);
+                          tts.stop();
+                          tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "sub");
+                      }
+                  });
               }
 
               // ── Speech recognition ─────────────────────────────────────────────────
