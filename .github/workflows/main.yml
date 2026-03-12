@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="58" android:versionName="58.0">
+              package="com.allinone.app" android:versionCode="59" android:versionName="59.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited29",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited30",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1183,7 +1183,22 @@ jobs:
                           progressBar.setVisibility(View.VISIBLE);
                       }
                       @Override public void onPageFinished(WebView v, String u) {
-                          progressBar.setVisibility(View.GONE); injectJs(v);
+                          progressBar.setVisibility(View.GONE);
+                          injectJs(v);
+                          handler.post(new Runnable() {
+                              @Override public void run() {
+                                  android.widget.Toast.makeText(MainActivity.this,
+                                      "JS injected: " + u.substring(0, Math.min(u.length(), 40)),
+                                      android.widget.Toast.LENGTH_SHORT).show();
+                              }
+                          });
+                          // Re-inject sau 3s để đảm bảo iframe cũng nhận được
+                          handler.postDelayed(new Runnable() {
+                              @Override public void run() { injectJs(v); }
+                          }, 3000);
+                          handler.postDelayed(new Runnable() {
+                              @Override public void run() { injectJs(v); }
+                          }, 8000);
                       }
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
                           h.proceed();
@@ -1330,47 +1345,57 @@ jobs:
                   // Auto-detect sub element: không cần biết trước selector
                   + "  var _knownEl=null,_knownDoc=null;\n"
                   // Hàm chấm điểm element: càng giống sub càng cao điểm
-                  + "  function _score(el,doc){\n"
+                  + "  function _score(el){\n"
                   + "    try{\n"
-                  + "      if(!el||!el.offsetParent)return 0;\n"
+                  + "      if(!el||el.offsetParent===null)return 0;\n"
                   + "      var t=(el.innerText||el.textContent||'').trim();\n"
                   + "      if(!_ok(t))return 0;\n"
-                  // Độ dài hợp lý của sub: 2-200 ký tự
-                  + "      if(t.length<2||t.length>200)return 0;\n"
-                  + "      var sc=0;\n"
+                  + "      if(t.length<2||t.length>300)return 0;\n"
+                  // Bỏ qua element là toàn bộ trang (body, main, article lớn)
                   + "      var r=el.getBoundingClientRect();\n"
-                  + "      var vw=window.innerWidth||1920,vh=window.innerHeight||1080;\n"
-                  // Nằm ở nửa dưới màn hình → cộng điểm cao
-                  + "      if(r.top>vh*0.5)sc+=40;\n"
+                  + "      var vw=window.innerWidth||document.documentElement.clientWidth||1280;\n"
+                  + "      var vh=window.innerHeight||document.documentElement.clientHeight||720;\n"
+                  + "      if(r.width>vw*0.98&&r.height>vh*0.5)return 0;\n"
+                  + "      var sc=0;\n"
+                  // Nằm ở 40% dưới màn hình → điểm rất cao
+                  + "      if(r.top>vh*0.6)sc+=50;\n"
+                  + "      else if(r.top>vh*0.4)sc+=25;\n"
                   // Nằm giữa theo chiều ngang
                   + "      var cx=r.left+r.width/2;\n"
-                  + "      if(cx>vw*0.2&&cx<vw*0.8)sc+=20;\n"
-                  // Không quá rộng, không quá hẹp
-                  + "      if(r.width>vw*0.1&&r.width<vw*0.95)sc+=10;\n"
+                  + "      if(cx>vw*0.25&&cx<vw*0.75)sc+=25;\n"
+                  // Chiều rộng vừa phải
+                  + "      if(r.width>vw*0.15&&r.width<vw*0.92)sc+=10;\n"
                   // Số từ ít (sub thường 2-20 từ)
                   + "      var wc=t.split(/\\s+/).length;\n"
-                  + "      if(wc>=2&&wc<=25)sc+=20;\n"
+                  + "      if(wc>=2&&wc<=20)sc+=20;\n"
+                  + "      else if(wc>20)sc-=20;\n"
                   // z-index cao → overlay
-                  + "      var zi=parseInt(window.getComputedStyle(el).zIndex)||0;\n"
-                  + "      if(zi>10)sc+=10;\n"
-                  // Class/id có từ sub/caption
+                  + "      try{var zi=parseInt(window.getComputedStyle(el).zIndex)||0;\n"
+                  + "        if(zi>100)sc+=20;else if(zi>10)sc+=10;}catch(e){}\n"
+                  // Màu chữ trắng/vàng (điển hình của sub)
+                  + "      try{var col=window.getComputedStyle(el).color;\n"
+                  + "        if(col&&(col.indexOf('255, 255, 255')>-1||col.indexOf('255,255,255')>-1))sc+=20;\n"
+                  + "        if(col&&(col.indexOf('255, 230')>-1||col.indexOf('255,230')>-1))sc+=20;}catch(e){}\n"
+                  // font-weight bold
+                  + "      try{var fw=window.getComputedStyle(el).fontWeight;\n"
+                  + "        if(fw==='bold'||parseInt(fw)>=700)sc+=10;}catch(e){}\n"
+                  // text-shadow (sub thường có shadow để đọc trên nền bất kỳ)
+                  + "      try{var ts=window.getComputedStyle(el).textShadow;\n"
+                  + "        if(ts&&ts!=='none')sc+=15;}catch(e){}\n"
+                  // Class/id có từ sub/caption/cue/lyric
                   + "      var nm=(el.className||'')+(el.id||'');\n"
-                  + "      if(/sub|caption|cue|lyric/i.test(nm))sc+=30;\n"
+                  + "      if(/sub|caption|cue|lyric|track/i.test(nm))sc+=30;\n"
                   + "      return sc;\n"
                   + "    }catch(e){return 0;}\n"
                   + "  }\n"
-                  // Quét toàn bộ visible text elements trong doc, chọn element điểm cao nhất
+                  // Quét toàn bộ visible text elements, chọn element điểm cao nhất
                   + "  function _findBest(doc){\n"
                   + "    if(!doc||!doc.body)return null;\n"
-                  + "    var best=null,bestSc=30;\n"
-                  // Quét tất cả elements có text
-                  + "    var tags=['p','span','div','li','td','label'];\n"
-                  + "    for(var ti=0;ti<tags.length;ti++){\n"
-                  + "      var els=doc.getElementsByTagName(tags[ti]);\n"
-                  + "      for(var i=0;i<els.length;i++){\n"
-                  + "        var sc=_score(els[i],doc);\n"
-                  + "        if(sc>bestSc){bestSc=sc;best=els[i];}\n"
-                  + "      }\n"
+                  + "    var best=null,bestSc=35;\n"
+                  + "    var all=doc.querySelectorAll('p,span,div,li');\n"
+                  + "    for(var i=0;i<all.length;i++){\n"
+                  + "      var sc=_score(all[i]);\n"
+                  + "      if(sc>bestSc){bestSc=sc;best=all[i];}\n"
                   + "    }\n"
                   + "    return best;\n"
                   + "  }\n"
