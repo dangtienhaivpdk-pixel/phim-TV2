@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="57" android:versionName="57.0">
+              package="com.allinone.app" android:versionCode="58" android:versionName="58.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited28",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited29",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1194,6 +1194,13 @@ jobs:
                           if (r != null && r.getUrl() != null) {
                               final String u2 = r.getUrl().toString();
                               if (u2.contains(".vtt") || u2.contains(".srt")) {
+                                  handler.post(new Runnable() {
+                                      @Override public void run() {
+                                          android.widget.Toast.makeText(MainActivity.this,
+                                              "VTT: " + u2.substring(Math.max(0,u2.length()-40)),
+                                              android.widget.Toast.LENGTH_LONG).show();
+                                      }
+                                  });
                                   edgeExec.execute(new Runnable() {
                                       @Override public void run() { fetchAndParseSub(u2); }
                                   });
@@ -1271,16 +1278,13 @@ jobs:
                   + "  function _show(txt,dur){\n"
                   + "    if(!txt||!_ok(txt))return;\n"
                   + "    var n=txt.trim();\n"
-                  // Dedup: chỉ skip nếu hoàn toàn giống
                   + "    if(n===_ls)return;\n"
                   + "    _ls=n;\n"
                   + "    _sd.textContent=n;\n"
                   + "    _sd.style.display='block';\n"
                   + "    if(_ht)clearTimeout(_ht);\n"
                   + "    if(_dt)clearTimeout(_dt);\n"
-                  // Gọi TTS sau 80ms
                   + "    _dt=setTimeout(function(){try{window.AIO.onSubText(n);}catch(e){}},80);\n"
-                  // Hiện sub đúng thời gian VTT, hoặc ít nhất 3s
                   + "    var d=dur&&dur>500?dur:Math.max(3000,n.length*120);\n"
                   + "    _ht=setTimeout(function(){_sd.style.display='none';_ls='';},d);\n"
                   + "  }\n"
@@ -1387,7 +1391,10 @@ jobs:
                   + "    var best=_findBest(doc);\n"
                   + "    if(best){\n"
                   + "      _knownEl=best;_knownDoc=doc;\n"
-                  + "      return (best.innerText||best.textContent||'').trim();\n"
+                  + "      var bt=(best.innerText||best.textContent||'').trim();\n"
+                  // Debug: thông báo tìm được element gì
+                  + "      try{window.AIO.onDebug('FOUND:'+best.tagName+'.'+best.className.substring(0,20)+' = '+bt.substring(0,30));}catch(e){}\n"
+                  + "      return bt;\n"
                   + "    }\n"
                   + "    return '';\n"
                   + "  }\n"
@@ -1422,9 +1429,22 @@ jobs:
               // ── KbdBridge ──────────────────────────────────────────────────────────
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
+                  public void onDebug(final String msg) {
+                      handler.post(new Runnable() {
+                          @Override public void run() {
+                              android.widget.Toast.makeText(MainActivity.this,
+                                  msg, android.widget.Toast.LENGTH_LONG).show();
+                          }
+                      });
+                  }
+                  @android.webkit.JavascriptInterface
                   public void onSubText(final String text) {
                       handler.post(new Runnable() {
-                          @Override public void run() { speakVi(text); }
+                          @Override public void run() {
+                              android.widget.Toast.makeText(MainActivity.this,
+                                  "SUB: " + text, android.widget.Toast.LENGTH_SHORT).show();
+                              speakVi(text);
+                          }
                       });
                   }
                   @android.webkit.JavascriptInterface
