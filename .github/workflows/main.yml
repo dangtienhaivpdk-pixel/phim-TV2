@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="55" android:versionName="55.0">
+              package="com.allinone.app" android:versionCode="56" android:versionName="56.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited26",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited27",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1259,6 +1259,9 @@ jobs:
                   + "  var _ls='',_ht=null,_dt=null;\n"
                   + "  function _ok(t){\n"
                   + "    if(!t||t.length<3)return false;\n"
+                  // Lọc dòng timestamp: chứa --> hoặc chỉ gồm số:.,/khoảng trắng
+                  + "    if(t.indexOf('-->')>-1)return false;\n"
+                  + "    if(/^[\\d:\\.,\\s\\/]+$/.test(t))return false;\n"
                   + "    var lc=0;\n"
                   + "    for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);\n"
                   + "      if((c>=65&&c<=90)||(c>=97&&c<=122)||(c>=192&&c<=696)||(c>=7680&&c<=7935))lc++;}\n"
@@ -1286,8 +1289,14 @@ jobs:
                   + "    var cues=[],lines=raw.split('\\n'),s=0,e2=0,ct='';\n"
                   + "    for(var i=0;i<lines.length;i++){\n"
                   + "      var l=lines[i].trim();\n"
+                  // Bỏ qua dòng timestamp (có -->)
                   + "      if(l.indexOf('-->')>-1){var pp=l.split('-->');s=_ts(pp[0]);e2=_ts(pp[1]);ct='';}\n"
-                  + "      else if(l.length>0&&s>0&&isNaN(+l)){ct=ct+(ct?' ':'')+l.replace(/<[^>]*>/g,'');}\n"
+                  // Bỏ qua dòng số thứ tự cue và dòng rỗng
+                  + "      else if(l.length>0&&s>0&&isNaN(+l)&&l.indexOf('-->')<0){\n"
+                  // Lọc thêm: bỏ dòng có dạng 00:00:00 (timestamp thuần)
+                  + "        var clean=l.replace(/<[^>]*>/g,'').trim();\n"
+                  + "        if(clean.length>0&&!/^[\\d:\\.,\\s-->]+$/.test(clean))ct=ct+(ct?' ':'')+clean;\n"
+                  + "      }\n"
                   + "      else if(l.length===0&&ct.length>0){cues.push({s:s,e:e2,t:ct});ct='';s=0;e2=0;}\n"
                   + "    }\n"
                   + "    if(ct.length>0&&s>0)cues.push({s:s,e:e2,t:ct});\n"
