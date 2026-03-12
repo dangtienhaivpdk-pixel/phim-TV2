@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="62" android:versionName="62.0">
+              package="com.allinone.app" android:versionCode="63" android:versionName="63.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited33",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited34",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1271,6 +1271,14 @@ jobs:
                   + "  (document.head||document.documentElement).appendChild(_s);}\n"
                   + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
                   // Sub overlay - CHỈ đọc khi có video đang phát
+                  // Debug: dump tất cả iframe src sau 3s
+                  + "setTimeout(function(){\n"
+                  + "  try{var frs=document.querySelectorAll('iframe');\n"
+                  + "    var msg='iframes('+frs.length+'):';\n"
+                  + "    for(var i=0;i<Math.min(frs.length,5);i++)msg+=' '+frs[i].src.substring(0,40);\n"
+                  + "    window.AIO.onDebug(msg);\n"
+                  + "  }catch(e){}\n"
+                  + "},3000);\n"
                   + "if(!window._aioSub){window._aioSub=true;\n"
                   + "  var _sd=document.createElement('div');\n"
                   + "  _sd.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.85);color:#ffe066;font-size:26px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';\n"
