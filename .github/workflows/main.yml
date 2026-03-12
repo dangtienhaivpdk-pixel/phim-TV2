@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="54" android:versionName="54.0">
+              package="com.allinone.app" android:versionCode="55" android:versionName="55.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited25",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited26",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1251,7 +1251,7 @@ jobs:
                   + "  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"]{display:none!important;}';\n"
                   + "  (document.head||document.documentElement).appendChild(_s);}\n"
                   + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
-                  // Sub overlay
+                  // Sub overlay - CHỈ đọc khi có video đang phát
                   + "if(!window._aioSub){window._aioSub=true;\n"
                   + "  var _sd=document.createElement('div');\n"
                   + "  _sd.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.85);color:#ffe066;font-size:26px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';\n"
@@ -1264,37 +1264,48 @@ jobs:
                   + "      if((c>=65&&c<=90)||(c>=97&&c<=122)||(c>=192&&c<=696)||(c>=7680&&c<=7935))lc++;}\n"
                   + "    return lc>=2;\n"
                   + "  }\n"
-                  + "  function _show(txt){\n"
+                  // _show(txt, dur): dur = thời gian hiện sub theo VTT (ms), không truyền thì tự tính
+                  + "  function _show(txt,dur){\n"
                   + "    if(!txt||!_ok(txt))return;\n"
-                  + "    var n=txt.toLowerCase();\n"
+                  + "    var n=txt.trim();\n"
+                  // Dedup: chỉ skip nếu hoàn toàn giống
                   + "    if(n===_ls)return;\n"
                   + "    _ls=n;\n"
-                  + "    _sd.textContent=txt;\n"
+                  + "    _sd.textContent=n;\n"
                   + "    _sd.style.display='block';\n"
                   + "    if(_ht)clearTimeout(_ht);\n"
                   + "    if(_dt)clearTimeout(_dt);\n"
-                  + "    _dt=setTimeout(function(){try{window.AIO.onSubText(txt);}catch(e){}},150);\n"
-                  + "    _ht=setTimeout(function(){_sd.style.display='none';_ls='';},Math.max(2500,txt.length*80));\n"
+                  // Gọi TTS sau 80ms
+                  + "    _dt=setTimeout(function(){try{window.AIO.onSubText(n);}catch(e){}},80);\n"
+                  // Hiện sub đúng thời gian VTT, hoặc ít nhất 3s
+                  + "    var d=dur&&dur>500?dur:Math.max(3000,n.length*120);\n"
+                  + "    _ht=setTimeout(function(){_sd.style.display='none';_ls='';},d);\n"
                   + "  }\n"
-                  // _pvtt: parse VTT và sync với video - được gọi từ Java khi bắt .vtt request
+                  // _pvtt: parse VTT, sync chính xác với video.currentTime
                   + "  window._pvtt=function(raw){\n"
-                  + "    var cues=[],lines=raw.split('\\n'),s=0,e=0,ct='';\n"
+                  + "    var cues=[],lines=raw.split('\\n'),s=0,e2=0,ct='';\n"
                   + "    for(var i=0;i<lines.length;i++){\n"
                   + "      var l=lines[i].trim();\n"
-                  + "      if(l.indexOf('-->')>-1){var pp=l.split('-->');s=_ts(pp[0]);e=_ts(pp[1]);ct='';}\n"
-                  + "      else if(l.length>0&&s>0&&isNaN(+l)){ct=ct+(ct?' ':'')+l;}\n"
-                  + "      else if(l.length===0&&ct.length>0){cues.push({s:s,e:e,t:ct});ct='';s=0;}\n"
+                  + "      if(l.indexOf('-->')>-1){var pp=l.split('-->');s=_ts(pp[0]);e2=_ts(pp[1]);ct='';}\n"
+                  + "      else if(l.length>0&&s>0&&isNaN(+l)){ct=ct+(ct?' ':'')+l.replace(/<[^>]*>/g,'');}\n"
+                  + "      else if(l.length===0&&ct.length>0){cues.push({s:s,e:e2,t:ct});ct='';s=0;e2=0;}\n"
                   + "    }\n"
-                  + "    if(ct.length>0&&s>0)cues.push({s:s,e:e,t:ct});\n"
+                  + "    if(ct.length>0&&s>0)cues.push({s:s,e:e2,t:ct});\n"
                   + "    if(cues.length===0)return;\n"
+                  + "    window._aioCues=cues;\n"
                   + "    if(window._aioSyncT)clearInterval(window._aioSyncT);\n"
                   + "    window._aioSyncT=setInterval(function(){\n"
                   + "      var vid=document.querySelector('video');\n"
                   + "      if(!vid||vid.paused)return;\n"
                   + "      var ct2=vid.currentTime;\n"
-                  + "      for(var j=0;j<cues.length;j++)\n"
-                  + "        if(ct2>=cues[j].s&&ct2<=cues[j].e){_show(cues[j].t);return;}\n"
-                  + "    },250);\n"
+                  + "      for(var j=0;j<cues.length;j++){\n"
+                  + "        if(ct2>=cues[j].s&&ct2<cues[j].e){\n"
+                  // Truyền dur = thời gian sub VTT
+                  + "          _show(cues[j].t,(cues[j].e-cues[j].s)*1000);\n"
+                  + "          return;\n"
+                  + "        }\n"
+                  + "      }\n"
+                  + "    },200);\n"
                   + "  };\n"
                   + "  function _ts(str){\n"
                   + "    var p=str.replace(',','.').trim().split(':');\n"
@@ -1303,7 +1314,7 @@ jobs:
                   + "    var hr=parseFloat(p.length>=3?p[p.length-3]:0);\n"
                   + "    return hr*3600+min*60+sec;\n"
                   + "  }\n"
-                  // DOM sub scan - quét trang chính + tất cả iframe (same + cross origin cùng domain)
+                  // DOM scan - CHỈ khi có video đang phát, không đọc web thường
                   + "  var _sels=[\n"
                   + "    '.vjs-text-track-cue span','.vjs-text-track-cue','.vjs-text-track-display',\n"
                   + "    '.jw-text-track-cue','.jw-captions-item','.jw-captions-text',\n"
@@ -1311,16 +1322,24 @@ jobs:
                   + "    '.vid-subtitles__text','.vid-subtitles',\n"
                   + "    '.plyr__captions .plyr__caption','.plyr__captions',\n"
                   + "    '[class*=\"subtitle\"]','[class*=\"caption\"]','[class*=\"sub-text\"]',\n"
-                  + "    '[class*=\"lyric\"]','[class*=\"cue\"]',\n"
-                  + "    '[id*=\"subtitle\"]','[id*=\"caption\"]','[id*=\"cue\"]'\n"
+                  + "    '[class*=\"cue\"]','[id*=\"subtitle\"]','[id*=\"caption\"]'\n"
                   + "  ];\n"
+                  + "  function _hasVideo(){\n"
+                  + "    var vids=document.querySelectorAll('video');\n"
+                  + "    for(var i=0;i<vids.length;i++){if(!vids[i].paused&&vids[i].readyState>=2)return true;}\n"
+                  + "    try{var frs=document.querySelectorAll('iframe');\n"
+                  + "      for(var i=0;i<frs.length;i++){try{\n"
+                  + "        var fv=frs[i].contentDocument.querySelectorAll('video');\n"
+                  + "        for(var j=0;j<fv.length;j++){if(!fv[j].paused&&fv[j].readyState>=2)return true;}\n"
+                  + "      }catch(e){}}\n"
+                  + "    }catch(e){}\n"
+                  + "    return false;\n"
+                  + "  }\n"
                   + "  function _scan(doc){\n"
                   + "    if(!doc)return '';\n"
                   + "    for(var i=0;i<_sels.length;i++){\n"
-                  + "      try{\n"
-                  + "        var els=doc.querySelectorAll(_sels[i]);\n"
-                  + "        for(var j=0;j<els.length;j++){\n"
-                  + "          var el=els[j];\n"
+                  + "      try{var els=doc.querySelectorAll(_sels[i]);\n"
+                  + "        for(var j=0;j<els.length;j++){var el=els[j];\n"
                   + "          if(el&&el.offsetParent!==null){\n"
                   + "            var t=(el.innerText||el.textContent||'').trim();\n"
                   + "            if(_ok(t))return t;\n"
@@ -1330,36 +1349,28 @@ jobs:
                   + "    }return '';\n"
                   + "  }\n"
                   + "  function _scanAll(){\n"
+                  // GUARD: không đọc nội dung web khi không có video đang phát
+                  + "    if(!_hasVideo())return;\n"
                   + "    var f=_scan(document);\n"
                   + "    if(f){_show(f);return;}\n"
-                  + "    try{\n"
-                  + "      var iframes=document.querySelectorAll('iframe');\n"
-                  + "      for(var i=0;i<iframes.length;i++){\n"
-                  + "        try{\n"
-                  + "          var idoc=iframes[i].contentDocument||iframes[i].contentWindow.document;\n"
-                  + "          var g=_scan(idoc);\n"
-                  + "          if(g){_show(g);return;}\n"
-                  + "        }catch(e){}\n"
-                  + "      }\n"
+                  + "    try{var iframes=document.querySelectorAll('iframe');\n"
+                  + "      for(var i=0;i<iframes.length;i++){try{\n"
+                  + "        var idoc=iframes[i].contentDocument||iframes[i].contentWindow.document;\n"
+                  + "        var g=_scan(idoc);\n"
+                  + "        if(g){_show(g);return;}\n"
+                  + "      }catch(e){}}\n"
                   + "    }catch(e){}\n"
                   + "  }\n"
-                  // MutationObserver cho trang chính
                   + "  new MutationObserver(_scanAll)\n"
                   + "    .observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});\n"
-                  // setInterval attach observer vào iframe khi chúng load xong
                   + "  setInterval(function(){\n"
-                  + "    try{\n"
-                  + "      document.querySelectorAll('iframe').forEach(function(fr){\n"
-                  + "        try{\n"
-                  + "          var fd=fr.contentDocument||fr.contentWindow.document;\n"
-                  + "          if(fd&&fd.body&&!fd._aioMO){\n"
-                  + "            fd._aioMO=true;\n"
-                  + "            new MutationObserver(_scanAll)\n"
-                  + "              .observe(fd.body,{childList:true,subtree:true,characterData:true});\n"
-                  + "          }\n"
-                  + "        }catch(e){}\n"
-                  + "      });\n"
-                  + "    }catch(e){}\n"
+                  + "    try{document.querySelectorAll('iframe').forEach(function(fr){\n"
+                  + "      try{var fd=fr.contentDocument||fr.contentWindow.document;\n"
+                  + "        if(fd&&fd.body&&!fd._aioMO){fd._aioMO=true;\n"
+                  + "          new MutationObserver(_scanAll)\n"
+                  + "            .observe(fd.body,{childList:true,subtree:true,characterData:true});}\n"
+                  + "      }catch(e){}\n"
+                  + "    });}catch(e){}\n"
                   + "  },1000);\n"
                   + "}\n"
                   + "})();";
