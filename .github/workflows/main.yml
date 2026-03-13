@@ -1149,6 +1149,32 @@ jobs:
                           savedCX = cursorView.getCX(); savedCY = cursorView.getCY();
                           startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                       }});
+                  // Debug button: bấm nút Refresh 3 lần liên tiếp để dump DOM
+                  findViewById(R.id.btnRefresh).setOnLongClickListener(new View.OnLongClickListener() {
+                      @Override public boolean onLongClick(View v) {
+                          String js2 = "(function(){"
+                              + "var res=[];"
+                              + "var all=document.querySelectorAll('p,span,div');"
+                              + "for(var i=0;i<all.length;i++){"
+                              + "  var el=all[i];"
+                              + "  var r=el.getBoundingClientRect();"
+                              + "  if(r.width<10||r.height<5)continue;"
+                              + "  var t=(el.innerText||'').trim();"
+                              + "  if(!t||t.length<3||t.length>150)continue;"
+                              + "  if(t.split('\\n').length>3)continue;"
+                              + "  var col=window.getComputedStyle(el).color||'';"
+                              + "  var fw=window.getComputedStyle(el).fontWeight||'';"
+                              + "  var pos=window.getComputedStyle(el).position||'';"
+                              + "  var top=Math.round(r.top);"
+                              + "  res.push(top+'|'+el.tagName+'.'+String(el.className).substring(0,15)+'|c:'+col.substring(0,20)+'|w:'+fw+'|p:'+pos+'|'+t.substring(0,30));"
+                              + "}"
+                              + "res.sort(function(a,b){return parseInt(a)-parseInt(b);});"
+                              + "window.AIO.onDebug(res.slice(-8).join('\\n'));"
+                              + "})();";
+                          webView.evaluateJavascript(js2, null);
+                          return true;
+                      }
+                  });
                   setupTts(); setupSpeech(); setupWebView(); webView.loadUrl(loadUrl);
               }
 
