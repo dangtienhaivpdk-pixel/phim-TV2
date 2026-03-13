@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="76" android:versionName="76.0">
+              package="com.allinone.app" android:versionCode="77" android:versionName="77.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited47",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited48",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1214,17 +1214,12 @@ jobs:
                       }
                       @Override public void onPageStarted(WebView v, String u, Bitmap f) {
                           progressBar.setVisibility(View.VISIBLE);
+                          // Reset JW hook flag khi chuyển trang mới
+                          v.evaluateJavascript("window._aioJwHook=false;window._aioSub=false;", null);
                       }
                       @Override public void onPageFinished(WebView v, String u) {
                           progressBar.setVisibility(View.GONE);
                           injectJs(v);
-                          handler.post(new Runnable() {
-                              @Override public void run() {
-                                  android.widget.Toast.makeText(MainActivity.this,
-                                      "JS injected: " + u.substring(0, Math.min(u.length(), 40)),
-                                      android.widget.Toast.LENGTH_SHORT).show();
-                              }
-                          });
                           // Re-inject định kỳ - player load sau trang chính
                           handler.postDelayed(new Runnable() { @Override public void run() { injectJs(v); } }, 2000);
                           handler.postDelayed(new Runnable() { @Override public void run() { injectJs(v); } }, 5000);
@@ -1233,28 +1228,23 @@ jobs:
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
                           h.proceed();
                       }
-                      // Bắt file .vtt/.srt ở tầng Java - hoạt động với cross-origin iframe
+                      // Bắt network requests - tìm .vtt/.srt và m3u8 chứa sub
                       @Override public android.webkit.WebResourceResponse shouldInterceptRequest(
                               WebView v, android.webkit.WebResourceRequest r) {
                           if (r != null && r.getUrl() != null) {
-                              final String u2 = r.getUrl().toString().toLowerCase();
-                              // Log tất cả URL liên quan đến sub/caption/track
-                              if (u2.contains(".vtt") || u2.contains(".srt")
-                                      || u2.contains("subtitle") || u2.contains("caption")
-                                      || u2.contains("/track") || u2.contains("text_track")) {
-                                  handler.post(new Runnable() {
-                                      @Override public void run() {
-                                          android.widget.Toast.makeText(MainActivity.this,
-                                              "SUB-URL: " + u2.substring(Math.max(0, u2.length()-50)),
-                                              android.widget.Toast.LENGTH_LONG).show();
-                                      }
+                              final String u2 = r.getUrl().toString();
+                              final String u2l = u2.toLowerCase();
+                              // Bắt trực tiếp .vtt/.srt
+                              if (u2l.contains(".vtt") || u2l.contains(".srt")) {
+                                  edgeExec.execute(new Runnable() {
+                                      @Override public void run() { fetchAndParseSub(u2); }
                                   });
-                                  if (u2.contains(".vtt") || u2.contains(".srt")) {
-                                      final String u3 = r.getUrl().toString();
-                                      edgeExec.execute(new Runnable() {
-                                          @Override public void run() { fetchAndParseSub(u3); }
-                                      });
-                                  }
+                              }
+                              // Bắt m3u8 master playlist - parse tìm subtitle track URL
+                              else if (u2l.contains(".m3u8") && u2l.contains("rophim")) {
+                                  edgeExec.execute(new Runnable() {
+                                      @Override public void run() { fetchM3u8ForSub(u2); }
+                                  });
                               }
                           }
                           return null;
@@ -1313,48 +1303,29 @@ jobs:
                   + "  (document.head||document.documentElement).appendChild(_s);}\n"
                   + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
                   // Sub overlay - CHỈ đọc khi có video đang phát
-                  // Hook rophim - bật caption JW Player và đọc text
+                  // Bật JW caption nếu có, không debug
                   + "if(!window._aioJwHook&&location.hostname.indexOf('rophim')>-1){window._aioJwHook=true;\n"
-                  // Thử bật caption sau khi JW Player ready
-                  + "  var _jwWait=setInterval(function(){\n"
+                  + "  var _jwW=setInterval(function(){\n"
                   + "    try{\n"
                   + "      var jw=window.jwplayer&&window.jwplayer();\n"
                   + "      if(!jw||!jw.getState||jw.getState()==='idle')return;\n"
-                  + "      clearInterval(_jwWait);\n"
-                  + "      try{window.AIO.onDebug('JW ready, enabling captions...');}catch(e){}\n"
-                  // Lấy danh sách caption tracks
-                  + "      var tracks=jw.getCaptionsList();\n"
-                  + "      try{window.AIO.onDebug('tracks:'+JSON.stringify(tracks).substring(0,150));}catch(e){}\n"
-                  // Bật track đầu tiên (index 1 = Vietsub, 0 = Off)
-                  + "      if(tracks&&tracks.length>1){jw.setCurrentCaptions(1);try{window.AIO.onDebug('captions ON track 1');}catch(e){}}\n"
-                  // Poll getCurrentCaptions text mỗi 300ms
-                  + "      var _lastC='';\n"
+                  + "      clearInterval(_jwW);\n"
+                  + "      var trs=jw.getCaptionsList();\n"
+                  + "      if(trs&&trs.length>1)jw.setCurrentCaptions(1);\n"
+                  + "      var _lj='';\n"
                   + "      setInterval(function(){\n"
                   + "        try{\n"
                   + "          var ci=jw.getCurrentCaptions();\n"
                   + "          if(ci<=0)return;\n"
-                  + "          var trs=jw.getCaptionsList();\n"
-                  + "          if(!trs||!trs[ci])return;\n"
-                  // Lấy text caption hiện tại từ DOM JW Player (canvas render nhưng data vẫn trong DOM ẩn)
-                  + "          var cues=document.querySelectorAll('.jw-captions-window,.jw-text-track-cue,.jw-captions-item');\n"
-                  + "          for(var i=0;i<cues.length;i++){\n"
-                  + "            var t=(cues[i].textContent||'').trim();\n"
-                  + "            if(t&&t!==_lastC&&t.length>1){\n"
-                  + "              _lastC=t;_show(t);\n"
+                  + "          var tr=(jw.getCaptionsList()||[])[ci];\n"
+                  + "          if(!tr||!tr.data)return;\n"
+                  + "          var pos=jw.getPosition();\n"
+                  + "          for(var j=0;j<tr.data.length;j++){\n"
+                  + "            var c=tr.data[j];\n"
+                  + "            if(pos>=c.begin&&pos<c.end){\n"
+                  + "              var t=(c.text||'').replace(/<[^>]*>/g,'').trim();\n"
+                  + "              if(t&&t!==_lj){_lj=t;_show(t,(c.end-c.begin)*1000);}\n"
                   + "              return;\n"
-                  + "            }\n"
-                  + "          }\n"
-                  // Thử lấy từ track data trực tiếp
-                  + "          var tr=trs[ci];\n"
-                  + "          if(tr&&tr.data&&tr.data.length>0){\n"
-                  + "            var pos=jw.getPosition();\n"
-                  + "            for(var j=0;j<tr.data.length;j++){\n"
-                  + "              var c=tr.data[j];\n"
-                  + "              if(pos>=c.begin&&pos<c.end){\n"
-                  + "                var txt=(c.text||'').replace(/<[^>]*>/g,'').trim();\n"
-                  + "                if(txt&&txt!==_lastC){_lastC=txt;_show(txt,(c.end-c.begin)*1000);}\n"
-                  + "                return;\n"
-                  + "              }\n"
                   + "            }\n"
                   + "          }\n"
                   + "        }catch(ex){}\n"
@@ -1651,6 +1622,60 @@ jobs:
                       .replace("\n", "\\n")
                       .replace("\r", "");
                   webView.evaluateJavascript("if(window._pvtt)window._pvtt('" + escaped + "');", null);
+              }
+
+              // Tải m3u8 master, tìm subtitle URI, rồi tải vtt
+              private void fetchM3u8ForSub(final String m3u8Url) {
+                  // Chỉ xử lý master playlist (ngắn, chứa #EXT-X-MEDIA:TYPE=SUBTITLES)
+                  java.net.HttpURLConnection conn = null;
+                  try {
+                      java.net.URL u = new java.net.URL(m3u8Url);
+                      conn = (java.net.HttpURLConnection) u.openConnection();
+                      conn.setConnectTimeout(5000); conn.setReadTimeout(8000);
+                      conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+                      if (conn.getResponseCode() != 200) return;
+                      java.io.BufferedReader br = new java.io.BufferedReader(
+                          new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+                      StringBuilder sb = new StringBuilder();
+                      String line;
+                      while ((line = br.readLine()) != null) { sb.append(line).append("\n"); }
+                      br.close();
+                      String m3u8 = sb.toString();
+                      // Tìm SUBTITLES URI trong master playlist
+                      // #EXT-X-MEDIA:TYPE=SUBTITLES,...,URI="..."
+                      String subUri = null;
+                      String[] lines2 = m3u8.split("\n");
+                      for (String ln : lines2) {
+                          if (ln.contains("TYPE=SUBTITLES") || ln.contains("TYPE=CLOSED-CAPTIONS")) {
+                              int ui = ln.indexOf("URI=\"");
+                              if (ui >= 0) {
+                                  int end = ln.indexOf("\"", ui + 5);
+                                  if (end > ui + 5) { subUri = ln.substring(ui + 5, end); break; }
+                              }
+                          }
+                          // Tìm dòng .vtt hoặc .srt trực tiếp
+                          if ((ln.trim().endsWith(".vtt") || ln.trim().endsWith(".srt")) && !ln.startsWith("#")) {
+                              subUri = ln.trim(); break;
+                          }
+                      }
+                      if (subUri != null) {
+                          // Resolve relative URL
+                          if (!subUri.startsWith("http")) {
+                              java.net.URL base = new java.net.URL(m3u8Url);
+                              subUri = new java.net.URL(base, subUri).toString();
+                          }
+                          final String finalSubUri = subUri;
+                          handler.post(new Runnable() {
+                              @Override public void run() {
+                                  android.widget.Toast.makeText(MainActivity.this,
+                                      "M3U8 sub found: ..." + finalSubUri.substring(Math.max(0,finalSubUri.length()-40)),
+                                      android.widget.Toast.LENGTH_LONG).show();
+                              }
+                          });
+                          fetchAndParseSub(finalSubUri);
+                      }
+                  } catch (Exception e) { /* ignore */ }
+                  finally { if (conn != null) conn.disconnect(); }
               }
 
               // ── TTS ────────────────────────────────────────────────────────────────
