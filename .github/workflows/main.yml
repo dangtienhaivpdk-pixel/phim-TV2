@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="77" android:versionName="77.0">
+              package="com.allinone.app" android:versionCode="78" android:versionName="78.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited48",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited49",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1241,7 +1241,7 @@ jobs:
                                   });
                               }
                               // Bắt m3u8 master playlist - parse tìm subtitle track URL
-                              else if (u2l.contains(".m3u8") && u2l.contains("rophim")) {
+                              else if (u2l.contains(".m3u8")) {
                                   edgeExec.execute(new Runnable() {
                                       @Override public void run() { fetchM3u8ForSub(u2); }
                                   });
@@ -2022,6 +2022,7 @@ jobs:
               private void clickAtBarOrWeb() {
                   wakeC(); stopEdge();
                   float sx = cursorView.getCX(), sy = cursorView.getCY();
+                  // Nếu bar đang hiện, kiểm tra click vào nút bar
                   if (barVisible) {
                       int[] ids = {R.id.btnHome, R.id.btnWebBack, R.id.btnWebForward, R.id.btnRefresh, R.id.btnSettingsWeb};
                       for (int id : ids) {
@@ -2033,6 +2034,25 @@ jobs:
                           }
                       }
                   }
+                  // Kiểm tra có video đang chạy không - nếu cursor ở vùng trên (video area) thì play/pause
+                  int screenH = getResources().getDisplayMetrics().heightPixels;
+                  if (sy < screenH * 0.85f) {
+                      // Thử play/pause video trước
+                      webView.evaluateJavascript(
+                          "(function(){var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();return true;}return false;})()",
+                          new android.webkit.ValueCallback<String>() {
+                              @Override public void onReceiveValue(String val) {
+                                  // Nếu không có video element (JW Player canvas), dùng JW API
+                                  if ("false".equals(val) || val == null) {
+                                      webView.evaluateJavascript(
+                                          "try{var jw=jwplayer();if(jw){var s=jw.getState();if(s==='playing')jw.pause();else jw.play();}}catch(e){}",
+                                          null);
+                                  }
+                              }
+                          });
+                      return;
+                  }
+                  // Cursor ở bottom bar area - click bình thường
                   click();
               }
 
