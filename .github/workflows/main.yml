@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="70" android:versionName="70.0">
+              package="com.allinone.app" android:versionCode="71" android:versionName="71.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited41",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited42",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1323,33 +1323,39 @@ jobs:
                   + "      var jw=window.jwplayer&&window.jwplayer();\n"
                   + "      if(!jw||!jw.on)return;\n"
                   + "      clearInterval(_jwTimer);\n"
-                  // Hook event captionsList - lấy danh sách track
                   + "      try{window.AIO.onDebug('JW API found! hooking...');}catch(e){}\n"
-                  // Hook time event để đọc caption hiện tại theo currentTime
                   + "      jw.on('captionsList',function(e){\n"
-                  + "        try{window.AIO.onDebug('JW captions:'+JSON.stringify(e).substring(0,80));}catch(ex){}\n"
+                  + "        try{window.AIO.onDebug('JW captionsList:'+JSON.stringify(e).substring(0,120));}catch(ex){}\n"
                   + "      });\n"
-                  // captionsChanged event - fired khi sub thay đổi
-                  + "      jw.on('captionsChanged',function(e){\n"
+                  // Dump captionsList ngay lập tức sau 2s (sau khi video load xong)
+                  + "      setTimeout(function(){\n"
                   + "        try{\n"
-                  + "          var tracks=jw.getCaptionsList();\n"
-                  + "          var idx=jw.getCurrentCaptions();\n"
-                  + "          if(tracks&&tracks[idx]){\n"
-                  + "            try{window.AIO.onDebug('JW changed:'+JSON.stringify(tracks[idx]).substring(0,60));}catch(ex){}\n"
+                  + "          var cl=jw.getCaptionsList();\n"
+                  + "          var ci=jw.getCurrentCaptions();\n"
+                  + "          try{window.AIO.onDebug('JW tracks('+cl.length+') cur='+ci+': '+JSON.stringify(cl).substring(0,150));}catch(ex){}\n"
+                  // Thử lấy data của track hiện tại
+                  + "          if(cl&&cl.length>1){\n"
+                  + "            var tr=cl[1];\n"
+                  + "            try{window.AIO.onDebug('track[1] keys:'+Object.keys(tr).join(','));}catch(ex){}\n"
+                  + "            try{window.AIO.onDebug('track[1] data sample:'+JSON.stringify(tr).substring(0,200));}catch(ex){}\n"
                   + "          }\n"
-                  + "        }catch(ex){}\n"
-                  + "      });\n"
-                  // Hook time để lấy active caption text theo currentTime
+                  + "        }catch(ex){try{window.AIO.onDebug('JW err:'+ex.message);}catch(e2){}}\n"
+                  + "      },2000);\n"
                   + "      var _lastJwSub='';\n"
                   + "      jw.on('time',function(e){\n"
                   + "        try{\n"
                   + "          var ct=e.position;\n"
                   + "          var tracks=jw.getCaptionsList();\n"
                   + "          var idx=jw.getCurrentCaptions();\n"
-                  // idx=0 là "Off", tracks[1] trở đi là Vietsub/TM
                   + "          if(!tracks||idx<=0)return;\n"
                   + "          var track=tracks[idx];\n"
-                  + "          if(!track||!track.data)return;\n"
+                  + "          if(!track)return;\n"
+                  // Log cấu trúc track 1 lần để debug
+                  + "          if(!window._aioJwLogged){\n"
+                  + "            window._aioJwLogged=true;\n"
+                  + "            try{window.AIO.onDebug('track keys:'+Object.keys(track).join(',')+' data?'+(track.data?track.data.length:'no'));}catch(ex){}\n"
+                  + "          }\n"
+                  + "          if(!track.data)return;\n"
                   + "          for(var i=0;i<track.data.length;i++){\n"
                   + "            var c=track.data[i];\n"
                   + "            if(ct>=c.begin&&ct<c.end){\n"
