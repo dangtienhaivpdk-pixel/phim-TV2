@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="73" android:versionName="73.0">
+              package="com.allinone.app" android:versionCode="74" android:versionName="74.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited44",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited45",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1315,66 +1315,42 @@ jobs:
                   // Sub overlay - CHỈ đọc khi có video đang phát
                   // Hook rophim custom subtitle system
                   + "if(!window._aioJwHook){window._aioJwHook=true;\n"
-                  // Hook renderPlayer ngay lập tức trước khi nó chạy
-                  + "  var _origRender=window.renderPlayer;\n"
-                  + "  if(_origRender){\n"
-                  + "    window.renderPlayer=function(){\n"
-                  + "      try{window.AIO.onDebug('renderPlayer args:'+JSON.stringify(Array.prototype.slice.call(arguments)).substring(0,200));}catch(e){}\n"
-                  + "      return _origRender.apply(this,arguments);\n"
-                  + "    };\n"
-                  + "    try{window.AIO.onDebug('renderPlayer hooked!');}catch(e){}\n"
-                  + "  }\n"
-                  // Hook XHR để bắt m3u8 và vtt
+                  // Hook XHR ngay lập tức để bắt m3u8/vtt
                   + "  var _origOpen=XMLHttpRequest.prototype.open;\n"
                   + "  XMLHttpRequest.prototype.open=function(m,u){\n"
                   + "    var us=String(u||'');\n"
-                  + "    if(us.indexOf('.m3u8')>-1||us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1\n"
-                  + "       ||us.indexOf('subtitle')>-1||us.indexOf('caption')>-1||us.indexOf('track')>-1){\n"
-                  + "      try{window.AIO.onDebug('XHR:'+us.substring(0,100));}catch(e){}\n"
-                  + "      if(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1){\n"
-                  + "        this._subUrl=us;\n"
-                  + "        var _self=this;\n"
-                  + "        var _origOnLoad=this.onload;\n"
-                  + "        this.addEventListener('load',function(){\n"
-                  + "          try{\n"
-                  + "            var txt=_self.responseText||'';\n"
-                  + "            if(txt.indexOf('WEBVTT')>-1||txt.indexOf('-->')){\n"
-                  + "              try{window.AIO.onDebug('VTT via XHR! len='+txt.length);}catch(e){}\n"
-                  + "              if(window._pvtt)window._pvtt(txt);\n"
-                  + "            }\n"
-                  + "          }catch(e){}\n"
-                  + "        });\n"
-                  + "      }\n"
+                  + "    if(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1){\n"
+                  + "      try{window.AIO.onDebug('XHR-sub:'+us.substring(0,120));}catch(e){}\n"
+                  + "      var _self=this;\n"
+                  + "      this.addEventListener('load',function(){\n"
+                  + "        try{\n"
+                  + "          var txt=_self.responseText||'';\n"
+                  + "          if(txt.length>50&&window._pvtt){window._pvtt(txt);try{window.AIO.onDebug('VTT loaded! '+txt.length+'chars');}catch(e){}}\n"
+                  + "        }catch(e){}\n"
+                  + "      });\n"
                   + "    }\n"
                   + "    return _origOpen.apply(this,arguments);\n"
                   + "  };\n"
-                  // Hook fetch
-                  + "  if(window.fetch){\n"
-                  + "    var _origFetch=window.fetch;\n"
-                  + "    window.fetch=function(u,opts){\n"
-                  + "      var us=String(u||'');\n"
-                  + "      if(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1\n"
-                  + "         ||us.indexOf('subtitle')>-1||us.indexOf('caption')>-1){\n"
-                  + "        try{window.AIO.onDebug('fetch:'+us.substring(0,100));}catch(e){}\n"
-                  + "        return _origFetch.apply(this,arguments).then(function(resp){\n"
-                  + "          return resp.clone().text().then(function(txt){\n"
-                  + "            if(window._pvtt)window._pvtt(txt);\n"
-                  + "            return resp;\n"
-                  + "          });\n"
-                  + "        });\n"
-                  + "      }\n"
-                  + "      return _origFetch.apply(this,arguments);\n"
-                  + "    };\n"
-                  + "  }\n"
-                  // Sau 3s dump renderPlayer source để xem config
+                  // Dump renderPlayer source gốc (trước khi bị wrap)
                   + "  setTimeout(function(){\n"
                   + "    try{\n"
                   + "      if(window.renderPlayer){\n"
-                  + "        var src=window.renderPlayer.toString().substring(0,300);\n"
-                  + "        window.AIO.onDebug('renderPlayer src:'+src);\n"
+                  + "        var src=window.renderPlayer.toString();\n"
+                  // Tìm đoạn config chứa tracks/subtitle
+                  + "        var idx=src.indexOf('track');\n"
+                  + "        if(idx<0)idx=src.indexOf('subtitle');\n"
+                  + "        if(idx<0)idx=src.indexOf('caption');\n"
+                  + "        if(idx>-1)window.AIO.onDebug('rP track at:'+src.substring(Math.max(0,idx-20),idx+100));\n"
+                  + "        else window.AIO.onDebug('rP src(0-200):'+src.substring(0,200));\n"
                   + "      }\n"
-                  + "    }catch(e){}\n"
-                  + "  },3000);\n"
+                  // Tìm jwplayer config object
+                  + "      var jw=window.jwplayer&&window.jwplayer();\n"
+                  + "      if(jw){\n"
+                  + "        var cfg=jw.getConfig&&jw.getConfig();\n"
+                  + "        if(cfg)window.AIO.onDebug('jwCfg:'+JSON.stringify(cfg).substring(0,300));\n"
+                  + "      }\n"
+                  + "    }catch(e){window.AIO.onDebug('err:'+e.message);}\n"
+                  + "  },2000);\n"
                   + "}\n"
                   + "if(!window._aioSub){window._aioSub=true;\n"
                   + "  var _sd=document.createElement('div');\n"
