@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="67" android:versionName="67.0">
+              package="com.allinone.app" android:versionCode="68" android:versionName="68.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited38",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited39",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1237,18 +1237,24 @@ jobs:
                       @Override public android.webkit.WebResourceResponse shouldInterceptRequest(
                               WebView v, android.webkit.WebResourceRequest r) {
                           if (r != null && r.getUrl() != null) {
-                              final String u2 = r.getUrl().toString();
-                              if (u2.contains(".vtt") || u2.contains(".srt")) {
+                              final String u2 = r.getUrl().toString().toLowerCase();
+                              // Log tất cả URL liên quan đến sub/caption/track
+                              if (u2.contains(".vtt") || u2.contains(".srt")
+                                      || u2.contains("subtitle") || u2.contains("caption")
+                                      || u2.contains("/track") || u2.contains("text_track")) {
                                   handler.post(new Runnable() {
                                       @Override public void run() {
                                           android.widget.Toast.makeText(MainActivity.this,
-                                              "VTT: " + u2.substring(Math.max(0,u2.length()-40)),
+                                              "SUB-URL: " + u2.substring(Math.max(0, u2.length()-50)),
                                               android.widget.Toast.LENGTH_LONG).show();
                                       }
                                   });
-                                  edgeExec.execute(new Runnable() {
-                                      @Override public void run() { fetchAndParseSub(u2); }
-                                  });
+                                  if (u2.contains(".vtt") || u2.contains(".srt")) {
+                                      final String u3 = r.getUrl().toString();
+                                      edgeExec.execute(new Runnable() {
+                                          @Override public void run() { fetchAndParseSub(u3); }
+                                      });
+                                  }
                               }
                           }
                           return null;
