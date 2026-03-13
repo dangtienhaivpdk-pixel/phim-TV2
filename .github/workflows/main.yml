@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="66" android:versionName="66.0">
+              package="com.allinone.app" android:versionCode="67" android:versionName="67.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited37",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited38",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1154,28 +1154,28 @@ jobs:
                       @Override public boolean onLongClick(View v) {
                           String js2 = "(function(){"
                               + "var res=[];"
-                              // Dump iframes
                               + "var frs=document.querySelectorAll('iframe');"
-                              + "res.push('=IFRAMES('+frs.length+'):');"
-                              + "for(var i=0;i<frs.length;i++){"
-                              + "  var fr=frs[i];"
-                              + "  var r=fr.getBoundingClientRect();"
-                              + "  res.push('  '+fr.src.substring(0,60)+' ['+Math.round(r.width)+'x'+Math.round(r.height)+']');"
-                              + "}"
-                              // Dump visible elements ở vị trí sub (top 50-95% màn hình)
-                              + "var vh=window.innerHeight||720;"
-                              + "res.push('=ELEMENTS top>'+(vh*0.5|0)+':');"
+                              + "res.push('IFRAMES('+frs.length+'):');"
+                              + "for(var i=0;i<frs.length;i++)"
+                              + "  res.push(frs[i].src.substring(0,50));"
+                              // Dump tất cả elements có text ngắn (có thể là sub)
                               + "var all=document.querySelectorAll('p,span,div');"
+                              + "var vh=window.innerHeight||720;"
                               + "for(var i=0;i<all.length;i++){"
                               + "  var el=all[i];"
-                              + "  var r=el.getBoundingClientRect();"
-                              + "  if(r.top<vh*0.5||r.width<10||r.height<5)continue;"
                               + "  var t=(el.innerText||'').trim();"
-                              + "  if(!t||t.length<2||t.length>100)continue;"
-                              + "  if(t.split('\\n').length>2)continue;"
+                              // Lọc text ngắn 2-80 ký tự, 1 dòng
+                              + "  if(!t||t.length<2||t.length>80)continue;"
+                              + "  if(t.indexOf('\\n')>-1)continue;"
+                              + "  var r=el.getBoundingClientRect();"
+                              + "  if(r.width<20||r.height<5)continue;"
                               + "  var st=window.getComputedStyle(el);"
-                              + "  res.push(Math.round(r.top)+'|'+el.tagName+'.'+String(el.className).substring(0,20)+'|'+st.color.substring(0,18)+'|w:'+st.fontWeight+'|'+t.substring(0,35));"
+                              + "  var top=Math.round(r.top);"
+                              // Chỉ lấy elements trong vùng video (top 100-600px)
+                              + "  if(top<50||top>vh*0.85)continue;"
+                              + "  res.push(top+'|'+el.tagName+'.'+String(el.className).substring(0,25)+'|'+t.substring(0,40));"
                               + "}"
+                              + "if(res.length<=2)res.push('(no elements in video area)');"
                               + "window.AIO.onDebug(res.join('\\n'));"
                               + "})();";
                           webView.evaluateJavascript(js2, null);
