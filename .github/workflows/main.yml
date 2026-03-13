@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="74" android:versionName="74.0">
+              package="com.allinone.app" android:versionCode="76" android:versionName="76.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited45",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited47",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1313,44 +1313,54 @@ jobs:
                   + "  (document.head||document.documentElement).appendChild(_s);}\n"
                   + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
                   // Sub overlay - CHỈ đọc khi có video đang phát
-                  // Hook rophim custom subtitle system
-                  + "if(!window._aioJwHook){window._aioJwHook=true;\n"
-                  // Hook XHR ngay lập tức để bắt m3u8/vtt
-                  + "  var _origOpen=XMLHttpRequest.prototype.open;\n"
-                  + "  XMLHttpRequest.prototype.open=function(m,u){\n"
-                  + "    var us=String(u||'');\n"
-                  + "    if(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1){\n"
-                  + "      try{window.AIO.onDebug('XHR-sub:'+us.substring(0,120));}catch(e){}\n"
-                  + "      var _self=this;\n"
-                  + "      this.addEventListener('load',function(){\n"
-                  + "        try{\n"
-                  + "          var txt=_self.responseText||'';\n"
-                  + "          if(txt.length>50&&window._pvtt){window._pvtt(txt);try{window.AIO.onDebug('VTT loaded! '+txt.length+'chars');}catch(e){}}\n"
-                  + "        }catch(e){}\n"
-                  + "      });\n"
-                  + "    }\n"
-                  + "    return _origOpen.apply(this,arguments);\n"
-                  + "  };\n"
-                  // Dump renderPlayer source gốc (trước khi bị wrap)
-                  + "  setTimeout(function(){\n"
+                  // Hook rophim - bật caption JW Player và đọc text
+                  + "if(!window._aioJwHook&&location.hostname.indexOf('rophim')>-1){window._aioJwHook=true;\n"
+                  // Thử bật caption sau khi JW Player ready
+                  + "  var _jwWait=setInterval(function(){\n"
                   + "    try{\n"
-                  + "      if(window.renderPlayer){\n"
-                  + "        var src=window.renderPlayer.toString();\n"
-                  // Tìm đoạn config chứa tracks/subtitle
-                  + "        var idx=src.indexOf('track');\n"
-                  + "        if(idx<0)idx=src.indexOf('subtitle');\n"
-                  + "        if(idx<0)idx=src.indexOf('caption');\n"
-                  + "        if(idx>-1)window.AIO.onDebug('rP track at:'+src.substring(Math.max(0,idx-20),idx+100));\n"
-                  + "        else window.AIO.onDebug('rP src(0-200):'+src.substring(0,200));\n"
-                  + "      }\n"
-                  // Tìm jwplayer config object
                   + "      var jw=window.jwplayer&&window.jwplayer();\n"
-                  + "      if(jw){\n"
-                  + "        var cfg=jw.getConfig&&jw.getConfig();\n"
-                  + "        if(cfg)window.AIO.onDebug('jwCfg:'+JSON.stringify(cfg).substring(0,300));\n"
-                  + "      }\n"
-                  + "    }catch(e){window.AIO.onDebug('err:'+e.message);}\n"
-                  + "  },2000);\n"
+                  + "      if(!jw||!jw.getState||jw.getState()==='idle')return;\n"
+                  + "      clearInterval(_jwWait);\n"
+                  + "      try{window.AIO.onDebug('JW ready, enabling captions...');}catch(e){}\n"
+                  // Lấy danh sách caption tracks
+                  + "      var tracks=jw.getCaptionsList();\n"
+                  + "      try{window.AIO.onDebug('tracks:'+JSON.stringify(tracks).substring(0,150));}catch(e){}\n"
+                  // Bật track đầu tiên (index 1 = Vietsub, 0 = Off)
+                  + "      if(tracks&&tracks.length>1){jw.setCurrentCaptions(1);try{window.AIO.onDebug('captions ON track 1');}catch(e){}}\n"
+                  // Poll getCurrentCaptions text mỗi 300ms
+                  + "      var _lastC='';\n"
+                  + "      setInterval(function(){\n"
+                  + "        try{\n"
+                  + "          var ci=jw.getCurrentCaptions();\n"
+                  + "          if(ci<=0)return;\n"
+                  + "          var trs=jw.getCaptionsList();\n"
+                  + "          if(!trs||!trs[ci])return;\n"
+                  // Lấy text caption hiện tại từ DOM JW Player (canvas render nhưng data vẫn trong DOM ẩn)
+                  + "          var cues=document.querySelectorAll('.jw-captions-window,.jw-text-track-cue,.jw-captions-item');\n"
+                  + "          for(var i=0;i<cues.length;i++){\n"
+                  + "            var t=(cues[i].textContent||'').trim();\n"
+                  + "            if(t&&t!==_lastC&&t.length>1){\n"
+                  + "              _lastC=t;_show(t);\n"
+                  + "              return;\n"
+                  + "            }\n"
+                  + "          }\n"
+                  // Thử lấy từ track data trực tiếp
+                  + "          var tr=trs[ci];\n"
+                  + "          if(tr&&tr.data&&tr.data.length>0){\n"
+                  + "            var pos=jw.getPosition();\n"
+                  + "            for(var j=0;j<tr.data.length;j++){\n"
+                  + "              var c=tr.data[j];\n"
+                  + "              if(pos>=c.begin&&pos<c.end){\n"
+                  + "                var txt=(c.text||'').replace(/<[^>]*>/g,'').trim();\n"
+                  + "                if(txt&&txt!==_lastC){_lastC=txt;_show(txt,(c.end-c.begin)*1000);}\n"
+                  + "                return;\n"
+                  + "              }\n"
+                  + "            }\n"
+                  + "          }\n"
+                  + "        }catch(ex){}\n"
+                  + "      },300);\n"
+                  + "    }catch(e){}\n"
+                  + "  },500);\n"
                   + "}\n"
                   + "if(!window._aioSub){window._aioSub=true;\n"
                   + "  var _sd=document.createElement('div');\n"
