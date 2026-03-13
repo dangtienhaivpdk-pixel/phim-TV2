@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="71" android:versionName="71.0">
+              package="com.allinone.app" android:versionCode="72" android:versionName="72.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited42",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited43",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1313,62 +1313,55 @@ jobs:
                   + "  (document.head||document.documentElement).appendChild(_s);}\n"
                   + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
                   // Sub overlay - CHỈ đọc khi có video đang phát
-                  // Hook JW Player API để bắt sub - chạy nhiều lần cho đến khi jwplayer có mặt
+                  // Hook rophim custom subtitle system
                   + "if(!window._aioJwHook){window._aioJwHook=true;\n"
                   + "  var _jwTry=0;\n"
                   + "  var _jwTimer=setInterval(function(){\n"
                   + "    _jwTry++;\n"
-                  + "    if(_jwTry>40){clearInterval(_jwTimer);return;}\n"
+                  + "    if(_jwTry>60){clearInterval(_jwTimer);return;}\n"
                   + "    try{\n"
-                  + "      var jw=window.jwplayer&&window.jwplayer();\n"
-                  + "      if(!jw||!jw.on)return;\n"
-                  + "      clearInterval(_jwTimer);\n"
-                  + "      try{window.AIO.onDebug('JW API found! hooking...');}catch(e){}\n"
-                  + "      jw.on('captionsList',function(e){\n"
-                  + "        try{window.AIO.onDebug('JW captionsList:'+JSON.stringify(e).substring(0,120));}catch(ex){}\n"
-                  + "      });\n"
-                  // Dump captionsList ngay lập tức sau 2s (sau khi video load xong)
-                  + "      setTimeout(function(){\n"
-                  + "        try{\n"
-                  + "          var cl=jw.getCaptionsList();\n"
-                  + "          var ci=jw.getCurrentCaptions();\n"
-                  + "          try{window.AIO.onDebug('JW tracks('+cl.length+') cur='+ci+': '+JSON.stringify(cl).substring(0,150));}catch(ex){}\n"
-                  // Thử lấy data của track hiện tại
-                  + "          if(cl&&cl.length>1){\n"
-                  + "            var tr=cl[1];\n"
-                  + "            try{window.AIO.onDebug('track[1] keys:'+Object.keys(tr).join(','));}catch(ex){}\n"
-                  + "            try{window.AIO.onDebug('track[1] data sample:'+JSON.stringify(tr).substring(0,200));}catch(ex){}\n"
+                  // Dump tất cả global variables có thể liên quan đến sub
+                  + "      if(_jwTry===10){\n"
+                  + "        var gkeys=[];\n"
+                  + "        for(var k in window){\n"
+                  + "          try{\n"
+                  + "            var v2=window[k];\n"
+                  + "            var ks=String(k).toLowerCase();\n"
+                  + "            if(/sub|caption|lyric|track|player|video/i.test(ks)&&ks!=='subtitles')gkeys.push(k);\n"
+                  + "          }catch(e){}\n"
+                  + "        }\n"
+                  + "        try{window.AIO.onDebug('globals:'+gkeys.join(',').substring(0,150));}catch(e){}\n"
+                  + "      }\n"
+                  // Tìm canvas elements (rophim vẽ sub lên canvas)
+                  + "      if(_jwTry===15){\n"
+                  + "        var cvs=document.querySelectorAll('canvas');\n"
+                  + "        try{window.AIO.onDebug('canvas('+cvs.length+') video('+document.querySelectorAll('video').length+')');}catch(e){}\n"
+                  // Tìm element custom sub của rophim - thường là div với style position absolute
+                  + "        var subs=document.querySelectorAll('[class*=\"sub\"],[class*=\"lyric\"],[class*=\"caption\"],[id*=\"sub\"]');\n"
+                  + "        var subInfo=[];\n"
+                  + "        for(var i=0;i<subs.length;i++)subInfo.push(subs[i].tagName+'.'+subs[i].className.substring(0,20));\n"
+                  + "        try{window.AIO.onDebug('sub-els:'+subInfo.join('|').substring(0,150));}catch(e){}\n"
+                  + "      }\n"
+                  // Hook XMLHttpRequest để bắt sub request
+                  + "      if(_jwTry===1){\n"
+                  + "        var _origOpen=XMLHttpRequest.prototype.open;\n"
+                  + "        XMLHttpRequest.prototype.open=function(m,u){\n"
+                  + "          if(u&&(u.indexOf('.vtt')>-1||u.indexOf('.srt')>-1||u.indexOf('subtitle')>-1||u.indexOf('caption')>-1)){\n"
+                  + "            try{window.AIO.onDebug('XHR:'+u.substring(0,80));}catch(e){}\n"
                   + "          }\n"
-                  + "        }catch(ex){try{window.AIO.onDebug('JW err:'+ex.message);}catch(e2){}}\n"
-                  + "      },2000);\n"
-                  + "      var _lastJwSub='';\n"
-                  + "      jw.on('time',function(e){\n"
-                  + "        try{\n"
-                  + "          var ct=e.position;\n"
-                  + "          var tracks=jw.getCaptionsList();\n"
-                  + "          var idx=jw.getCurrentCaptions();\n"
-                  + "          if(!tracks||idx<=0)return;\n"
-                  + "          var track=tracks[idx];\n"
-                  + "          if(!track)return;\n"
-                  // Log cấu trúc track 1 lần để debug
-                  + "          if(!window._aioJwLogged){\n"
-                  + "            window._aioJwLogged=true;\n"
-                  + "            try{window.AIO.onDebug('track keys:'+Object.keys(track).join(',')+' data?'+(track.data?track.data.length:'no'));}catch(ex){}\n"
+                  + "          return _origOpen.apply(this,arguments);\n"
+                  + "        };\n"
+                  // Hook fetch để bắt sub request
+                  + "        var _origFetch=window.fetch;\n"
+                  + "        window.fetch=function(u,opts){\n"
+                  + "          var us=String(u);\n"
+                  + "          if(us.indexOf('.vtt')>-1||us.indexOf('.srt')>-1||us.indexOf('subtitle')>-1||us.indexOf('caption')>-1){\n"
+                  + "            try{window.AIO.onDebug('fetch:'+us.substring(0,80));}catch(e){}\n"
                   + "          }\n"
-                  + "          if(!track.data)return;\n"
-                  + "          for(var i=0;i<track.data.length;i++){\n"
-                  + "            var c=track.data[i];\n"
-                  + "            if(ct>=c.begin&&ct<c.end){\n"
-                  + "              var txt=(c.text||'').replace(/<[^>]*>/g,'').trim();\n"
-                  + "              if(txt&&txt!==_lastJwSub){\n"
-                  + "                _lastJwSub=txt;\n"
-                  + "                _show(txt,(c.end-c.begin)*1000);\n"
-                  + "              }\n"
-                  + "              return;\n"
-                  + "            }\n"
-                  + "          }\n"
-                  + "        }catch(ex){}\n"
-                  + "      });\n"
+                  + "          return _origFetch.apply(this,arguments);\n"
+                  + "        };\n"
+                  + "        try{window.AIO.onDebug('XHR+fetch hooked');}catch(e){}\n"
+                  + "      }\n"
                   + "    }catch(e){}\n"
                   + "  },500);\n"
                   + "}\n"
