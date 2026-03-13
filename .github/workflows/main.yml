@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="79" android:versionName="79.0">
+              package="com.allinone.app" android:versionCode="80" android:versionName="80.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited50",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited51",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1045,7 +1045,6 @@ jobs:
               private CursorView cursorView;
               private InputMethodManager imm;
               // TTS / Sub
-              private boolean ttsReady = false;
               private String lastSubText = "";
               private android.os.Handler subHandler = new android.os.Handler();
               private android.media.MediaPlayer edgePlayer = null;
@@ -1307,10 +1306,6 @@ jobs:
               // ── Key handling ───────────────────────────────────────────────────────
               @Override public boolean onKeyDown(int key, KeyEvent e) {
                   wakeC();
-                  if (voiceOverlay.getVisibility() == View.VISIBLE) {
-                      if (key == KeyEvent.KEYCODE_BACK) { hideVoice(); return true; }
-                      return true;
-                  }
                   int rep = e.getRepeatCount();
                   switch (key) {
                       case KeyEvent.KEYCODE_DPAD_UP:    moveCursor(0, -1, rep); return true;
@@ -1354,7 +1349,7 @@ jobs:
                           return true;
                       case KeyEvent.KEYCODE_SEARCH:
                       case KeyEvent.KEYCODE_VOICE_ASSIST:
-                          showVoice(); return true;
+                          return true;
                       case KeyEvent.KEYCODE_BACK:
                           if (dragMode) { dragMode = false; cursorView.setMode(CursorView.MODE_NORMAL); return true; }
                           if (webView.canGoBack()) { webView.goBack(); return true; }
@@ -1401,9 +1396,7 @@ jobs:
                   handler.removeCallbacksAndMessages(null);
                   subHandler.removeCallbacksAndMessages(null);
                   if (edgePlayer != null) { edgePlayer.stop(); edgePlayer.release(); edgePlayer = null; }
-                      if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
-                  if (speechRecognizer != null) speechRecognizer.destroy();
-                  super.onDestroy();
+                      super.onDestroy();
               }
           }
 
