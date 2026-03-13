@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="78" android:versionName="78.0">
+              package="com.allinone.app" android:versionCode="79" android:versionName="79.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited49",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited50",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -640,8 +640,7 @@ jobs:
           import android.view.ViewGroup;
           import android.view.WindowManager;
           import android.view.inputmethod.InputMethodManager;
-               import android.speech.tts.TextToSpeech;
-          import android.widget.EditText;
+               import android.widget.EditText;
           import android.widget.FrameLayout;
           import android.widget.LinearLayout;
           import android.widget.ScrollView;
@@ -1017,10 +1016,6 @@ jobs:
           import android.os.Bundle;
           import android.os.Handler;
           import android.os.SystemClock;
-          import android.speech.RecognitionListener;
-          import android.speech.RecognizerIntent;
-          import android.speech.SpeechRecognizer;
-          import android.speech.tts.TextToSpeech;
           import android.app.Activity;
           import android.util.DisplayMetrics;
           import android.view.KeyEvent;
@@ -1048,16 +1043,12 @@ jobs:
               private RelativeLayout voiceOverlay;
               private TextView voiceResult;
               private CursorView cursorView;
-              private SpeechRecognizer speechRecognizer;
               private InputMethodManager imm;
               // TTS / Sub
-              private TextToSpeech tts;
               private boolean ttsReady = false;
               private String lastSubText = "";
               private android.os.Handler subHandler = new android.os.Handler();
               private android.media.MediaPlayer edgePlayer = null;
-              private java.util.concurrent.ExecutorService edgeExec =
-                  java.util.concurrent.Executors.newSingleThreadExecutor();
               private static final String[] EDGE_VOICES = {
                   "vi-VN-HoaiMyNeural",
                   "vi-VN-NamMinhNeural",
@@ -1182,7 +1173,7 @@ jobs:
                           return true;
                       }
                   });
-                  setupTts(); setupSpeech(); setupWebView(); webView.loadUrl(loadUrl);
+                  setupWebView(); webView.loadUrl(loadUrl);
               }
 
               // ── WebView setup ──────────────────────────────────────────────────────
@@ -1228,25 +1219,8 @@ jobs:
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
                           h.proceed();
                       }
-                      // Bắt network requests - tìm .vtt/.srt và m3u8 chứa sub
                       @Override public android.webkit.WebResourceResponse shouldInterceptRequest(
                               WebView v, android.webkit.WebResourceRequest r) {
-                          if (r != null && r.getUrl() != null) {
-                              final String u2 = r.getUrl().toString();
-                              final String u2l = u2.toLowerCase();
-                              // Bắt trực tiếp .vtt/.srt
-                              if (u2l.contains(".vtt") || u2l.contains(".srt")) {
-                                  edgeExec.execute(new Runnable() {
-                                      @Override public void run() { fetchAndParseSub(u2); }
-                                  });
-                              }
-                              // Bắt m3u8 master playlist - parse tìm subtitle track URL
-                              else if (u2l.contains(".m3u8")) {
-                                  edgeExec.execute(new Runnable() {
-                                      @Override public void run() { fetchM3u8ForSub(u2); }
-                                  });
-                              }
-                          }
                           return null;
                       }
                   });
@@ -1268,15 +1242,10 @@ jobs:
               }
 
               // ── JS inject ──────────────────────────────────────────────────────────
+              // ── JS inject ──────────────────────────────────────────────────────────
               private void injectJs(WebView v) {
-                  SharedPreferences ip = getSharedPreferences(SettingsActivity.PREF, Context.MODE_PRIVATE);
-                  final boolean subOn = ip.getBoolean(SettingsActivity.KEY_SUB, true);
-                  v.evaluateJavascript("window._aioSubOn=" + subOn + ";", null);
                   String js = "(function(){\n"
-                  + "document.documentElement.style.scrollBehavior='auto';\n"
-                  + "if(document.body){document.body.style.overscrollBehavior='none';}\n"
-                  + "document.querySelectorAll('a[target=\"_blank\"]').forEach(function(a){a.target='_self';});\n"
-                  + "window.open=function(u){if(u)location.href=u;return null;};\n"
+                  // ── Keyboard / input bridge (chỉ đăng ký 1 lần) ──────────────────
                   + "if(!window._aioKbd){window._aioKbd=true;\n"
                   + "  document.addEventListener('focusin',function(e){\n"
                   + "    var t=e.target;\n"
@@ -1287,263 +1256,36 @@ jobs:
                   + "    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))\n"
                   + "      {try{window.AIO.onInputBlur();}catch(ex){}}},true);\n"
                   + "}\n"
-                  + "try{Object.defineProperty(window,'innerWidth',{configurable:true,\n"
-                  + "  get:function(){return Math.max(screen.width||1920,screen.height||1080)+1;}});\n"
-                  + "Object.defineProperty(window,'innerHeight',{configurable:true,\n"
-                  + "  get:function(){return Math.min(screen.width||1920,screen.height||1080)-1;}});}catch(ex){}\n"
+                  // ── Performance tweaks ────────────────────────────────────────────
+                  + "document.documentElement.style.scrollBehavior='auto';\n"
+                  + "if(document.body)document.body.style.overscrollBehavior='none';\n"
+                  + "document.querySelectorAll('a[target=\"_blank\"]').forEach(function(a){a.target='_self';});\n"
+                  // ── Landscape spoof - fix vtvgo "xoay ngang màn hình" ─────────────
                   + "try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){\n"
-                  + "  return{type:'landscape-primary',angle:0,\n"
-                  + "    lock:function(){return Promise.resolve();},\n"
+                  + "  return{type:'landscape-primary',angle:0,lock:function(){return Promise.resolve();},\n"
                   + "    unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};\n"
                   + "}})}catch(ex){}\n"
                   + "try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(ex){}\n"
+                  // innerWidth/Height spoof
+                  + "try{\n"
+                  + "  var _w=Math.max(screen.width||1920,screen.height||1080);\n"
+                  + "  var _h=Math.min(screen.width||1920,screen.height||1080);\n"
+                  + "  Object.defineProperty(window,'innerWidth',{configurable:true,get:function(){return _w+1;}});\n"
+                  + "  Object.defineProperty(window,'innerHeight',{configurable:true,get:function(){return _h-1;}});\n"
+                  + "}catch(ex){}\n"
+                  // Ẩn popup xoay màn hình
                   + "if(!document.getElementById('_aioS')){\n"
                   + "  var _s=document.createElement('style');_s.id='_aioS';\n"
-                  + "  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"]{display:none!important;}';\n"
+                  + "  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],[class*=\"landscape-warning\"],[class*=\"screen-rotate\"],[id*=\"rotate\"]{display:none!important;}';\n"
                   + "  (document.head||document.documentElement).appendChild(_s);}\n"
                   + "try{window.dispatchEvent(new Event('resize'));}catch(ex){}\n"
-                  // Sub overlay - CHỈ đọc khi có video đang phát
-                  // Bật JW caption nếu có, không debug
-                  + "if(!window._aioJwHook&&location.hostname.indexOf('rophim')>-1){window._aioJwHook=true;\n"
-                  + "  var _jwW=setInterval(function(){\n"
-                  + "    try{\n"
-                  + "      var jw=window.jwplayer&&window.jwplayer();\n"
-                  + "      if(!jw||!jw.getState||jw.getState()==='idle')return;\n"
-                  + "      clearInterval(_jwW);\n"
-                  + "      var trs=jw.getCaptionsList();\n"
-                  + "      if(trs&&trs.length>1)jw.setCurrentCaptions(1);\n"
-                  + "      var _lj='';\n"
-                  + "      setInterval(function(){\n"
-                  + "        try{\n"
-                  + "          var ci=jw.getCurrentCaptions();\n"
-                  + "          if(ci<=0)return;\n"
-                  + "          var tr=(jw.getCaptionsList()||[])[ci];\n"
-                  + "          if(!tr||!tr.data)return;\n"
-                  + "          var pos=jw.getPosition();\n"
-                  + "          for(var j=0;j<tr.data.length;j++){\n"
-                  + "            var c=tr.data[j];\n"
-                  + "            if(pos>=c.begin&&pos<c.end){\n"
-                  + "              var t=(c.text||'').replace(/<[^>]*>/g,'').trim();\n"
-                  + "              if(t&&t!==_lj){_lj=t;_show(t,(c.end-c.begin)*1000);}\n"
-                  + "              return;\n"
-                  + "            }\n"
-                  + "          }\n"
-                  + "        }catch(ex){}\n"
-                  + "      },300);\n"
-                  + "    }catch(e){}\n"
-                  + "  },500);\n"
-                  + "}\n"
-                  + "if(!window._aioSub){window._aioSub=true;\n"
-                  + "  var _sd=document.createElement('div');\n"
-                  + "  _sd.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);max-width:90%;background:rgba(0,0,0,0.85);color:#ffe066;font-size:26px;font-weight:bold;padding:10px 24px;border-radius:10px;z-index:2147483647;text-align:center;pointer-events:none;display:none;line-height:1.4;';\n"
-                  + "  document.body.appendChild(_sd);\n"
-                  + "  var _ls='',_ht=null,_dt=null;\n"
-                  + "  function _ok(t){\n"
-                  + "    if(!t||t.length<3)return false;\n"
-                  // Lọc dòng timestamp: chứa --> hoặc chỉ gồm số:.,/khoảng trắng
-                  + "    if(t.indexOf('-->')>-1)return false;\n"
-                  + "    if(/^[\\d:\\.,\\s\\/]+$/.test(t))return false;\n"
-                  + "    var lc=0;\n"
-                  + "    for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);\n"
-                  + "      if((c>=65&&c<=90)||(c>=97&&c<=122)||(c>=192&&c<=696)||(c>=7680&&c<=7935))lc++;}\n"
-                  + "    return lc>=2;\n"
-                  + "  }\n"
-                  // _show(txt, dur): dur = thời gian hiện sub theo VTT (ms), không truyền thì tự tính
-                  + "  function _show(txt,dur){\n"
-                  + "    if(!txt||!_ok(txt))return;\n"
-                  // Blacklist các từ UI phổ biến
-                  + "    var bl=/^(chuy\u1ec3n t\u1eadp|t\u1eadp \\d|next|prev|play|pause|t\u1eaft|b\u1eadt|\u0111\u00f3ng|m\u1edf|skip|replay|loading)$/i;\n"
-                  + "    if(bl.test(txt.trim()))return;\n"
-                  + "    var n=txt.trim();\n"
-                  + "    if(n===_ls)return;\n"
-                  + "    _ls=n;\n"
-                  // Luôn gọi TTS (Java sẽ check KEY_SUB), chỉ hiện overlay nếu subOn
-                  + "    if(window._aioSubOn!==false){\n"
-                  + "      _sd.textContent=n;\n"
-                  + "      _sd.style.display='block';\n"
-                  + "    }\n"
-                  + "    if(_ht)clearTimeout(_ht);\n"
-                  + "    if(_dt)clearTimeout(_dt);\n"
-                  + "    _dt=setTimeout(function(){try{window.AIO.onSubText(n);}catch(e){}},80);\n"
-                  + "    var d=dur&&dur>500?dur:Math.max(3000,n.length*120);\n"
-                  + "    _ht=setTimeout(function(){_sd.style.display='none';_ls='';},d);\n"
-                  + "  }\n"
-                  // _pvtt: parse VTT, sync chính xác với video.currentTime
-                  + "  window._pvtt=function(raw){\n"
-                  + "    var cues=[],lines=raw.split('\\n'),s=0,e2=0,ct='';\n"
-                  + "    for(var i=0;i<lines.length;i++){\n"
-                  + "      var l=lines[i].trim();\n"
-                  // Bỏ qua dòng timestamp (có -->)
-                  + "      if(l.indexOf('-->')>-1){var pp=l.split('-->');s=_ts(pp[0]);e2=_ts(pp[1]);ct='';}\n"
-                  // Bỏ qua dòng số thứ tự cue và dòng rỗng
-                  + "      else if(l.length>0&&s>0&&isNaN(+l)&&l.indexOf('-->')<0){\n"
-                  // Lọc thêm: bỏ dòng có dạng 00:00:00 (timestamp thuần)
-                  + "        var clean=l.replace(/<[^>]*>/g,'').trim();\n"
-                  + "        if(clean.length>0&&!/^[\\d:\\.,\\s-->]+$/.test(clean))ct=ct+(ct?' ':'')+clean;\n"
-                  + "      }\n"
-                  + "      else if(l.length===0&&ct.length>0){cues.push({s:s,e:e2,t:ct});ct='';s=0;e2=0;}\n"
-                  + "    }\n"
-                  + "    if(ct.length>0&&s>0)cues.push({s:s,e:e2,t:ct});\n"
-                  + "    if(cues.length===0)return;\n"
-                  + "    window._aioCues=cues;\n"
-                  + "    if(window._aioSyncT)clearInterval(window._aioSyncT);\n"
-                  + "    window._aioSyncT=setInterval(function(){\n"
-                  + "      var vid=document.querySelector('video');\n"
-                  + "      if(!vid||vid.paused)return;\n"
-                  + "      var ct2=vid.currentTime;\n"
-                  + "      for(var j=0;j<cues.length;j++){\n"
-                  + "        if(ct2>=cues[j].s&&ct2<cues[j].e){\n"
-                  // Truyền dur = thời gian sub VTT
-                  + "          _show(cues[j].t,(cues[j].e-cues[j].s)*1000);\n"
-                  + "          return;\n"
-                  + "        }\n"
-                  + "      }\n"
-                  + "    },200);\n"
-                  + "  };\n"
-                  + "  function _ts(str){\n"
-                  + "    var p=str.replace(',','.').trim().split(':');\n"
-                  + "    var sec=parseFloat(p[p.length-1]||0);\n"
-                  + "    var min=parseFloat(p.length>=2?p[p.length-2]:0);\n"
-                  + "    var hr=parseFloat(p.length>=3?p[p.length-3]:0);\n"
-                  + "    return hr*3600+min*60+sec;\n"
-                  + "  }\n"
-                  // Auto-detect sub element: không cần biết trước selector
-                  + "  var _knownEl=null,_knownDoc=null;\n"
-                  + "  function _score(el){\n"
-                  + "    try{\n"
-                  + "      if(!el)return 0;\n"
-                  + "      var t=(el.innerText||el.textContent||'').trim();\n"
-                  + "      if(!_ok(t))return 0;\n"
-                  + "      if(t.length<2||t.length>300)return 0;\n"
-                  + "      try{if(window.getComputedStyle(el).display==='none')return 0;}catch(e){}\n"
-                  + "      var sc=0;\n"
-                  + "      var r=el.getBoundingClientRect();\n"
-                  + "      var vw=window.innerWidth||document.documentElement.clientWidth||1280;\n"
-                  + "      var vh=window.innerHeight||document.documentElement.clientHeight||720;\n"
-                  + "      if(r.width>0&&r.height>0){\n"
-                  + "        if(r.width>vw*0.98&&r.height>vh*0.5)return 0;\n"
-                  + "        if(r.top>vh*0.75)sc+=80;else if(r.top>vh*0.6)sc+=50;else if(r.top>vh*0.4)sc+=25;\n"
-                  + "        var cx=r.left+r.width/2;\n"
-                  + "        if(cx>vw*0.15&&cx<vw*0.85)sc+=25;\n"
-                  + "        if(r.width>vw*0.1&&r.width<vw*0.95)sc+=10;\n"
-                  + "      }\n"
-                  + "      var wc=t.split(/\\s+/).length;\n"
-                  + "      if(wc>=2&&wc<=20)sc+=20;else if(wc>20)sc-=10;\n"
-                  + "      try{var zi=parseInt(window.getComputedStyle(el).zIndex)||0;\n"
-                  + "        if(zi>100)sc+=20;else if(zi>5)sc+=10;}catch(e){}\n"
-                  + "      try{var col=window.getComputedStyle(el).color;\n"
-                  + "        if(col&&col.indexOf('255, 255, 255')>-1)sc+=25;}catch(e){}\n"
-                  + "      try{var fw=window.getComputedStyle(el).fontWeight;\n"
-                  + "        if(fw==='bold'||parseInt(fw)>=600)sc+=15;}catch(e){}\n"
-                  + "      try{var ts=window.getComputedStyle(el).textShadow;\n"
-                  + "        if(ts&&ts!=='none'&&ts!=='')sc+=20;}catch(e){}\n"
-                  + "      try{var pos=window.getComputedStyle(el).position;\n"
-                  + "        if(pos==='absolute'||pos==='fixed')sc+=15;}catch(e){}\n"
-                  + "      var nm=(el.className||'')+(el.id||'');\n"
-                  + "      if(/sub|caption|cue|lyric|track/i.test(nm))sc+=30;\n"
-                  + "      return sc;\n"
-                  + "    }catch(e){return 0;}\n"
-                  + "  }\n"
-                  + "  function _findBest(doc){\n"
-                  + "    if(!doc||!doc.body)return null;\n"
-                  + "    var best=null,bestSc=25;\n"
-                  + "    var all=doc.querySelectorAll('p,span,div,li');\n"
-                  + "    for(var i=0;i<all.length;i++){\n"
-                  + "      var sc=_score(all[i]);\n"
-                  + "      if(sc>bestSc){bestSc=sc;best=all[i];}\n"
-                  + "    }\n"
-                  + "    return best;\n"
-                  + "  }\n"
-                  // JW Player selectors - rophim dùng JW Player
-                  + "  var _jwSels=['.jw-text-track-cue','.jw-captions-item',\n"
-                  + "    '.jw-captions-text','.jw-caption',\n"
-                  + "    '[class*=\"jw-capt\"]','[class*=\"jw-sub\"]'];\n"
-                  + "  function _scanJw(doc){\n"
-                  + "    if(!doc)return '';\n"
-                  + "    for(var i=0;i<_jwSels.length;i++){\n"
-                  + "      try{\n"
-                  + "        var els=doc.querySelectorAll(_jwSels[i]);\n"
-                  + "        for(var j=0;j<els.length;j++){\n"
-                  + "          var t=(els[j].innerText||els[j].textContent||'').trim();\n"
-                  + "          if(_ok(t))return t;\n"
-                  + "        }\n"
-                  + "      }catch(e){}\n"
-                  + "    }return '';\n"
-                  + "  }\n"
-                  + "  function _scan(doc){\n"
-                  + "    if(!doc)return '';\n"
-                  // Ưu tiên JW Player selectors
-                  + "    var jw=_scanJw(doc);if(jw){try{window.AIO.onDebug('JW:'+jw.substring(0,30));}catch(e){}return jw;}\n"
-                  + "    if(_knownEl&&_knownDoc===doc){\n"
-                  + "      try{\n"
-                  + "        var ds=window.getComputedStyle(_knownEl).display;\n"
-                  + "        if(ds!=='none'){\n"
-                  + "          var kt=(_knownEl.innerText||_knownEl.textContent||'').trim();\n"
-                  + "          if(_ok(kt))return kt;\n"
-                  + "        }\n"
-                  + "        _knownEl=null;_knownDoc=null;\n"
-                  + "      }catch(e){_knownEl=null;_knownDoc=null;}\n"
-                  + "    }\n"
-                  + "    var best=_findBest(doc);\n"
-                  + "    if(best){\n"
-                  + "      _knownEl=best;_knownDoc=doc;\n"
-                  + "      var bt=(best.innerText||best.textContent||'').trim();\n"
-                  + "      try{window.AIO.onDebug('FOUND:'+best.tagName+'.'+String(best.className).substring(0,20)+'='+bt.substring(0,25));}catch(e){}\n"
-                  + "      return bt;\n"
-                  + "    }\n"
-                  + "    return '';\n"
-                  + "  }\n"
-                  + "  function _scanAll(){\n"
-                  + "    var f=_scan(document);\n"
-                  + "    if(f){_show(f);return;}\n"
-                  + "    try{\n"
-                  + "      var iframes=document.querySelectorAll('iframe');\n"
-                  + "      for(var i=0;i<iframes.length;i++){try{\n"
-                  + "        var idoc=iframes[i].contentDocument||iframes[i].contentWindow.document;\n"
-                  + "        var g=_scan(idoc);\n"
-                  + "        if(g){_show(g);return;}\n"
-                  + "      }catch(e){}}\n"
-                  + "    }catch(e){}\n"
-                  + "  }\n"
-                  + "  new MutationObserver(_scanAll)\n"
-                  + "    .observe(document.body||document.documentElement,{childList:true,subtree:true,characterData:true});\n"
-                  // Scan định kỳ 500ms - backup cho MutationObserver
-                  + "  setInterval(_scanAll,500);\n"
-                  + "  setInterval(function(){\n"
-                  + "    try{document.querySelectorAll('iframe').forEach(function(fr){\n"
-                  + "      try{var fd=fr.contentDocument||fr.contentWindow.document;\n"
-                  + "        if(fd&&fd.body&&!fd._aioMO){fd._aioMO=true;\n"
-                  + "          new MutationObserver(_scanAll)\n"
-                  + "            .observe(fd.body,{childList:true,subtree:true,characterData:true});}\n"
-                  + "      }catch(e){}\n"
-                  + "    });}catch(e){}\n"
-                  + "  },1000);\n"
-                  + "}\n"
                   + "})();";
                   v.evaluateJavascript(js, null);
               }
 
               // ── KbdBridge ──────────────────────────────────────────────────────────
+              // ── KbdBridge ──────────────────────────────────────────────────────────
               private class KbdBridge {
-                  @android.webkit.JavascriptInterface
-                  public void onDebug(final String msg) {
-                      handler.post(new Runnable() {
-                          @Override public void run() {
-                              android.widget.Toast.makeText(MainActivity.this,
-                                  msg, android.widget.Toast.LENGTH_LONG).show();
-                          }
-                      });
-                  }
-                  @android.webkit.JavascriptInterface
-                  public void onSubText(final String text) {
-                      handler.post(new Runnable() {
-                          @Override public void run() {
-                              android.widget.Toast.makeText(MainActivity.this,
-                                  "SUB: " + text, android.widget.Toast.LENGTH_SHORT).show();
-                              speakVi(text);
-                          }
-                      });
-                  }
                   @android.webkit.JavascriptInterface
                   public void onInputFocus() {
                       handler.post(new Runnable() {
@@ -1559,511 +1301,6 @@ jobs:
                               imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
                           }
                       });
-                  }
-              }
-
-              // ── Sub fetch (Java network layer, bypass cross-origin) ────────────────
-              private void fetchAndParseSub(final String url) {
-                  java.net.HttpURLConnection conn = null;
-                  try {
-                      java.net.URL u = new java.net.URL(url);
-                      conn = (java.net.HttpURLConnection) u.openConnection();
-                      conn.setRequestMethod("GET");
-                      conn.setConnectTimeout(5000); conn.setReadTimeout(10000);
-                      conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-                      String ref = webView.getUrl();
-                      conn.setRequestProperty("Referer", ref != null ? ref : "https://rophim.is/");
-                      final int rc = conn.getResponseCode();
-                      if (rc == 200) {
-                          java.io.BufferedReader br = new java.io.BufferedReader(
-                              new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
-                          StringBuilder sb = new StringBuilder();
-                          String line;
-                          while ((line = br.readLine()) != null) { sb.append(line).append("\n"); }
-                          br.close();
-                          final String content = sb.toString();
-                          final int nlines = content.split("\n").length;
-                          handler.post(new Runnable() {
-                              @Override public void run() {
-                                  android.widget.Toast.makeText(MainActivity.this,
-                                      "VTT OK " + nlines + "ln: ..." + url.substring(Math.max(0,url.length()-30)),
-                                      android.widget.Toast.LENGTH_LONG).show();
-                                  injectSubCues(content);
-                                  // Retry sau 3s đề phòng _pvtt chưa ready
-                                  handler.postDelayed(new Runnable() {
-                                      @Override public void run() { injectSubCues(content); }
-                                  }, 3000);
-                              }
-                          });
-                      } else {
-                          final int frc = rc;
-                          handler.post(new Runnable() {
-                              @Override public void run() {
-                                  android.widget.Toast.makeText(MainActivity.this,
-                                      "VTT FAIL " + frc + ": ..." + url.substring(Math.max(0,url.length()-30)),
-                                      android.widget.Toast.LENGTH_LONG).show();
-                              }
-                          });
-                      }
-                  } catch (final Exception e) {
-                      handler.post(new Runnable() {
-                          @Override public void run() {
-                              android.widget.Toast.makeText(MainActivity.this,
-                                  "VTT ERR: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
-                          }
-                      });
-                  } finally { if (conn != null) conn.disconnect(); }
-              }
-
-              private void injectSubCues(String vttContent) {
-                  String escaped = vttContent
-                      .replace("\\", "\\\\")
-                      .replace("'", "\\'")
-                      .replace("\n", "\\n")
-                      .replace("\r", "");
-                  webView.evaluateJavascript("if(window._pvtt)window._pvtt('" + escaped + "');", null);
-              }
-
-              // Tải m3u8 master, tìm subtitle URI, rồi tải vtt
-              private void fetchM3u8ForSub(final String m3u8Url) {
-                  // Chỉ xử lý master playlist (ngắn, chứa #EXT-X-MEDIA:TYPE=SUBTITLES)
-                  java.net.HttpURLConnection conn = null;
-                  try {
-                      java.net.URL u = new java.net.URL(m3u8Url);
-                      conn = (java.net.HttpURLConnection) u.openConnection();
-                      conn.setConnectTimeout(5000); conn.setReadTimeout(8000);
-                      conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-                      if (conn.getResponseCode() != 200) return;
-                      java.io.BufferedReader br = new java.io.BufferedReader(
-                          new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
-                      StringBuilder sb = new StringBuilder();
-                      String line;
-                      while ((line = br.readLine()) != null) { sb.append(line).append("\n"); }
-                      br.close();
-                      String m3u8 = sb.toString();
-                      // Tìm SUBTITLES URI trong master playlist
-                      // #EXT-X-MEDIA:TYPE=SUBTITLES,...,URI="..."
-                      String subUri = null;
-                      String[] lines2 = m3u8.split("\n");
-                      for (String ln : lines2) {
-                          if (ln.contains("TYPE=SUBTITLES") || ln.contains("TYPE=CLOSED-CAPTIONS")) {
-                              int ui = ln.indexOf("URI=\"");
-                              if (ui >= 0) {
-                                  int end = ln.indexOf("\"", ui + 5);
-                                  if (end > ui + 5) { subUri = ln.substring(ui + 5, end); break; }
-                              }
-                          }
-                          // Tìm dòng .vtt hoặc .srt trực tiếp
-                          if ((ln.trim().endsWith(".vtt") || ln.trim().endsWith(".srt")) && !ln.startsWith("#")) {
-                              subUri = ln.trim(); break;
-                          }
-                      }
-                      if (subUri != null) {
-                          // Resolve relative URL
-                          if (!subUri.startsWith("http")) {
-                              java.net.URL base = new java.net.URL(m3u8Url);
-                              subUri = new java.net.URL(base, subUri).toString();
-                          }
-                          final String finalSubUri = subUri;
-                          handler.post(new Runnable() {
-                              @Override public void run() {
-                                  android.widget.Toast.makeText(MainActivity.this,
-                                      "M3U8 sub found: ..." + finalSubUri.substring(Math.max(0,finalSubUri.length()-40)),
-                                      android.widget.Toast.LENGTH_LONG).show();
-                              }
-                          });
-                          fetchAndParseSub(finalSubUri);
-                      }
-                  } catch (Exception e) { /* ignore */ }
-                  finally { if (conn != null) conn.disconnect(); }
-              }
-
-              // ── TTS ────────────────────────────────────────────────────────────────
-              private float getSpeechRate() {
-                  SharedPreferences p = getSharedPreferences(SettingsActivity.PREF, Context.MODE_PRIVATE);
-                  int s = p.getInt(SettingsActivity.KEY_SPEED, 1);
-                  if (s == 0) return 0.75f;
-                  if (s == 2) return 1.4f;
-                  return 1.0f;
-              }
-
-              private void setupTts() {
-                  tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-                      @Override public void onInit(int status) {
-                          if (status == TextToSpeech.SUCCESS) {
-                              java.util.Locale vi = new java.util.Locale("vi", "VN");
-                              int res = tts.isLanguageAvailable(vi);
-                              if (res >= TextToSpeech.LANG_AVAILABLE) {
-                                  tts.setLanguage(vi);
-                              } else {
-                                  // Thử locale mặc định của hệ thống
-                                  try { tts.setLanguage(java.util.Locale.getDefault()); }
-                                  catch (Exception ex) { tts.setLanguage(java.util.Locale.ENGLISH); }
-                              }
-                              tts.setSpeechRate(1.0f);
-                              tts.setPitch(1.0f);
-                              ttsReady = true;
-                          }
-                      }
-                  });
-                  // Đặt volume kênh audio lên cao nhất
-                  try {
-                      android.media.AudioManager am = (android.media.AudioManager)
-                          getSystemService(Context.AUDIO_SERVICE);
-                      if (am != null) {
-                          int max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
-                          int cur = am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
-                          // Chỉ tăng nếu đang ở 0
-                          if (cur == 0) am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, max / 2, 0);
-                      }
-                  } catch (Exception e) {}
-              }
-
-              private void speakVi(final String text) {
-                  if (text == null || text.isEmpty()) return;
-                  boolean hasLetter = false;
-                  for (int ci = 0; ci < text.length(); ci++) {
-                      if (Character.isLetter(text.charAt(ci))) { hasLetter = true; break; }
-                  }
-                  if (!hasLetter) return;
-                  SharedPreferences p = getSharedPreferences(SettingsActivity.PREF, Context.MODE_PRIVATE);
-                  if (!p.getBoolean(SettingsActivity.KEY_SUB, true)) return;
-                  String norm = text.trim().toLowerCase();
-                  if (norm.equals(lastSubText)) return;
-                  lastSubText = norm;
-                  final int vi = p.getInt(SettingsActivity.KEY_VOICE, 0);
-                  final float rate = getSpeechRate();
-                  if (vi < 2) {
-                      // Edge TTS neural - chạy trong background thread
-                      final String voice = EDGE_VOICES[vi];
-                      edgeExec.execute(new Runnable() {
-                          @Override public void run() { playEdgeTts(text, voice, rate); }
-                      });
-                  } else {
-                      // Android TTS fallback
-                      if (!ttsReady || tts == null) return;
-                      subHandler.post(new Runnable() {
-                          @Override public void run() {
-                              tts.setSpeechRate(rate);
-                              tts.stop();
-                              android.os.Bundle params = new android.os.Bundle();
-                              params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM,
-                                  android.media.AudioManager.STREAM_MUSIC);
-                              tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "sub");
-                          }
-                      });
-                  }
-              }
-
-              private void playEdgeTts(String text, String voice, float rate) {
-                  java.net.HttpURLConnection conn = null;
-                  try {
-                      int pct = (int) ((rate - 1f) * 100);
-                      String rateStr = (pct >= 0 ? "+" : "") + pct + "%";
-                      String ssml = "<speak version='1.0' xml:lang='vi-VN'>"
-                          + "<voice name='" + voice + "'><prosody rate='" + rateStr + "'>"
-                          + text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                          + "</prosody></voice></speak>";
-                      String uid = java.util.UUID.randomUUID().toString().replace("-", "");
-                      java.net.URL url = new java.net.URL(
-                          "https://speech.platform.bing.com/consumer/speech/synthesize"
-                          + "/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4"
-                          + "&ConnectionId=" + uid);
-                      conn = (java.net.HttpURLConnection) url.openConnection();
-                      conn.setRequestMethod("POST");
-                      conn.setRequestProperty("Content-Type", "application/ssml+xml");
-                      conn.setRequestProperty("X-Microsoft-OutputFormat", "audio-24khz-48kbitrate-mono-mp3");
-                      conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-                      conn.setDoOutput(true);
-                      conn.setConnectTimeout(6000); conn.setReadTimeout(12000);
-                      conn.getOutputStream().write(ssml.getBytes("UTF-8"));
-                      int rc = conn.getResponseCode();
-                      if (rc == 200) {
-                          java.io.File tmp = java.io.File.createTempFile("tts", ".mp3", getCacheDir());
-                          java.io.InputStream is = conn.getInputStream();
-                          java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp);
-                          byte[] buf = new byte[4096]; int n;
-                          while ((n = is.read(buf)) != -1) fos.write(buf, 0, n);
-                          fos.close(); is.close();
-                          final java.io.File ftmp = tmp;
-                          subHandler.post(new Runnable() {
-                              @Override public void run() {
-                                  try {
-                                      if (edgePlayer != null) {
-                                          try { edgePlayer.stop(); } catch (Exception ex) {}
-                                          edgePlayer.release(); edgePlayer = null;
-                                      }
-                                      edgePlayer = new android.media.MediaPlayer();
-                                      edgePlayer.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
-                                      edgePlayer.setDataSource(ftmp.getAbsolutePath());
-                                      edgePlayer.prepare();
-                                      edgePlayer.start();
-                                      edgePlayer.setOnCompletionListener(
-                                          new android.media.MediaPlayer.OnCompletionListener() {
-                                              @Override public void onCompletion(android.media.MediaPlayer mp) {
-                                                  mp.release(); edgePlayer = null; ftmp.delete();
-                                              }
-                                          });
-                                  } catch (Exception e) { ftmp.delete(); fallbackTts(text, rate); }
-                              }
-                          });
-                      } else {
-                          // Edge TTS trả lỗi (rc != 200) → thử Google TTS
-                          playGoogleTts(text, rate);
-                      }
-                  } catch (Exception e) {
-                      // Mạng lỗi → thử Google TTS
-                      playGoogleTts(text, rate);
-                  } finally { if (conn != null) conn.disconnect(); }
-              }
-
-              // Google TTS API - miễn phí, hỗ trợ tiếng Việt tốt
-              private void playGoogleTts(final String text, final float rate) {
-                  edgeExec.execute(new Runnable() {
-                      @Override public void run() {
-                          java.net.HttpURLConnection conn2 = null;
-                          try {
-                              String encoded = java.net.URLEncoder.encode(text, "UTF-8");
-                              // Giới hạn 200 ký tự mỗi lần
-                              if (encoded.length() > 300) encoded = java.net.URLEncoder.encode(
-                                  text.substring(0, Math.min(text.length(), 150)), "UTF-8");
-                              String ttsUrl = "https://translate.google.com/translate_tts"
-                                  + "?ie=UTF-8&q=" + encoded
-                                  + "&tl=vi&total=1&idx=0&client=tw-ob&ttsspeed=" + rate;
-                              java.net.URL u2 = new java.net.URL(ttsUrl);
-                              conn2 = (java.net.HttpURLConnection) u2.openConnection();
-                              conn2.setRequestMethod("GET");
-                              conn2.setConnectTimeout(6000); conn2.setReadTimeout(10000);
-                              conn2.setRequestProperty("User-Agent",
-                                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-                              conn2.setRequestProperty("Referer", "https://translate.google.com/");
-                              if (conn2.getResponseCode() == 200) {
-                                  java.io.File tmp2 = java.io.File.createTempFile("gtts", ".mp3", getCacheDir());
-                                  java.io.InputStream is2 = conn2.getInputStream();
-                                  java.io.FileOutputStream fos2 = new java.io.FileOutputStream(tmp2);
-                                  byte[] buf2 = new byte[4096]; int n2;
-                                  while ((n2 = is2.read(buf2)) != -1) fos2.write(buf2, 0, n2);
-                                  fos2.close(); is2.close();
-                                  final java.io.File ftmp2 = tmp2;
-                                  subHandler.post(new Runnable() {
-                                      @Override public void run() {
-                                          try {
-                                              if (edgePlayer != null) {
-                                                  try { edgePlayer.stop(); } catch (Exception ex) {}
-                                                  edgePlayer.release(); edgePlayer = null;
-                                              }
-                                              edgePlayer = new android.media.MediaPlayer();
-                                              edgePlayer.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
-                                              edgePlayer.setDataSource(ftmp2.getAbsolutePath());
-                                              edgePlayer.prepare(); edgePlayer.start();
-                                              edgePlayer.setOnCompletionListener(
-                                                  new android.media.MediaPlayer.OnCompletionListener() {
-                                                      @Override public void onCompletion(android.media.MediaPlayer mp) {
-                                                          mp.release(); edgePlayer = null; ftmp2.delete();
-                                                      }
-                                                  });
-                                          } catch (Exception e) { ftmp2.delete(); fallbackTts(text, rate); }
-                                      }
-                                  });
-                              } else { fallbackTts(text, rate); }
-                          } catch (Exception e) { fallbackTts(text, rate); }
-                          finally { if (conn2 != null) conn2.disconnect(); }
-                      }
-                  });
-              }
-
-              private void fallbackTts(final String text, final float rate) {
-                  subHandler.post(new Runnable() {
-                      @Override public void run() {
-                          if (!ttsReady || tts == null) return;
-                          // Xin audio focus để không bị video át
-                          try {
-                              android.media.AudioManager am = (android.media.AudioManager)
-                                  getSystemService(Context.AUDIO_SERVICE);
-                              if (am != null) am.requestAudioFocus(null,
-                                  android.media.AudioManager.STREAM_MUSIC,
-                                  android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-                          } catch (Exception e) {}
-                          tts.setSpeechRate(rate);
-                          tts.stop();
-                          tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "sub");
-                      }
-                  });
-              }
-
-              // ── Speech recognition ─────────────────────────────────────────────────
-              private void setupSpeech() {
-                  if (!SpeechRecognizer.isRecognitionAvailable(this)) return;
-                  speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-                  speechRecognizer.setRecognitionListener(new RecognitionListener() {
-                      @Override public void onReadyForSpeech(Bundle p) { voiceResult.setText("Đang nghe..."); }
-                      @Override public void onResults(Bundle r) {
-                          ArrayList<String> m = r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                          if (m != null && !m.isEmpty()) {
-                              final String tt = m.get(0).toLowerCase();
-                              voiceResult.setText(m.get(0));
-                              handler.postDelayed(new Runnable() { @Override public void run() { hideVoice(); } }, 800);
-                              handleVoice(tt);
-                          } else hideVoice();
-                      }
-                      @Override public void onError(int err) {
-                          voiceResult.setText("Loi nhan giong");
-                          handler.postDelayed(new Runnable() { @Override public void run() { hideVoice(); } }, 1500);
-                      }
-                      @Override public void onBeginningOfSpeech() {}
-                      @Override public void onRmsChanged(float v) {}
-                      @Override public void onBufferReceived(byte[] b) {}
-                      @Override public void onEndOfSpeech() {}
-                      @Override public void onPartialResults(Bundle b) {}
-                      @Override public void onEvent(int t, Bundle b) {}
-                  });
-              }
-
-              private void handleVoice(String t) {
-                  if (t.contains("phat") || t.contains("play"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();", null);
-                  else if (t.contains("dung") || t.contains("pause"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();", null);
-                  else if (t.contains("tua toi"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;", null);
-                  else if (t.contains("tua lui"))
-                      webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;", null);
-                  else if (t.contains("trang chu") || t.contains("home")) finish();
-                  else if (t.contains("cai dat"))
-                      startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-              }
-
-              private void showVoice() {
-                  if (speechRecognizer == null) return;
-                  voiceOverlay.setVisibility(View.VISIBLE); voiceResult.setText("");
-                  Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                  i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN");
-                  i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
-                  speechRecognizer.startListening(i);
-              }
-
-              private void hideVoice() {
-                  if (speechRecognizer != null) speechRecognizer.stopListening();
-                  voiceOverlay.setVisibility(View.GONE);
-              }
-
-              // ── Cursor helpers ─────────────────────────────────────────────────────
-              private void wakeC() {
-                  if (!cursorVisible) { cursorView.setVisibility(View.VISIBLE); cursorVisible = true; }
-                  handler.removeCallbacks(hideCursorRun);
-                  handler.postDelayed(hideCursorRun, HIDE_DELAY);
-              }
-
-              private float[] wc() {
-                  return new float[]{cursorView.getCX(), cursorView.getCY()};
-              }
-
-              private void tDown(float x, float y) {
-                  long t = android.os.SystemClock.uptimeMillis();
-                  webView.dispatchTouchEvent(MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, x, y, 0));
-              }
-
-              private void tUp(float x, float y, long dt) {
-                  long t = android.os.SystemClock.uptimeMillis();
-                  webView.dispatchTouchEvent(MotionEvent.obtain(dt, t, MotionEvent.ACTION_UP, x, y, 0));
-              }
-
-              private void tMove(float x, float y, long dt) {
-                  long t = android.os.SystemClock.uptimeMillis();
-                  webView.dispatchTouchEvent(MotionEvent.obtain(dt, t, MotionEvent.ACTION_MOVE, x, y, 0));
-              }
-
-              private void click() {
-                  float[] rc = wc();
-                  long t = android.os.SystemClock.uptimeMillis();
-                  tDown(rc[0], rc[1]); tUp(rc[0], rc[1], t);
-              }
-
-              private void pgScroll(int dy) {
-                  webView.scrollBy(0, dy);
-              }
-
-              private void moveCursor(float dx, float dy, int rep) {
-                  float factor = Math.min(1f, rep / ACCEL);
-                  float step = STEP_MIN + (STEP_MAX - STEP_MIN) * factor;
-                  float nx = Math.max(0, Math.min(screenW - 1, cursorView.getCX() + dx * step));
-                  float ny = cursorView.getCY() + dy * step;
-                  // Edge auto-scroll khi cursor chạm cạnh trên/dưới
-                  int nd = 0;
-                  if (ny >= screenH - 10) nd = 1;
-                  else if (ny <= 10) nd = -1;
-                  ny = Math.max(0, Math.min(screenH - 2, ny));
-                  cursorView.setPos(nx, ny);
-                  savedCX = nx; savedCY = ny;
-                  if (dragMode) {
-                      int[] l = new int[2]; webView.getLocationOnScreen(l);
-                      tMove(nx - l[0], ny - l[1], dragT);
-                  }
-                  if (nd != edgeDir) {
-                      edgeDir = nd; edgeTick = 0;
-                      handler.removeCallbacks(edgeRun);
-                      if (nd != 0) handler.post(edgeRun);
-                  }
-                  // Hiện bottomBar khi cursor vào góc trái dưới
-                  boolean inZ = nx <= BAR_W && ny >= screenH - BAR_H;
-                  if (inZ && !barVisible) {
-                      bottomBar.setVisibility(View.VISIBLE); barVisible = true;
-                      handler.removeCallbacks(hideBarRun);
-                  } else if (!inZ && barVisible) {
-                      handler.removeCallbacks(hideBarRun);
-                      handler.postDelayed(hideBarRun, 1800);
-                  }
-                  wakeC();
-              }
-
-              private void stopEdge() { edgeDir = 0; edgeTick = 0; handler.removeCallbacks(edgeRun); }
-
-              private void clickAtBarOrWeb() {
-                  wakeC(); stopEdge();
-                  float sx = cursorView.getCX(), sy = cursorView.getCY();
-                  // Nếu bar đang hiện, kiểm tra click vào nút bar
-                  if (barVisible) {
-                      int[] ids = {R.id.btnHome, R.id.btnWebBack, R.id.btnWebForward, R.id.btnRefresh, R.id.btnSettingsWeb};
-                      for (int id : ids) {
-                          View b = findViewById(id);
-                          int[] loc = new int[2]; b.getLocationOnScreen(loc);
-                          if (sx >= loc[0] && sx < loc[0] + b.getWidth() &&
-                              sy >= loc[1] && sy < loc[1] + b.getHeight()) {
-                              b.performClick(); return;
-                          }
-                      }
-                  }
-                  // Kiểm tra có video đang chạy không - nếu cursor ở vùng trên (video area) thì play/pause
-                  int screenH = getResources().getDisplayMetrics().heightPixels;
-                  if (sy < screenH * 0.85f) {
-                      // Thử play/pause video trước
-                      webView.evaluateJavascript(
-                          "(function(){var v=document.querySelector('video');if(v){if(v.paused)v.play();else v.pause();return true;}return false;})()",
-                          new android.webkit.ValueCallback<String>() {
-                              @Override public void onReceiveValue(String val) {
-                                  // Nếu không có video element (JW Player canvas), dùng JW API
-                                  if ("false".equals(val) || val == null) {
-                                      webView.evaluateJavascript(
-                                          "try{var jw=jwplayer();if(jw){var s=jw.getState();if(s==='playing')jw.pause();else jw.play();}}catch(e){}",
-                                          null);
-                                  }
-                              }
-                          });
-                      return;
-                  }
-                  // Cursor ở bottom bar area - click bình thường
-                  click();
-              }
-
-              private void toggleDrag() {
-                  if (!dragMode) {
-                      dragMode = true; dragT = android.os.SystemClock.uptimeMillis();
-                      float[] rc = wc(); tDown(rc[0], rc[1]);
-                      cursorView.setMode(CursorView.MODE_DRAG);
-                  } else {
-                      dragMode = false; float[] rc = wc(); tUp(rc[0], rc[1], dragT);
-                      cursorView.setMode(CursorView.MODE_NORMAL);
                   }
               }
 
@@ -2164,8 +1401,7 @@ jobs:
                   handler.removeCallbacksAndMessages(null);
                   subHandler.removeCallbacksAndMessages(null);
                   if (edgePlayer != null) { edgePlayer.stop(); edgePlayer.release(); edgePlayer = null; }
-                  edgeExec.shutdownNow();
-                  if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
+                      if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
                   if (speechRecognizer != null) speechRecognizer.destroy();
                   super.onDestroy();
               }
