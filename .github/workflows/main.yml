@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="63" android:versionName="63.0">
+              package="com.allinone.app" android:versionCode="64" android:versionName="64.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited34",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited35",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1240,6 +1240,9 @@ jobs:
 
               // ── JS inject ──────────────────────────────────────────────────────────
               private void injectJs(WebView v) {
+                  SharedPreferences ip = getSharedPreferences(SettingsActivity.PREF, Context.MODE_PRIVATE);
+                  final boolean subOn = ip.getBoolean(SettingsActivity.KEY_SUB, true);
+                  v.evaluateJavascript("window._aioSubOn=" + subOn + ";", null);
                   String js = "(function(){\n"
                   + "document.documentElement.style.scrollBehavior='auto';\n"
                   + "if(document.body){document.body.style.overscrollBehavior='none';}\n"
@@ -1297,11 +1300,17 @@ jobs:
                   // _show(txt, dur): dur = thời gian hiện sub theo VTT (ms), không truyền thì tự tính
                   + "  function _show(txt,dur){\n"
                   + "    if(!txt||!_ok(txt))return;\n"
+                  // Blacklist các từ UI phổ biến
+                  + "    var bl=/^(chuy\u1ec3n t\u1eadp|t\u1eadp \\d|next|prev|play|pause|t\u1eaft|b\u1eadt|\u0111\u00f3ng|m\u1edf|skip|replay|loading)$/i;\n"
+                  + "    if(bl.test(txt.trim()))return;\n"
                   + "    var n=txt.trim();\n"
                   + "    if(n===_ls)return;\n"
                   + "    _ls=n;\n"
-                  + "    _sd.textContent=n;\n"
-                  + "    _sd.style.display='block';\n"
+                  // Luôn gọi TTS (Java sẽ check KEY_SUB), chỉ hiện overlay nếu subOn
+                  + "    if(window._aioSubOn!==false){\n"
+                  + "      _sd.textContent=n;\n"
+                  + "      _sd.style.display='block';\n"
+                  + "    }\n"
                   + "    if(_ht)clearTimeout(_ht);\n"
                   + "    if(_dt)clearTimeout(_dt);\n"
                   + "    _dt=setTimeout(function(){try{window.AIO.onSubText(n);}catch(e){}},80);\n"
@@ -1362,7 +1371,7 @@ jobs:
                   + "      var vh=window.innerHeight||document.documentElement.clientHeight||720;\n"
                   + "      if(r.width>0&&r.height>0){\n"
                   + "        if(r.width>vw*0.98&&r.height>vh*0.5)return 0;\n"
-                  + "        if(r.top>vh*0.6)sc+=50;else if(r.top>vh*0.4)sc+=25;\n"
+                  + "        if(r.top>vh*0.75)sc+=80;else if(r.top>vh*0.6)sc+=50;else if(r.top>vh*0.4)sc+=25;\n"
                   + "        var cx=r.left+r.width/2;\n"
                   + "        if(cx>vw*0.15&&cx<vw*0.85)sc+=25;\n"
                   + "        if(r.width>vw*0.1&&r.width<vw*0.95)sc+=10;\n"
@@ -1973,7 +1982,13 @@ jobs:
                   stopEdge(); handler.removeCallbacksAndMessages(null);
               }
 
-              @Override protected void onResume() { super.onResume(); webView.onResume(); wakeC(); }
+              @Override protected void onResume() {
+                  super.onResume(); webView.onResume(); wakeC();
+                  // Sync trạng thái sub xuống JS mỗi khi quay lại
+                  SharedPreferences rp = getSharedPreferences(SettingsActivity.PREF, Context.MODE_PRIVATE);
+                  final boolean subOn = rp.getBoolean(SettingsActivity.KEY_SUB, true);
+                  webView.evaluateJavascript("window._aioSubOn=" + subOn + ";", null);
+              }
 
               @Override protected void onDestroy() {
                   handler.removeCallbacksAndMessages(null);
