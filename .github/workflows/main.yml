@@ -85,7 +85,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="65" android:versionName="65.0">
+              package="com.allinone.app" android:versionCode="66" android:versionName="66.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -454,7 +454,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited36",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited37",DEF="https://vtvgo.vn",SEP="|||";
               static final String[]DEFS={
                   "https://vuila.xyz",
                   "https://vtvgo.vn",
@@ -1436,8 +1436,26 @@ jobs:
                   + "    }\n"
                   + "    return best;\n"
                   + "  }\n"
+                  // JW Player selectors - rophim dùng JW Player
+                  + "  var _jwSels=['.jw-text-track-cue','.jw-captions-item',\n"
+                  + "    '.jw-captions-text','.jw-caption',\n"
+                  + "    '[class*=\"jw-capt\"]','[class*=\"jw-sub\"]'];\n"
+                  + "  function _scanJw(doc){\n"
+                  + "    if(!doc)return '';\n"
+                  + "    for(var i=0;i<_jwSels.length;i++){\n"
+                  + "      try{\n"
+                  + "        var els=doc.querySelectorAll(_jwSels[i]);\n"
+                  + "        for(var j=0;j<els.length;j++){\n"
+                  + "          var t=(els[j].innerText||els[j].textContent||'').trim();\n"
+                  + "          if(_ok(t))return t;\n"
+                  + "        }\n"
+                  + "      }catch(e){}\n"
+                  + "    }return '';\n"
+                  + "  }\n"
                   + "  function _scan(doc){\n"
                   + "    if(!doc)return '';\n"
+                  // Ưu tiên JW Player selectors
+                  + "    var jw=_scanJw(doc);if(jw){try{window.AIO.onDebug('JW:'+jw.substring(0,30));}catch(e){}return jw;}\n"
                   + "    if(_knownEl&&_knownDoc===doc){\n"
                   + "      try{\n"
                   + "        var ds=window.getComputedStyle(_knownEl).display;\n"
