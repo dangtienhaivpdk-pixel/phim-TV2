@@ -133,7 +133,7 @@ jobs:
                       android:padding="12dp" android:background="#333355"
                       android:clickable="true" android:focusable="false"/>
               </LinearLayout>
-              <ScrollView android:layout_width="match_parent" android:layout_height="match_parent"
+              <ScrollView android:id="@+id/scrollView" android:layout_width="match_parent" android:layout_height="match_parent"
                   android:padding="40dp" android:focusable="false">
                   <LinearLayout android:id="@+id/gridLinks"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -201,6 +201,9 @@ jobs:
                           android:gravity="center" android:focusable="false"/>
                   </LinearLayout>
               </RelativeLayout>
+              <com.allinone.app.CursorView android:id="@+id/cursor"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:clickable="false" android:focusable="false"/>
           </FrameLayout>
           XMLEOF
 
