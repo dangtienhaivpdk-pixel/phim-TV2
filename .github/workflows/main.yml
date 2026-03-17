@@ -83,7 +83,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="84" android:versionName="84.0">
+              package="com.allinone.app" android:versionCode="85" android:versionName="85.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -209,65 +209,98 @@ jobs:
 
           cat > res/layout/settings.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:background="#0d0d1a" android:focusable="false">
-              <LinearLayout android:layout_width="match_parent" android:layout_height="70dp"
-                  android:orientation="horizontal" android:gravity="center_vertical"
-                  android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp"
-                  android:focusable="false">
-                  <TextView android:id="@+id/btnBack"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:text="&#9664; Back" android:textSize="16sp" android:textColor="#ffffff"
-                      android:padding="12dp" android:layout_marginRight="20dp"
-                      android:background="#333355" android:clickable="true" android:focusable="false"/>
-                  <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                      android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
-                      android:textSize="24sp" android:textColor="#ffffff" android:textStyle="bold"
-                      android:focusable="false"/>
-              </LinearLayout>
-              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:orientation="vertical" android:padding="30dp" android:focusable="false">
-                  <EditText android:id="@+id/editUrl"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:hint="Nhap URL..." android:textSize="18sp"
-                      android:textColor="#ffffff" android:textColorHint="#666666"
-                      android:background="#222233" android:padding="16dp"
-                      android:inputType="textUri" android:layout_marginBottom="14dp"
-                      android:focusable="true" android:focusableInTouchMode="true"
-                      android:singleLine="true" android:imeOptions="actionGo"/>
+              android:focusable="false">
+              <LinearLayout android:id="@+id/settingsMain"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:orientation="vertical" android:background="#0d0d1a" android:focusable="false">
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="70dp"
+                      android:orientation="horizontal" android:gravity="center_vertical"
+                      android:background="#111122" android:paddingLeft="30dp" android:paddingRight="30dp"
+                      android:focusable="false">
+                      <TextView android:id="@+id/btnBack"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:text="&#9664; Quay lai" android:textSize="16sp" android:textColor="#ffffff"
+                          android:padding="12dp" android:layout_marginRight="20dp"
+                          android:clickable="true" android:focusable="false"/>
+                      <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:text="ALL IN ONE - Cai dat"
+                          android:textSize="26sp" android:textColor="#ffffff" android:textStyle="bold"
+                          android:focusable="false"/>
+                  </LinearLayout>
                   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="horizontal" android:focusable="false">
-                      <TextView android:id="@+id/btnSave"
+                      android:orientation="horizontal" android:padding="24dp" android:focusable="false">
+                      <TextView android:id="@+id/btnAddUrl"
                           android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1" android:text="THEM &amp; MO"
+                          android:layout_weight="1" android:text="&#10133; Them URL moi"
                           android:textSize="16sp" android:textColor="#ffffff"
-                          android:padding="14dp" android:gravity="center"
-                          android:background="#9900cc" android:layout_marginRight="10dp"
+                          android:background="#1a3a1a" android:padding="16dp"
+                          android:gravity="center" android:layout_marginRight="12dp"
                           android:clickable="true" android:focusable="false"/>
                       <TextView android:id="@+id/btnReset"
                           android:layout_width="0dp" android:layout_height="wrap_content"
-                          android:layout_weight="1" android:text="RESET"
+                          android:layout_weight="1" android:text="&#8635; Reset mac dinh"
                           android:textSize="16sp" android:textColor="#aaaaaa"
-                          android:padding="14dp" android:gravity="center"
-                          android:background="#1a1a2e"
+                          android:background="#1a1a2e" android:padding="16dp" android:gravity="center"
                           android:clickable="true" android:focusable="false"/>
                   </LinearLayout>
+                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:text="Danh sach kenh / trang web:" android:textSize="15sp"
+                      android:textColor="#888888" android:layout_marginLeft="24dp"
+                      android:layout_marginBottom="6dp" android:focusable="false"/>
+                  <ScrollView android:id="@+id/settingsScroll"
+                      android:layout_width="match_parent" android:layout_height="0dp"
+                      android:layout_weight="1" android:paddingLeft="24dp" android:paddingRight="24dp"
+                      android:focusable="false">
+                      <LinearLayout android:id="@+id/listUrls"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:orientation="vertical" android:focusable="false"/>
+                  </ScrollView>
               </LinearLayout>
-              <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                  android:text="Danh sach:" android:textSize="16sp" android:textColor="#888888"
-                  android:layout_marginLeft="30dp" android:layout_marginBottom="8dp"
-                  android:focusable="false"/>
-              <ScrollView android:id="@+id/settingsScroll"
-                  android:layout_width="match_parent" android:layout_height="0dp"
-                  android:layout_weight="1" android:paddingLeft="30dp" android:paddingRight="30dp"
-                  android:focusable="false">
-                  <LinearLayout android:id="@+id/listUrls"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="vertical" android:focusable="false"/>
-              </ScrollView>
-          </LinearLayout>
+              <!-- Dialog noi tuyen thay AlertDialog -->
+              <FrameLayout android:id="@+id/dialogOverlay"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:background="#cc000000" android:visibility="gone" android:focusable="false">
+                  <LinearLayout android:layout_width="700dp" android:layout_height="wrap_content"
+                      android:layout_gravity="center" android:orientation="vertical"
+                      android:background="#1e1e30" android:padding="32dp" android:focusable="false">
+                      <TextView android:id="@+id/dialogTitle"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:text="Nhap dia chi web" android:textSize="20sp"
+                          android:textColor="#ffffff" android:textStyle="bold"
+                          android:layout_marginBottom="8dp" android:focusable="false"/>
+                      <TextView android:id="@+id/dialogHint"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:text="Vi du: https://vtvgo.vn" android:textSize="14sp"
+                          android:textColor="#888888" android:layout_marginBottom="16dp"
+                          android:focusable="false"/>
+                      <EditText android:id="@+id/dialogInput"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:textSize="17sp" android:textColor="#ffffff"
+                          android:hint="https://example.com" android:singleLine="true"
+                          android:background="#111133" android:padding="16dp"
+                          android:layout_marginBottom="24dp" android:focusable="true"
+                          android:focusableInTouchMode="true" android:inputType="textUri"/>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:orientation="horizontal" android:gravity="end" android:focusable="false">
+                          <TextView android:id="@+id/dialogBtnCancel"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"
+                              android:text="  HUY  " android:textSize="16sp" android:textColor="#aaaaaa"
+                              android:background="#333344" android:padding="14dp"
+                              android:layout_marginRight="16dp"
+                              android:clickable="true" android:focusable="false"/>
+                          <TextView android:id="@+id/dialogBtnSave"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"
+                              android:text="  LUU  " android:textSize="16sp" android:textColor="#ffffff"
+                              android:background="#E50914" android:padding="14dp"
+                              android:clickable="true" android:focusable="false"/>
+                      </LinearLayout>
+                  </LinearLayout>
+              </FrameLayout>
+          </FrameLayout>
           XMLEOF
+
 
           cat > res/values/strings.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -340,7 +373,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs", KEY_URL="custom_url", KEY_HIST="url_history",
-                  KEY_INIT="inited84", DEF="https://www.rophimm.me", SEP="|||";
+                  KEY_INIT="inited85", DEF="https://www.rophimm.me", SEP="|||";
               static final String[] DEFS={
                   "https://www.rophimm.me",
                   "https://vtvgo.vn",
@@ -472,12 +505,17 @@ jobs:
           import android.graphics.Color;
           import android.os.Bundle;
           import android.os.Handler;
+          import android.util.DisplayMetrics;
           import android.view.KeyEvent;
+          import android.view.MotionEvent;
           import android.view.View;
           import android.view.ViewGroup;
+          import android.view.WindowManager;
           import android.view.inputmethod.InputMethodManager;
           import android.widget.EditText;
+          import android.widget.FrameLayout;
           import android.widget.LinearLayout;
+          import android.widget.ScrollView;
           import android.widget.TextView;
           import java.util.ArrayList;
           import java.util.Arrays;
@@ -485,97 +523,202 @@ jobs:
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs", KEY_URL="custom_url", KEY_HIST="url_history",
                   DEF="https://www.rophimm.me", SEP="|||";
-              private EditText editUrl;
               private LinearLayout listUrls;
-              private android.widget.ScrollView scrollView;
+              private ScrollView settingsScroll;
+              private FrameLayout dialogOverlay;
+              private EditText dialogInput;
+              private TextView dialogTitle, dialogHint;
               private SharedPreferences prefs;
               private InputMethodManager imm;
               private Handler handler = new Handler();
+              private String editingUrl = null; // null = add new, else = edit existing
 
               @Override protected void onCreate(Bundle s) {
-                  super.onCreate(s); setContentView(R.layout.settings);
+                  super.onCreate(s);
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  setContentView(R.layout.settings);
                   prefs = getSharedPreferences(PREF, Context.MODE_PRIVATE);
-                  imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
-                  editUrl = (EditText)findViewById(R.id.editUrl);
-                  listUrls = (LinearLayout)findViewById(R.id.listUrls);
-                  scrollView = (android.widget.ScrollView)findViewById(R.id.settingsScroll);
-                  editUrl.setText(prefs.getString(KEY_URL, DEF));
-                  renderHist();
-                  findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){finish();}});
-                  findViewById(R.id.btnSave).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){doSave();}});
-                  findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(DEF);openUrl(DEF);}});
-                  editUrl.setOnEditorActionListener(new TextView.OnEditorActionListener(){
-                      @Override public boolean onEditorAction(TextView v, int id, KeyEvent ev){
-                          if(id==android.view.inputmethod.EditorInfo.IME_ACTION_GO||id==android.view.inputmethod.EditorInfo.IME_ACTION_DONE){doSave();return true;}return false;}});
-                  handler.postDelayed(new Runnable(){@Override public void run(){
-                      editUrl.requestFocus(); imm.showSoftInput(editUrl,InputMethodManager.SHOW_IMPLICIT);}},200);
-              }
-
-              private void doSave() {
-                  String u = editUrl.getText().toString().trim();
-                  if (u.isEmpty()) return;
-                  if (!u.startsWith("http")) u = "https://"+u;
-                  imm.hideSoftInputFromWindow(editUrl.getWindowToken(),0);
-                  saveUrl(u); openUrl(u);
+                  imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                  listUrls = (LinearLayout) findViewById(R.id.listUrls);
+                  settingsScroll = (ScrollView) findViewById(R.id.settingsScroll);
+                  dialogOverlay = (FrameLayout) findViewById(R.id.dialogOverlay);
+                  dialogInput = (EditText) findViewById(R.id.dialogInput);
+                  dialogTitle = (TextView) findViewById(R.id.dialogTitle);
+                  dialogHint = (TextView) findViewById(R.id.dialogHint);
+                  findViewById(R.id.btnBack).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { finish(); }});
+                  findViewById(R.id.btnAddUrl).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { showDialog(null); }});
+                  findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { resetDefaults(); }});
+                  findViewById(R.id.dialogBtnCancel).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { hideDialog(); }});
+                  findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener() {
+                      @Override public void onClick(View v) { saveDialog(); }});
+                  dialogInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                      @Override public boolean onEditorAction(TextView v, int id, KeyEvent ev) {
+                          if (id == android.view.inputmethod.EditorInfo.IME_ACTION_GO
+                              || id == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                              saveDialog(); return true; } return false; }});
+                  renderList();
               }
 
               private List<String> getHist() {
-                  return new ArrayList<String>(Arrays.asList(prefs.getString(KEY_HIST,DEF).split("\\|\\|\\|")));
+                  String raw = prefs.getString(KEY_HIST, DEF);
+                  return new ArrayList<String>(Arrays.asList(raw.split("\\|\\|\\|")));
               }
 
-              private void saveUrl(String url) {
-                  List<String> list = getHist(); list.remove(url); list.add(0,url);
-                  if(list.size()>30) list=list.subList(0,30);
-                  StringBuilder sb=new StringBuilder();
-                  for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
-                  prefs.edit().putString(KEY_HIST,sb.toString()).putString(KEY_URL,url).apply();
-                  renderHist();
+              private void saveHist(List<String> list) {
+                  StringBuilder sb = new StringBuilder();
+                  for (int i = 0; i < list.size(); i++) { if (i > 0) sb.append(SEP); sb.append(list.get(i)); }
+                  prefs.edit().putString(KEY_HIST, sb.toString()).apply();
               }
 
-              private void openUrl(String url) {
-                  startActivity(new Intent(this,MainActivity.class).putExtra("url",url).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+              private void resetDefaults() {
+                  String[] defs = {
+                      "https://www.rophimm.me", "https://vtvgo.vn", "https://www.netflix.com",
+                      "https://www.youtube.com", "https://fptplay.vn", "https://www.google.com",
+                      "https://vnexpress.net", "https://tinnhac.com"
+                  };
+                  StringBuilder sb = new StringBuilder();
+                  for (int i = 0; i < defs.length; i++) { if (i > 0) sb.append(SEP); sb.append(defs[i]); }
+                  prefs.edit().putString(KEY_HIST, sb.toString()).putString(KEY_URL, defs[0]).apply();
+                  renderList();
+              }
+
+              private void showDialog(String existingUrl) {
+                  editingUrl = existingUrl;
+                  if (existingUrl == null) {
+                      dialogTitle.setText("Them dia chi web moi");
+                      dialogHint.setText("Vi du: https://vtvgo.vn");
+                      dialogInput.setText("https://");
+                  } else {
+                      dialogTitle.setText("Sua dia chi web");
+                      dialogHint.setText(existingUrl);
+                      dialogInput.setText(existingUrl);
+                  }
+                  dialogInput.setSelection(dialogInput.getText().length());
+                  dialogOverlay.setVisibility(View.VISIBLE);
+                  handler.postDelayed(new Runnable() { @Override public void run() {
+                      dialogInput.requestFocus();
+                      imm.showSoftInput(dialogInput, InputMethodManager.SHOW_IMPLICIT);
+                  }}, 150);
+              }
+
+              private void hideDialog() {
+                  imm.hideSoftInputFromWindow(dialogInput.getWindowToken(), 0);
+                  dialogOverlay.setVisibility(View.GONE);
+                  editingUrl = null;
+              }
+
+              private void saveDialog() {
+                  String u = dialogInput.getText().toString().trim();
+                  if (u.isEmpty()) return;
+                  if (!u.startsWith("http")) u = "https://" + u;
+                  imm.hideSoftInputFromWindow(dialogInput.getWindowToken(), 0);
+                  List<String> list = getHist();
+                  if (editingUrl != null) {
+                      int idx = list.indexOf(editingUrl);
+                      if (idx >= 0) list.set(idx, u); else list.add(0, u);
+                  } else {
+                      list.remove(u); list.add(0, u);
+                  }
+                  if (list.size() > 30) list = list.subList(0, 30);
+                  saveHist(list);
+                  // Set as active and open
+                  prefs.edit().putString(KEY_URL, u).apply();
+                  dialogOverlay.setVisibility(View.GONE);
+                  editingUrl = null;
+                  startActivity(new Intent(this, MainActivity.class)
+                      .putExtra("url", u).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                   finish();
               }
 
-              private void renderHist() {
+              private void renderList() {
                   listUrls.removeAllViews();
-                  List<String> hist = getHist(); String act = prefs.getString(KEY_URL,DEF);
+                  List<String> hist = getHist();
+                  String act = prefs.getString(KEY_URL, DEF);
                   for (final String url : hist) {
                       LinearLayout row = new LinearLayout(this);
-                      row.setOrientation(LinearLayout.HORIZONTAL); row.setPadding(16,14,16,14);
-                      row.setBackgroundColor(url.equals(act)?0xff1e1e35:0xff111122); row.setFocusable(false); row.setClickable(true);
-                      LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      rp.setMargins(0,0,0,6); row.setLayoutParams(rp);
-                      TextView tv=new TextView(this);
-                      tv.setText((url.equals(act)?"▶  ":"   ")+url);
-                      tv.setTextColor(url.equals(act)?0xffE50914:0xffcccccc); tv.setTextSize(14); tv.setFocusable(false);
-                      tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
+                      row.setOrientation(LinearLayout.HORIZONTAL);
+                      row.setPadding(16, 14, 16, 14);
+                      row.setBackgroundColor(url.equals(act) ? 0xff1e1e35 : 0xff111122);
+                      row.setFocusable(false); row.setClickable(true);
+                      LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      rp.setMargins(0, 0, 0, 6); row.setLayoutParams(rp);
+                      // URL text
+                      TextView tv = new TextView(this);
+                      tv.setText((url.equals(act) ? "▶  " : "   ") + url);
+                      tv.setTextColor(url.equals(act) ? 0xffE50914 : 0xffcccccc);
+                      tv.setTextSize(14); tv.setFocusable(false);
+                      tv.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
                       row.addView(tv);
-                      TextView bu=new TextView(this); bu.setText(" Chon "); bu.setTextColor(Color.WHITE);
-                      bu.setBackgroundColor(0xff2233aa); bu.setTextSize(12); bu.setPadding(14,8,14,8); bu.setFocusable(false); bu.setClickable(true);
-                      bu.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-                      bu.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
-                      TextView bd=new TextView(this); bd.setText("  X  "); bd.setTextColor(Color.WHITE);
-                      bd.setBackgroundColor(0xff770000); bd.setTextSize(12); bd.setPadding(14,8,14,8); bd.setFocusable(false); bd.setClickable(true);
-                      LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-                      dp.setMargins(6,0,0,0); bd.setLayoutParams(dp);
-                      bd.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){
-                          List<String> list=getHist(); list.remove(url);
-                          StringBuilder sb=new StringBuilder();
-                          for(int i=0;i<list.size();i++){if(i>0)sb.append(SEP);sb.append(list.get(i));}
-                          prefs.edit().putString(KEY_HIST,sb.toString()).apply(); renderHist();}});
-                      row.setOnClickListener(new View.OnClickListener(){@Override public void onClick(View v){saveUrl(url);openUrl(url);}});
-                      row.addView(bu); row.addView(bd); listUrls.addView(row);
+                      // Chon button
+                      TextView btnChon = new TextView(this);
+                      btnChon.setText(" Chon "); btnChon.setTextColor(Color.WHITE);
+                      btnChon.setBackgroundColor(0xff2233aa); btnChon.setTextSize(13);
+                      btnChon.setPadding(16, 10, 16, 10); btnChon.setFocusable(false); btnChon.setClickable(true);
+                      btnChon.setLayoutParams(new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                      btnChon.setOnClickListener(new View.OnClickListener() {
+                          @Override public void onClick(View v) {
+                              prefs.edit().putString(KEY_URL, url).apply();
+                              startActivity(new Intent(SettingsActivity.this, MainActivity.class)
+                                  .putExtra("url", url).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                              finish();
+                          }});
+                      row.addView(btnChon);
+                      // Edit button (icon link)
+                      TextView btnEdit = new TextView(this);
+                      btnEdit.setText(" \uD83D\uDD17 "); btnEdit.setTextColor(Color.WHITE);
+                      btnEdit.setBackgroundColor(0xff336600); btnEdit.setTextSize(13);
+                      btnEdit.setPadding(14, 10, 14, 10); btnEdit.setFocusable(false); btnEdit.setClickable(true);
+                      LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      ep.setMargins(6, 0, 0, 0); btnEdit.setLayoutParams(ep);
+                      btnEdit.setOnClickListener(new View.OnClickListener() {
+                          @Override public void onClick(View v) { showDialog(url); }});
+                      row.addView(btnEdit);
+                      // Delete button
+                      TextView btnDel = new TextView(this);
+                      btnDel.setText("  X  "); btnDel.setTextColor(Color.WHITE);
+                      btnDel.setBackgroundColor(0xff770000); btnDel.setTextSize(13);
+                      btnDel.setPadding(14, 10, 14, 10); btnDel.setFocusable(false); btnDel.setClickable(true);
+                      LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                      dp.setMargins(6, 0, 0, 0); btnDel.setLayoutParams(dp);
+                      btnDel.setOnClickListener(new View.OnClickListener() {
+                          @Override public void onClick(View v) {
+                              List<String> list = getHist(); list.remove(url);
+                              saveHist(list); renderList();
+                          }});
+                      row.addView(btnDel);
+                      row.setOnClickListener(new View.OnClickListener() {
+                          @Override public void onClick(View v) {
+                              prefs.edit().putString(KEY_URL, url).apply();
+                              startActivity(new Intent(SettingsActivity.this, MainActivity.class)
+                                  .putExtra("url", url).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                              finish();
+                          }});
+                      listUrls.addView(row);
                   }
               }
 
               @Override public boolean onKeyDown(int key, KeyEvent e) {
-                  if(key==KeyEvent.KEYCODE_BACK){finish();return true;}
-                  return super.onKeyDown(key,e);
+                  if (dialogOverlay.getVisibility() == View.VISIBLE) {
+                      if (key == KeyEvent.KEYCODE_BACK) { hideDialog(); return true; }
+                      return false;
+                  }
+                  if (key == KeyEvent.KEYCODE_BACK) { finish(); return true; }
+                  return super.onKeyDown(key, e);
               }
-              @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);super.onDestroy();}
+
+              @Override protected void onDestroy() {
+                  handler.removeCallbacksAndMessages(null); super.onDestroy(); }
           }
           JEOF
+
 
           cat > src/com/allinone/app/MainActivity.java << 'JEOF'
           package com.allinone.app;
