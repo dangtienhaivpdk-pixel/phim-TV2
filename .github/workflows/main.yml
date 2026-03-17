@@ -83,7 +83,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="82" android:versionName="82.0">
+              package="com.allinone.app" android:versionCode="83" android:versionName="83.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -340,7 +340,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs", KEY_URL="custom_url", KEY_HIST="url_history",
-                  KEY_INIT="inited82", DEF="https://www.rophimm.me", SEP="|||";
+                  KEY_INIT="inited83", DEF="https://www.rophimm.me", SEP="|||";
               static final String[] DEFS={
                   "https://www.rophimm.me",
                   "https://vtvgo.vn",
@@ -759,7 +759,7 @@ jobs:
                               +"try{window.dispatchEvent(new Event('resize'));}catch(e){}"
                               +"document.documentElement.style.scrollBehavior='auto';"
                               +"if(document.body)document.body.style.overscrollBehavior='none';"
-                              +"document.querySelectorAll('a[target]').forEach(function(a){if(a.target==="_blank")a.target="_self";});"
+                              +"document.querySelectorAll('a[target]').forEach(function(a){if(a.getAttribute('target')=='_blank')a.target='_self';});"
                               +"window.open=function(u){if(u&&u.startsWith('http'))location.href=u;return null;};"
                               +"})();",null);}
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e){h.proceed();}
