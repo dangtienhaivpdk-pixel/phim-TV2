@@ -83,7 +83,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="81" android:versionName="81.0">
+              package="com.allinone.app" android:versionCode="82" android:versionName="82.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -340,7 +340,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs", KEY_URL="custom_url", KEY_HIST="url_history",
-                  KEY_INIT="inited81", DEF="https://www.rophimm.me", SEP="|||";
+                  KEY_INIT="inited82", DEF="https://www.rophimm.me", SEP="|||";
               static final String[] DEFS={
                   "https://www.rophimm.me",
                   "https://vtvgo.vn",
@@ -625,9 +625,17 @@ jobs:
               private static final float STEP_MIN=14f, STEP_MAX=88f;
               private static final int ACCEL=12, SCR_AMT=280;
               private static final long HIDE_DELAY=4000;
+              private static final int EDGE_ZONE=80, EDGE_SCROLL_MIN=30, EDGE_SCROLL_MAX=200, EDGE_INTERVAL=80;
               private boolean barVisible=true;
+              private int edgeDir=0, edgeTicks=0;
               private Runnable hideBar = new Runnable(){@Override public void run(){topBar.setVisibility(View.GONE);barVisible=false;}};
               private Runnable hideCursor = new Runnable(){@Override public void run(){cursorView.setVisibility(View.GONE);}};
+              private Runnable edgeScroll = new Runnable(){@Override public void run(){
+                  if(edgeDir==0)return;
+                  edgeTicks=Math.min(edgeTicks+1,10);
+                  int amt=EDGE_SCROLL_MIN+(EDGE_SCROLL_MAX-EDGE_SCROLL_MIN)*edgeTicks/10;
+                  webView.scrollBy(0,edgeDir*amt);
+                  handler.postDelayed(this,EDGE_INTERVAL);}};
 
               @Override protected void onCreate(Bundle s) {
                   super.onCreate(s);
@@ -675,6 +683,15 @@ jobs:
                   float nx=Math.max(0,Math.min(screenW-2,cursorView.getCX()+dx*step));
                   float ny=Math.max(0,Math.min(screenH-2,cursorView.getCY()+dy*step));
                   cursorView.setPos(nx,ny); savedCX=nx; savedCY=ny;
+                  // Edge scroll: con trỏ chạm mép trên/dưới
+                  int newDir=0;
+                  if(ny<=EDGE_ZONE) newDir=-1;
+                  else if(ny>=screenH-EDGE_ZONE) newDir=1;
+                  if(newDir!=edgeDir){
+                      edgeDir=newDir; edgeTicks=0;
+                      handler.removeCallbacks(edgeScroll);
+                      if(newDir!=0) handler.post(edgeScroll);
+                  }
               }
 
               private void click() {
@@ -722,19 +739,28 @@ jobs:
                           progressBar.setVisibility(View.GONE);
                           // Landscape spoof + performance + hide rotate popup
                           v.evaluateJavascript("(function(){"
+                              +"var _w=Math.max(screen.width||1920,screen.height||1080);"
+                              +"var _h=Math.min(screen.width||1920,screen.height||1080);"
+                              +"try{Object.defineProperty(window,'innerWidth',{configurable:true,get:function(){return _w+1;}});"
+                              +"Object.defineProperty(window,'innerHeight',{configurable:true,get:function(){return _h-1;}});}catch(e){}"
                               +"try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){"
                               +"return{type:'landscape-primary',angle:0,lock:function(){return Promise.resolve();},"
                               +"unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};"
                               +"}})}catch(e){}"
                               +"try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(e){}"
+                              +"try{window.screen={width:_w,height:_h,availWidth:_w,availHeight:_h,orientation:{type:'landscape-primary',angle:0}};}catch(e){}"
                               +"if(!document.getElementById('_aioS')){"
                               +"var s=document.createElement('style');s.id='_aioS';"
-                              +"s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],[class*=\"landscape-warning\"],[id*=\"rotate\"],[class*=\"screen-rotate\"]{display:none!important;}';"
+                              +"s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
+                              +"[class*=\"landscape-warning\"],[class*=\"screen-rotate\"],[id*=\"rotate\"],"
+                              +"[class*=\"mobile-warning\"],[class*=\"device-rotate\"]{display:none!important;}"
+                              +"video::-webkit-media-controls-fullscreen-button{display:none!important;}';"
                               +"(document.head||document.documentElement).appendChild(s);}"
                               +"try{window.dispatchEvent(new Event('resize'));}catch(e){}"
                               +"document.documentElement.style.scrollBehavior='auto';"
                               +"if(document.body)document.body.style.overscrollBehavior='none';"
-                              +"document.querySelectorAll('a[target]').forEach(function(a){if(a.target===\"_blank\")a.target=\"_self\";});"
+                              +"document.querySelectorAll('a[target]').forEach(function(a){if(a.target==="_blank")a.target="_self";});"
+                              +"window.open=function(u){if(u&&u.startsWith('http'))location.href=u;return null;};"
                               +"})();",null);}
                       @Override public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e){h.proceed();}
                   });
@@ -821,12 +847,17 @@ jobs:
                   }
                   return super.onKeyDown(key,e);}
 
-              @Override public boolean onKeyUp(int key, KeyEvent e){return super.onKeyUp(key,e);}
+              @Override public boolean onKeyUp(int key, KeyEvent e){
+                  if(key==KeyEvent.KEYCODE_DPAD_UP||key==KeyEvent.KEYCODE_DPAD_DOWN
+                      ||key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT){
+                      edgeDir=0; edgeTicks=0; handler.removeCallbacks(edgeScroll);
+                  }
+                  return super.onKeyUp(key,e);}
 
               @Override protected void onPause(){
                   super.onPause(); webView.onPause();
                   savedCX=cursorView.getCX(); savedCY=cursorView.getCY();
-                  handler.removeCallbacksAndMessages(null);}
+                  edgeDir=0; handler.removeCallbacksAndMessages(null);}
               @Override protected void onResume(){
                   super.onResume(); webView.onResume(); wakeC();}
               @Override protected void onDestroy(){
