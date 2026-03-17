@@ -682,14 +682,14 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                       rp.setMargins(0,0,0,6);row.setLayoutParams(rp);
                       TextView tv=new TextView(this);
-                      tv.setText((url.equals(active)?"\▶ ":"   ")+url);
+                      tv.setText((url.equals(active)?"\u25B6 ":"   ")+url);
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffbbbbbb);
                       tv.setTextSize(14);tv.setFocusable(false);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
                       TextView bSel=mkBtn(" Chọn ",0xff1144cc);
                       bSel.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveAndOpen(url);}});
-                      TextView bEdt=mkBtn(" \✎ ",0xff226600);
+                      TextView bEdt=mkBtn(" \u270E ",0xff226600);
                       bEdt.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){openDialog(url);}});
                       TextView bDel=mkBtn("  X  ",0xff880000);
