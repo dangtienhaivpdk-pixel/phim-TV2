@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="89" android:versionName="89.0">
+              package="com.allinone.app" android:versionCode="90" android:versionName="90.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -396,7 +396,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited89",DEF="https://www.rophimm.me",SEP="|||";
+                  KEY_INIT="inited90",DEF="https://www.rophimm.me",SEP="|||";
               static final String[]DEFS={
                   "https://www.rophimm.me",
                   "https://vtvgo.vn",
@@ -848,7 +848,7 @@ jobs:
               private static final long HIDE_DELAY=4000;
               private boolean barVisible=false,cursorVisible=true;
               // Edge scroll - chậm và mượt
-              private static final int EDGE_MS=120,EDGE_MIN=15,EDGE_MAX=100;
+              private static final int EDGE_MS=150,EDGE_MIN=8,EDGE_MAX=60;
               private int edgeDir=0,edgeTick=0;
               private Runnable edgeRun=new Runnable(){
                   @Override public void run(){
@@ -935,6 +935,26 @@ jobs:
                   webView.setLongClickable(true);
                   webView.addJavascriptInterface(new KbdBridge(),"AIO");
                   webView.setWebViewClient(new WebViewClient(){
+                      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView v,WebResourceRequest r){
+                          if(r!=null&&r.getUrl()!=null){
+                              String h=r.getUrl().getHost();
+                              if(h!=null&&(h.contains("googlesyndication")||h.contains("doubleclick")
+                                  ||h.contains("googleadservices")||h.contains("adnxs")
+                                  ||h.contains("facebook.net")||h.contains("popads")
+                                  ||h.contains("popcash")||h.contains("exoclick")
+                                  ||h.contains("trafficjunky")||h.contains("adtng")
+                                  ||h.contains("adskeeper")||h.contains("propellerads")
+                                  ||h.contains("hilltopads")||h.contains("adsterra")
+                                  ||h.contains("mgid.com")||h.contains("taboola")
+                                  ||h.contains("outbrain")||h.contains("revcontent")
+                                  ||h.contains("juicyads")||h.contains("clickadu")
+                                  ||h.contains("adcash")||h.contains("plugrush"))){
+                                  return new android.webkit.WebResourceResponse("text/plain","utf-8",
+                                      new java.io.ByteArrayInputStream("".getBytes()));
+                              }
+                          }
+                          return null;
+                      }
                       @Override public boolean shouldOverrideUrlLoading(WebView v,String u){
                           if(u==null)return true;if(!isHttp(u))return true;return false;}
                       @Override @TargetApi(Build.VERSION_CODES.N)
@@ -1014,6 +1034,17 @@ jobs:
                       +"      if(el.offsetParent!==null)el.style.setProperty('display','none','important');});}catch(ex){}"
                       +"  },1000);}"
                       +"try{window.dispatchEvent(new Event('resize'));}catch(ex){}"
+                      +"if(!document.getElementById('_aioAd')){"
+                      +"var _ad=document.createElement('style');_ad.id='_aioAd';"
+                      +"_ad.textContent='iframe[src*=ad],iframe[src*=banner],div[class*=banner-ad],div[id*=banner-ad],.adsbygoogle,.ads-container,.ad-container,.popup-ads{display:none!important;}';"
+                      +"(document.head||document.documentElement).appendChild(_ad);}"
+                      +"if(!window._aioAdI){window._aioAdI=true;"
+                      +"setInterval(function(){"
+                      +"try{document.querySelectorAll('div,section').forEach(function(el){"
+                      +"var s=window.getComputedStyle(el);var zi=parseInt(s.zIndex)||0;"
+                      +"if(zi>9000&&(s.position==='fixed'||s.position==='absolute')&&el.offsetWidth>100&&!el.querySelector('video'))"
+                      +"el.style.setProperty('display','none','important');"
+                      +"});}catch(ex){}},2000);}"
                       +"})();",null);
               }
               private class KbdBridge {
