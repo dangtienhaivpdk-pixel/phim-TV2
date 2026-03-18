@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="91" android:versionName="91.0">
+              package="com.allinone.app" android:versionCode="92" android:versionName="92.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -396,7 +396,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited91",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited92",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -986,12 +986,24 @@ jobs:
                       +"if(!window._aioKbd){window._aioKbd=true;"
                       +"document.addEventListener('focusin',function(e){"
                       +"  var t=e.target;"
-                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
+                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'"
+                      +"    ||t.contentEditable==='true'||t.isContentEditable))"
                       +"    {try{window.AIO.onInputFocus();}catch(ex){}}},true);"
                       +"document.addEventListener('focusout',function(e){"
                       +"  var t=e.target;"
-                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
-                      +"    {try{window.AIO.onInputBlur();}catch(ex){}}},true);}"
+                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'"
+                      +"    ||t.contentEditable==='true'||t.isContentEditable))"
+                      +"    {try{window.AIO.onInputBlur();}catch(ex){}}},true);"
+                      +"document.addEventListener('click',function(e){"
+                      +"  var t=e.target;"
+                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'"
+                      +"    ||t.contentEditable==='true'||t.isContentEditable))"
+                      +"    {try{window.AIO.onInputFocus();}catch(ex){}}},true);"
+                      +"document.addEventListener('touchend',function(e){"
+                      +"  var t=e.target;"
+                      +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'"
+                      +"    ||t.contentEditable==='true'||t.isContentEditable))"
+                      +"    {try{window.AIO.onInputFocus();}catch(ex){}}},true);}"
                       // ── Landscape spoof toàn diện cho vtvgo ──
                       +"try{"
                       +"  var _sw=Math.max(screen.width||1920,screen.height||1080);"
@@ -1036,7 +1048,7 @@ jobs:
                       +"try{window.dispatchEvent(new Event('resize'));}catch(ex){}"
                       +"if(!document.getElementById('_aioAd')){"
                       +"var _ad=document.createElement('style');_ad.id='_aioAd';"
-                      +"_ad.textContent='a[href*=\"vsbet\"],a[href*=\"bet88\"],a[href*=\"jun88\"],a[href*=\"fb88\"],a[href*=\"188bet\"],a[href*=\"w88\"],a[href*=\"discord.gg\"],a[href*=\"t.me\"],div[class*=\"banner\"],div[id*=\"banner\"],div[class*=\"quang-cao\"],div[id*=\"quang-cao\"],div[class*=\"advertisement\"],div[class*=\"ads-\"],div[id*=\"ads-\"],.adsbygoogle,.ads-container,.ad-container,img[src*=\"vsbet\"],img[src*=\"casino\"],.popup-ads,div[class*=\"popup-overlay\"]{display:none!important;visibility:hidden!important;}';"
+                      +"_ad.textContent='a[href*=\"vsbet\"],a[href*=\"bet88\"],a[href*=\"jun88\"],a[href*=\"fb88\"],a[href*=\"188bet\"],a[href*=\"w88\"],a[href*=\"discord.gg\"],a[href*=\"t.me\"],div[class*=\"banner\"],div[id*=\"banner\"],div[class*=\"quang-cao\"],div[id*=\"quang-cao\"],div[class*=\"advertisement\"],div[class*=\"ads-\"],div[id*=\"ads-\"],.adsbygoogle,.ads-container,.ad-container,img[src*=\"vsbet\"],img[src*=\"casino\"],.popup-ads,div[class*=\"popup-overlay\"],a[href*=\"discord\"],div:has(>a[href*=\"discord\"]),div:has(>img[src*=\"discord\"]),div[style*=\"bottom: 0\"][style*=\"fixed\"],div[style*=\"bottom:0\"][style*=\"fixed\"],a[href*=\"vsbet\"]>*,a[href*=\"vsbet\"]{display:none!important;visibility:hidden!important;}';"
                       +"(document.head||document.documentElement).appendChild(_ad);}"
                       +"if(!window._aioAdI){window._aioAdI=true;"
                       +"setInterval(function(){"
@@ -1050,7 +1062,12 @@ jobs:
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
-                      imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);}});}
+                      webView.requestFocus();
+                      imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                      // Retry sau 300ms phòng case webview chưa ready
+                      handler.postDelayed(new Runnable(){@Override public void run(){
+                          imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                      }},300);}});}
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
                       imm.hideSoftInputFromWindow(webView.getWindowToken(),0);}});}
