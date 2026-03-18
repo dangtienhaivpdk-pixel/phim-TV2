@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="90" android:versionName="90.0">
+              package="com.allinone.app" android:versionCode="91" android:versionName="91.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -396,9 +396,9 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited90",DEF="https://www.rophimm.me",SEP="|||";
+                  KEY_INIT="inited91",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
-                  "https://www.rophimm.me",
+                  "https://rophimm.me/",
                   "https://vtvgo.vn",
                   "https://www.netflix.com",
                   "https://pointnorth.io",
@@ -589,7 +589,7 @@ jobs:
           import java.util.List;
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  DEF="https://www.rophimm.me",SEP="|||";
+                  DEF="https://rophimm.me/",SEP="|||";
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private FrameLayout dialogOverlay;
@@ -839,7 +839,7 @@ jobs:
               private CursorView cursorView;
               private SpeechRecognizer speechRecognizer;
               private InputMethodManager imm;
-              private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://www.rophimm.me";
+              private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://rophimm.me/";
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
               private static float savedCX=-1,savedCY=-1;
@@ -1036,7 +1036,7 @@ jobs:
                       +"try{window.dispatchEvent(new Event('resize'));}catch(ex){}"
                       +"if(!document.getElementById('_aioAd')){"
                       +"var _ad=document.createElement('style');_ad.id='_aioAd';"
-                      +"_ad.textContent='iframe[src*=ad],iframe[src*=banner],div[class*=banner-ad],div[id*=banner-ad],.adsbygoogle,.ads-container,.ad-container,.popup-ads{display:none!important;}';"
+                      +"_ad.textContent='a[href*=\"vsbet\"],a[href*=\"bet88\"],a[href*=\"jun88\"],a[href*=\"fb88\"],a[href*=\"188bet\"],a[href*=\"w88\"],a[href*=\"discord.gg\"],a[href*=\"t.me\"],div[class*=\"banner\"],div[id*=\"banner\"],div[class*=\"quang-cao\"],div[id*=\"quang-cao\"],div[class*=\"advertisement\"],div[class*=\"ads-\"],div[id*=\"ads-\"],.adsbygoogle,.ads-container,.ad-container,img[src*=\"vsbet\"],img[src*=\"casino\"],.popup-ads,div[class*=\"popup-overlay\"]{display:none!important;visibility:hidden!important;}';"
                       +"(document.head||document.documentElement).appendChild(_ad);}"
                       +"if(!window._aioAdI){window._aioAdI=true;"
                       +"setInterval(function(){"
