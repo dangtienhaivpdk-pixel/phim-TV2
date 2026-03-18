@@ -76,13 +76,10 @@ jobs:
           with open('res/drawable/banner.png','wb') as f:f.write(make_png(320,180,bp))
           print('ok')
           "
-          # ── Manifest ───────────────────────────────────────────────────────────────
-          # FIX: SettingsActivity dùng Theme.Holo.Dark (có AlertDialog style)
-          # HomeActivity + MainActivity vẫn dùng Fullscreen
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="38" android:versionName="38.0">
+              package="com.allinone.app" android:versionCode="89" android:versionName="89.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -107,8 +104,6 @@ jobs:
                       android:hardwareAccelerated="true"
                       android:windowSoftInputMode="adjustResize"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
-                  <!-- FIX CRASH: SettingsActivity dùng Theme.DeviceDefault.NoActionBar -->
-                  <!-- Fullscreen set bằng code trong onCreate -->
                   <activity android:name=".SettingsActivity" android:exported="false"
                       android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
                       android:windowSoftInputMode="adjustResize"
@@ -116,7 +111,6 @@ jobs:
               </application>
           </manifest>
           XMLEOF
-          # ── Layouts ────────────────────────────────────────────────────────────────
           cat > res/layout/home.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -159,7 +153,6 @@ jobs:
                   android:layout_width="match_parent" android:layout_height="2dp"
                   android:layout_gravity="top" android:max="100"
                   android:progressTint="#E50914" android:visibility="gone"/>
-              <!-- Bottom bar NHỎ GỌN: icon 28dp, mờ 60%, góc trái dưới -->
               <LinearLayout android:id="@+id/bottomBar"
                   android:layout_width="wrap_content" android:layout_height="wrap_content"
                   android:layout_gravity="bottom|start"
@@ -221,7 +214,6 @@ jobs:
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:focusable="false">
-              <!-- Nội dung chính -->
               <LinearLayout android:id="@+id/settingsMain"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:orientation="vertical" android:background="#0d0d1a" android:focusable="false">
@@ -268,7 +260,6 @@ jobs:
                           android:orientation="vertical" android:focusable="false"/>
                   </ScrollView>
               </LinearLayout>
-              <!-- Dialog nội tuyến thay AlertDialog — cursor vẫn hoạt động -->
               <FrameLayout android:id="@+id/dialogOverlay"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:background="#cc000000" android:visibility="gone" android:focusable="false">
@@ -296,7 +287,6 @@ jobs:
                       <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                           android:orientation="horizontal" android:gravity="end" android:focusable="false"
                           android:layout_marginTop="8dp">
-                          <!-- Nút LƯU - click được bằng chuột, hoặc nhấn OK trên remote -->
                           <TextView android:id="@+id/dialogBtnSave"
                               android:layout_width="wrap_content" android:layout_height="wrap_content"
                               android:text="  LƯU  " android:textSize="16sp" android:textColor="#ffffff"
@@ -308,11 +298,9 @@ jobs:
                           android:textSize="12sp" android:textColor="#666688"
                           android:gravity="end" android:focusable="false"
                           android:layout_marginTop="6dp"/>
-                      <!-- ID ẩn cho Cancel (không hiển thị) -->
                       <View android:id="@+id/dialogBtnCancel" android:layout_width="0dp" android:layout_height="0dp"/>
                   </LinearLayout>
               </FrameLayout>
-              <!-- Con trỏ chuột nổi trên mọi thứ -->
               <com.allinone.app.CursorView android:id="@+id/settingsCursor"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:clickable="false" android:focusable="false"/>
@@ -322,7 +310,6 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <resources><string name="app_name">ALL IN ONE</string></resources>
           XMLEOF
-          # ── CursorView ─────────────────────────────────────────────────────────────
           cat > src/com/allinone/app/CursorView.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -383,7 +370,6 @@ jobs:
               public ScrollWebView(Context c,AttributeSet a){super(c,a);}
           }
           JEOF
-          # ── HomeActivity ───────────────────────────────────────────────────────────
           cat > src/com/allinone/app/HomeActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -410,9 +396,9 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited9",DEF="https://vtvgo.vn",SEP="|||";
+                  KEY_INIT="inited89",DEF="https://www.rophimm.me",SEP="|||";
               static final String[]DEFS={
-                  "https://vuila.xyz",
+                  "https://www.rophimm.me",
                   "https://vtvgo.vn",
                   "https://www.netflix.com",
                   "https://pointnorth.io",
@@ -451,8 +437,7 @@ jobs:
                   btnSettings.setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){goSettings();}});
               }
-              private void goSettings(){
-                  startActivity(new Intent(HomeActivity.this,SettingsActivity.class));}
+              private void goSettings(){startActivity(new Intent(HomeActivity.this,SettingsActivity.class));}
               @Override protected void onResume(){super.onResume();renderLinks();}
               private List<String> hist(){
                   String raw=prefs.getString(KEY_HIST,DEF);
@@ -475,8 +460,7 @@ jobs:
                       final LinearLayout wrap=new LinearLayout(this);
                       wrap.setOrientation(LinearLayout.VERTICAL);wrap.setFocusable(false);
                       LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f);
-                      wp.setMargins(0,0,16,0);wrap.setLayoutParams(wp);
-                      wrap.setPadding(3,3,3,3);
+                      wp.setMargins(0,0,16,0);wrap.setLayoutParams(wp);wrap.setPadding(3,3,3,3);
                       final LinearLayout card=new LinearLayout(this);
                       card.setOrientation(LinearLayout.VERTICAL);card.setGravity(android.view.Gravity.CENTER);
                       card.setPadding(18,22,18,22);
@@ -580,10 +564,6 @@ jobs:
               }
           }
           JEOF
-          # ── SettingsActivity v35 ─────────────────────────────────────────────────
-          # Bỏ AlertDialog (chiếm focus, cursor mất) → dùng dialog nội tuyến trong layout
-          # Cursor hoạt động cả khi dialog mở: click LƯU/HUỶ bình thường
-          # Thay bilutv/phimhay → pointnorth.io
           cat > src/com/allinone/app/SettingsActivity.java << 'JEOF'
           package com.allinone.app;
           import android.content.Context;
@@ -609,7 +589,7 @@ jobs:
           import java.util.List;
           public class SettingsActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  DEF="https://vtvgo.vn",SEP="|||";
+                  DEF="https://www.rophimm.me",SEP="|||";
               private LinearLayout listUrls;
               private ScrollView scrollView;
               private FrameLayout dialogOverlay;
@@ -617,8 +597,7 @@ jobs:
               private SharedPreferences prefs;
               private Handler handler=new Handler();
               private InputMethodManager imm;
-              private String dialogPrefill=null; // null = thêm mới, có giá trị = sửa
-              // Cursor
+              private String dialogPrefill=null;
               private CursorView cursor;
               private float scW=1920,scH=1080;
               private static float savedCX=-1,savedCY=-1;
@@ -651,20 +630,17 @@ jobs:
                       @Override public void onClick(View v){openDialog(null);}});
                   findViewById(R.id.btnReset).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){doReset();}});
-                  // Nút LƯU bấm được bằng chuột cursor
                   findViewById(R.id.dialogBtnSave).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){saveFromDialog();}});
                   renderHistory();
               }
-              // ── Dialog nội tuyến (không dùng AlertDialog) ─────────────────────────
               private void openDialog(String prefill){
                   dialogPrefill=prefill;
                   dialogInput.setText(prefill!=null?prefill:"https://");
                   if(prefill!=null&&!prefill.isEmpty())dialogInput.setSelection(prefill.length());
                   else dialogInput.setSelection(dialogInput.getText().length());
                   dialogOverlay.setVisibility(View.VISIBLE);
-                  wakeC(); // cursor luôn hiển thị khi dialog mở
-                  // Hiện bàn phím mà không lấy focus khỏi Activity
+                  wakeC();
                   handler.postDelayed(new Runnable(){@Override public void run(){
                       dialogInput.requestFocus();
                       imm.showSoftInput(dialogInput,InputMethodManager.SHOW_FORCED);}},80);
@@ -678,11 +654,9 @@ jobs:
                   String u=dialogInput.getText().toString().trim();
                   if(u.isEmpty()||u.equals("https://")){closeDialog();return;}
                   if(!u.startsWith("http"))u="https://"+u;
-                  closeDialog();
-                  saveAndOpen(u);
+                  closeDialog();saveAndOpen(u);
               }
               private boolean isDialogOpen(){return dialogOverlay.getVisibility()==View.VISIBLE;}
-              // ── Cursor ──────────────────────────────────────────────────────────
               private void wakeC(){
                   if(!cursorVisible){cursor.setVisibility(View.VISIBLE);cursorVisible=true;}
                   handler.removeCallbacks(hideCursorRun);handler.postDelayed(hideCursorRun,HIDE_DELAY);
@@ -728,7 +702,6 @@ jobs:
                   if(v.isClickable()&&!(v instanceof CursorView))return v;
                   return null;
               }
-              // ── Data ────────────────────────────────────────────────────────────
               private void saveAndOpen(String url){
                   addHist(url);prefs.edit().putString(KEY_URL,url).apply();
                   startActivity(new Intent(this,MainActivity.class).putExtra("url",url)
@@ -767,7 +740,7 @@ jobs:
                       tv.setTextColor(url.equals(active)?0xffE50914:0xffbbbbbb);
                       tv.setTextSize(14);tv.setFocusable(false);
                       tv.setLayoutParams(new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
-                      TextView bSel=mkBtn(" Chọn ",0xff1144cc);
+                      TextView bSel=mkBtn(" Ch\u1ecdn ",0xff1144cc);
                       bSel.setOnClickListener(new View.OnClickListener(){
                           @Override public void onClick(View v){saveAndOpen(url);}});
                       TextView bEdt=mkBtn(" \u270e ",0xff226600);
@@ -796,13 +769,11 @@ jobs:
                   lp.setMargins(6,0,0,0);b.setLayoutParams(lp);return b;
               }
               @Override public boolean onKeyDown(int key,KeyEvent e){
-                  // Khi dialog mở: BACK đóng dialog, OK = click tại cursor
                   if(isDialogOpen()){
                       switch(key){
                           case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:
                               if(e.getRepeatCount()==0)saveFromDialog();return true;
-                          case KeyEvent.KEYCODE_BACK:
-                              closeDialog();return true;
+                          case KeyEvent.KEYCODE_BACK:closeDialog();return true;
                       }
                       return super.onKeyDown(key,e);
                   }
@@ -868,16 +839,15 @@ jobs:
               private CursorView cursorView;
               private SpeechRecognizer speechRecognizer;
               private InputMethodManager imm;
-              private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://vtvgo.vn";
+              private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://www.rophimm.me";
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
               private static float savedCX=-1,savedCY=-1;
-              // Cursor
               private static final float STEP_MIN=12f,STEP_MAX=100f,ACCEL=15f;
               private static final int BAR_W=100,BAR_H=70;
               private static final long HIDE_DELAY=4000;
               private boolean barVisible=false,cursorVisible=true;
-              // Edge scroll
+              // Edge scroll - chậm và mượt
               private static final int EDGE_MS=120,EDGE_MIN=15,EDGE_MAX=100;
               private int edgeDir=0,edgeTick=0;
               private Runnable edgeRun=new Runnable(){
@@ -886,28 +856,22 @@ jobs:
                       edgeTick=Math.min(edgeTick+1,10);
                       pgScroll(edgeDir*(EDGE_MIN+(EDGE_MAX-EDGE_MIN)*edgeTick/10));
                       handler.postDelayed(this,EDGE_MS);}};
-              // Drag/click/hold
               private boolean dragMode=false;
               private boolean okDown=false;
               private long okT=0;
               private float okX=0,okY=0;
               private long dragT=0;
-              // HOLD_MS: giữ OK >= 600ms → long press → copy/paste context menu
               private static final long HOLD_MS=600;
               private static final int SCR_AMT=250;
               private Runnable hideBarRun=new Runnable(){
                   @Override public void run(){bottomBar.setVisibility(View.GONE);barVisible=false;}};
               private Runnable hideCursorRun=new Runnable(){
                   @Override public void run(){cursorView.setVisibility(View.GONE);cursorVisible=false;}};
-              // Sau HOLD_MS: gửi ACTION_DOWN → WebView nhận long press → copy/paste menu
               private Runnable holdRun=new Runnable(){
                   @Override public void run(){
                       if(!okDown)return;
-                      float[]rc=wc();
-                      tDown(rc[0],rc[1]);       // ACTION_DOWN không có UP
-                      cursorView.setMode(CursorView.MODE_HOLD);
-                  }
-              };
+                      float[]rc=wc();tDown(rc[0],rc[1]);
+                      cursorView.setMode(CursorView.MODE_HOLD);}};
               private Runnable clrScrollMode=new Runnable(){
                   @Override public void run(){
                       if(cursorView.getMode()==CursorView.MODE_SCROLL)
@@ -942,8 +906,6 @@ jobs:
                       @Override public void onClick(View v){if(webView.canGoForward())webView.goForward();}});
                   findViewById(R.id.btnRefresh).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){webView.reload();}});
-                  // Nút cài đặt: lưu vị trí cursor rồi mở Settings
-                  // Settings sẽ finish() và quay về đây, hoặc start MainActivity mới
                   findViewById(R.id.btnSettingsWeb).setOnClickListener(new View.OnClickListener(){
                       @Override public void onClick(View v){
                           savedCX=cursorView.getCX();savedCY=cursorView.getCY();
@@ -996,14 +958,11 @@ jobs:
               }
               private void injectJs(WebView v){
                   v.evaluateJavascript("(function(){"
-                      // Scroll mượt tức thì
                       +"document.documentElement.style.scrollBehavior='auto';"
                       +"if(document.body){document.body.style.overscrollBehavior='none';"
                       +"document.body.style.webkitOverflowScrolling='touch';}"
-                      // _blank → _self
                       +"document.querySelectorAll('a[target=\"_blank\"]').forEach(function(a){a.target='_self';});"
                       +"window.open=function(u){if(u)location.href=u;return null;};"
-                      // Keyboard bridge
                       +"if(!window._aioKbd){window._aioKbd=true;"
                       +"document.addEventListener('focusin',function(e){"
                       +"  var t=e.target;"
@@ -1013,33 +972,47 @@ jobs:
                       +"  var t=e.target;"
                       +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.contentEditable==='true'))"
                       +"    {try{window.AIO.onInputBlur();}catch(ex){}}},true);}"
-                      // Portrait fix (vtvgo.vn)
-                      +"try{Object.defineProperty(window,'innerWidth',{configurable:true,"
-                      +"  get:function(){return Math.max(screen.width||1920,screen.height||1080)+1;}});"
-                      +"Object.defineProperty(window,'innerHeight',{configurable:true,"
-                      +"  get:function(){return Math.min(screen.width||1920,screen.height||1080)-1;}});}catch(ex){}"
+                      // ── Landscape spoof toàn diện cho vtvgo ──
+                      +"try{"
+                      +"  var _sw=Math.max(screen.width||1920,screen.height||1080);"
+                      +"  var _sh=Math.min(screen.width||1920,screen.height||1080);"
+                      +"  Object.defineProperty(window,'innerWidth',{configurable:true,get:function(){return _sw;}});"
+                      +"  Object.defineProperty(window,'innerHeight',{configurable:true,get:function(){return _sh;}});"
+                      +"}catch(ex){}"
                       +"try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){"
                       +"  return{type:'landscape-primary',angle:0,"
                       +"    lock:function(){return Promise.resolve();},"
                       +"    unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};"
                       +"}})}catch(ex){}"
                       +"try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(ex){}"
+                      // CSS ẩn tất cả popup xoay màn hình
                       +"if(!document.getElementById('_aioS')){"
                       +"  var _s=document.createElement('style');_s.id='_aioS';"
                       +"  _s.textContent='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
                       +"[id*=\"rotate-\"],[id*=\"portrait-\"],[class*=\"landscape-guide\"],"
-                      +"[class*=\"screen-rotate\"],[class*=\"orientation-warn\"],[class*=\"orientation-over\"]"
+                      +"[class*=\"screen-rotate\"],[class*=\"orientation-warn\"],[class*=\"orientation-over\"],"
+                      +"[class*=\"landscape-noti\"],[class*=\"rotate-device\"],[class*=\"orientation-modal\"],"
+                      +"[class*=\"modal-rotate\"],[class*=\"device-rotate\"]"
                       +"{display:none!important;}';"
                       +"  (document.head||document.documentElement).appendChild(_s);}"
+                      // MutationObserver: ẩn popup mới xuất hiện sau load
                       +"if(!window._aioObs){window._aioObs=true;"
                       +"  var _hn=function(n){if(!n||n.nodeType!==1)return;"
                       +"    var c=(typeof n.className==='string'?n.className:'')+(n.id||'');"
-                      +"    if(/rotat|portrait|turn.dev|landscape.g|orient.warn|screen.rot/i.test(c))"
+                      +"    if(/rotat|portrait|turn.dev|landscape.g|orient.warn|screen.rot|landscape.not|modal.rot|device.rot/i.test(c))"
                       +"      n.style.setProperty('display','none','important');};"
                       +"  new MutationObserver(function(ms){ms.forEach(function(m){"
                       +"    m.addedNodes.forEach(function(n){_hn(n);"
-                      +"      try{n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"]').forEach(_hn);}catch(ex){}});"
+                      +"      try{n.querySelectorAll&&n.querySelectorAll('[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"orient\"]').forEach(_hn);}catch(ex){}});"
                       +"  });}).observe(document.body||document.documentElement,{childList:true,subtree:true});}"
+                      // setInterval quét định kỳ - bắt popup xuất hiện muộn
+                      +"if(!window._aioInt){window._aioInt=true;"
+                      +"  setInterval(function(){"
+                      +"    var sel='[class*=\"rotate\"],[class*=\"portrait\"],[class*=\"turn-device\"],"
+                      +"[class*=\"landscape-noti\"],[class*=\"orientation-modal\"],[class*=\"modal-rotate\"]';"
+                      +"    try{document.querySelectorAll(sel).forEach(function(el){"
+                      +"      if(el.offsetParent!==null)el.style.setProperty('display','none','important');});}catch(ex){}"
+                      +"  },1000);}"
                       +"try{window.dispatchEvent(new Event('resize'));}catch(ex){}"
                       +"})();",null);
               }
@@ -1051,7 +1024,6 @@ jobs:
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
                       imm.hideSoftInputFromWindow(webView.getWindowToken(),0);}});}
               }
-              // ── Touch helpers ────────────────────────────────────────────────────
               private float[] wc(){
                   int[]l=new int[2];webView.getLocationOnScreen(l);
                   return new float[]{cursorView.getCX()-l[0],cursorView.getCY()-l[1]};
@@ -1093,7 +1065,6 @@ jobs:
                       0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
               }
-              // ── Cursor ──────────────────────────────────────────────────────────
               private void moveCursor(float dx,float dy,int rep){
                   wakeC();
                   float t=Math.min(1f,rep/ACCEL);
@@ -1110,7 +1081,6 @@ jobs:
                   else if(!inZ&&barVisible){handler.removeCallbacks(hideBarRun);handler.postDelayed(hideBarRun,1800);}
               }
               private void stopEdge(){edgeDir=0;edgeTick=0;handler.removeCallbacks(edgeRun);}
-              // ── Keys ────────────────────────────────────────────────────────────
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   wakeC();
                   if(voiceOverlay.getVisibility()==View.VISIBLE){
@@ -1130,13 +1100,10 @@ jobs:
                               else{handler.postDelayed(holdRun,HOLD_MS);}
                           }
                           return true;
-                      // MENU = bật/tắt drag (kéo giữ chuột trái)
                       case KeyEvent.KEYCODE_MENU:if(rep==0)toggleDrag();return true;
-                      // Scroll lên
                       case KeyEvent.KEYCODE_BUTTON_L1:case KeyEvent.KEYCODE_CHANNEL_DOWN:case KeyEvent.KEYCODE_PAGE_UP:
                           cursorView.setMode(CursorView.MODE_SCROLL);pgScroll(-SCR_AMT);
                           handler.removeCallbacks(clrScrollMode);handler.postDelayed(clrScrollMode,300);return true;
-                      // Scroll xuống
                       case KeyEvent.KEYCODE_BUTTON_R1:case KeyEvent.KEYCODE_CHANNEL_UP:case KeyEvent.KEYCODE_PAGE_DOWN:
                           cursorView.setMode(CursorView.MODE_SCROLL);pgScroll(SCR_AMT);
                           handler.removeCallbacks(clrScrollMode);handler.postDelayed(clrScrollMode,300);return true;
@@ -1161,14 +1128,8 @@ jobs:
                       okDown=false;handler.removeCallbacks(holdRun);
                       long held=SystemClock.uptimeMillis()-okT;
                       if(!dragMode){
-                          if(held<HOLD_MS){
-                              // Nhấn nhanh = click trái
-                              clickAtBarOrWeb();
-                          }else{
-                              // Long press: gửi UP để kết thúc → copy/paste menu đã xuất hiện từ DOWN
-                              tUp(okX,okY,okT);
-                              cursorView.setMode(CursorView.MODE_NORMAL);
-                          }
+                          if(held<HOLD_MS){clickAtBarOrWeb();}
+                          else{tUp(okX,okY,okT);cursorView.setMode(CursorView.MODE_NORMAL);}
                       }
                       return true;
                   }
@@ -1193,14 +1154,14 @@ jobs:
                   if(!SpeechRecognizer.isRecognitionAvailable(this))return;
                   speechRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
                   speechRecognizer.setRecognitionListener(new RecognitionListener(){
-                      @Override public void onReadyForSpeech(Bundle p){voiceResult.setText("Đang nghe...");}
+                      @Override public void onReadyForSpeech(Bundle p){voiceResult.setText("\u0110ang nghe...");}
                       @Override public void onResults(Bundle r){
                           ArrayList<String>m=r.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                           if(m!=null&&!m.isEmpty()){final String tt=m.get(0).toLowerCase();
                           voiceResult.setText(m.get(0));
                           handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},800);
                           handleVoice(tt);}else hideVoice();}
-                      @Override public void onError(int err){voiceResult.setText("Lỗi nhận giọng");
+                      @Override public void onError(int err){voiceResult.setText("L\u1ed7i nh\u1eadn gi\u1ecdng");
                           handler.postDelayed(new Runnable(){@Override public void run(){hideVoice();}},1500);}
                       @Override public void onBeginningOfSpeech(){}@Override public void onRmsChanged(float v){}
                       @Override public void onBufferReceived(byte[]b){}@Override public void onEndOfSpeech(){}
@@ -1208,12 +1169,12 @@ jobs:
                   });
               }
               private void handleVoice(String t){
-                  if(t.contains("phát")||t.contains("play"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
-                  else if(t.contains("dừng")||t.contains("pause"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
-                  else if(t.contains("tua tới"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
-                  else if(t.contains("tua lùi"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
-                  else if(t.contains("trang chủ")||t.contains("home"))finish();
-                  else if(t.contains("cài đặt"))startActivity(new Intent(MainActivity.this,SettingsActivity.class));
+                  if(t.contains("ph\u00e1t")||t.contains("play"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.play();",null);
+                  else if(t.contains("d\u1eebng")||t.contains("pause"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.pause();",null);
+                  else if(t.contains("tua t\u1edbi"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime+=10;",null);
+                  else if(t.contains("tua l\u00f9i"))webView.evaluateJavascript("var v=document.querySelector('video');if(v)v.currentTime-=10;",null);
+                  else if(t.contains("trang ch\u1ee7")||t.contains("home"))finish();
+                  else if(t.contains("c\u00e0i \u0111\u1eb7t"))startActivity(new Intent(MainActivity.this,SettingsActivity.class));
               }
               private void showVoice(){
                   if(speechRecognizer==null)return;
