@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="92" android:versionName="92.0">
+              package="com.allinone.app" android:versionCode="93" android:versionName="93.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -396,7 +396,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited92",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited93",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -848,7 +848,7 @@ jobs:
               private static final long HIDE_DELAY=4000;
               private boolean barVisible=false,cursorVisible=true;
               // Edge scroll - chậm và mượt
-              private static final int EDGE_MS=150,EDGE_MIN=8,EDGE_MAX=60;
+              private static final int EDGE_MS=60,EDGE_MIN=40,EDGE_MAX=300;
               private int edgeDir=0,edgeTick=0;
               private Runnable edgeRun=new Runnable(){
                   @Override public void run(){
@@ -862,7 +862,7 @@ jobs:
               private float okX=0,okY=0;
               private long dragT=0;
               private static final long HOLD_MS=600;
-              private static final int SCR_AMT=250;
+              private static final int SCR_AMT=400;
               private Runnable hideBarRun=new Runnable(){
                   @Override public void run(){bottomBar.setVisibility(View.GONE);barVisible=false;}};
               private Runnable hideCursorRun=new Runnable(){
@@ -998,12 +998,24 @@ jobs:
                       +"  var t=e.target;"
                       +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'"
                       +"    ||t.contentEditable==='true'||t.isContentEditable))"
-                      +"    {try{window.AIO.onInputFocus();}catch(ex){}}},true);"
+                      +"    {t.focus();try{window.AIO.onInputFocus();}catch(ex){}}},true);"
                       +"document.addEventListener('touchend',function(e){"
                       +"  var t=e.target;"
                       +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'"
                       +"    ||t.contentEditable==='true'||t.isContentEditable))"
-                      +"    {try{window.AIO.onInputFocus();}catch(ex){}}},true);}"
+                      +"    {t.focus();try{window.AIO.onInputFocus();}catch(ex){}}},true);"
+                      +"if(!window._aioSrch){window._aioSrch=true;"
+                      +"  var _si=function(){"
+                      +"    document.querySelectorAll('input[type=search],input[type=text],input[placeholder*=im],input[placeholder*=earch]').forEach(function(inp){"
+                      +"      if(!inp._aioHooked){inp._aioHooked=true;"
+                      +"        inp.addEventListener('focus',function(){try{window.AIO.onInputFocus();}catch(ex){}});"
+                      +"        inp.addEventListener('click',function(){this.focus();try{window.AIO.onInputFocus();}catch(ex){}});"
+                      +"      }"
+                      +"    });};"
+                      +"  _si();"
+                      +"  new MutationObserver(function(){_si();}).observe(document.body||document.documentElement,{childList:true,subtree:true});"
+                      +"}"
+                      +"}"
                       // ── Landscape spoof toàn diện cho vtvgo ──
                       +"try{"
                       +"  var _sw=Math.max(screen.width||1920,screen.height||1080);"
@@ -1062,12 +1074,24 @@ jobs:
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
+                      showKbd();}});}
+                  private void showKbd(){
                       webView.requestFocus();
-                      imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                      // Retry sau 300ms phòng case webview chưa ready
+                      // Method 1: SHOW_FORCED
+                      imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                      // Method 2: toggleSoftInput fallback
                       handler.postDelayed(new Runnable(){@Override public void run(){
-                          imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
-                      }},300);}});}
+                          if(!imm.isActive()){
+                              imm.toggleSoftInput(InputMethodManager.SHOW_FORCED,
+                                  InputMethodManager.HIDE_IMPLICIT_ONLY);
+                          } else {
+                              imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                          }
+                      }},200);
+                      handler.postDelayed(new Runnable(){@Override public void run(){
+                          imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                      }},500);
+                  }
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
                       imm.hideSoftInputFromWindow(webView.getWindowToken(),0);}});}
@@ -1108,7 +1132,7 @@ jobs:
                   pp[0]=new MotionEvent.PointerProperties();pp[0].id=0;pp[0].toolType=MotionEvent.TOOL_TYPE_MOUSE;
                   MotionEvent.PointerCoords[]pc=new MotionEvent.PointerCoords[1];
                   pc[0]=new MotionEvent.PointerCoords();pc[0].x=rx;pc[0].y=ry;
-                  pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-3f:3f);
+                  pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-8f:8f);
                   MotionEvent ev=MotionEvent.obtain(t,t,MotionEvent.ACTION_SCROLL,1,pp,pc,
                       0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
