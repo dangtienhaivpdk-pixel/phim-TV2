@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="94" android:versionName="94.0">
+              package="com.allinone.app" android:versionCode="95" android:versionName="95.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -396,7 +396,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited94",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited95",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -848,13 +848,13 @@ jobs:
               private static final long HIDE_DELAY=4000;
               private boolean barVisible=false,cursorVisible=true;
               // Edge scroll - chậm và mượt
-              private static final int EDGE_MS=50,EDGE_MIN=20,EDGE_MAX=350;
+              private static final int EDGE_MS=80,EDGE_MIN=6,EDGE_MAX=80;
               private int edgeDir=0,edgeTick=0;
               private Runnable edgeRun=new Runnable(){
                   @Override public void run(){
                       if(edgeDir==0)return;
-                      edgeTick=Math.min(edgeTick+1,10);
-                      pgScroll(edgeDir*(EDGE_MIN+(EDGE_MAX-EDGE_MIN)*edgeTick/10));
+                      edgeTick=Math.min(edgeTick+1,20);
+                      pgScroll(edgeDir*(EDGE_MIN+(EDGE_MAX-EDGE_MIN)*edgeTick/20));
                       handler.postDelayed(this,EDGE_MS);}};
               private boolean dragMode=false;
               private boolean okDown=false;
@@ -862,7 +862,7 @@ jobs:
               private float okX=0,okY=0;
               private long dragT=0;
               private static final long HOLD_MS=600;
-              private static final int SCR_AMT=400;
+              private static final int SCR_AMT=300;
               private Runnable hideBarRun=new Runnable(){
                   @Override public void run(){bottomBar.setVisibility(View.GONE);barVisible=false;}};
               private Runnable hideCursorRun=new Runnable(){
@@ -1087,26 +1087,19 @@ jobs:
                   public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
                       showKbd();}});}
                   private void showKbd(){
-                      // Step 1: focus webview
-                      webView.requestFocus();
+                      // Chỉ dùng showSoftInput, KHÔNG dùng toggleSoftInput
+                      // (toggle gây ra enter giả)
                       webView.setFocusable(true);
                       webView.setFocusableInTouchMode(true);
-                      // Step 2: showSoftInput với nhiều method
+                      webView.requestFocus();
                       imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
-                      // Step 3: retry
-                      handler.postDelayed(new Runnable(){@Override public void run(){
-                          webView.requestFocus();
-                          imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      }},100);
                       handler.postDelayed(new Runnable(){@Override public void run(){
                           imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      }},400);
-                      // Step 4: restore focusable sau khi done
+                      }},300);
                       handler.postDelayed(new Runnable(){@Override public void run(){
                           webView.setFocusable(false);
                           webView.setFocusableInTouchMode(false);
-                      }},800);
+                      }},1000);
                   }
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
@@ -1148,7 +1141,7 @@ jobs:
                   pp[0]=new MotionEvent.PointerProperties();pp[0].id=0;pp[0].toolType=MotionEvent.TOOL_TYPE_MOUSE;
                   MotionEvent.PointerCoords[]pc=new MotionEvent.PointerCoords[1];
                   pc[0]=new MotionEvent.PointerCoords();pc[0].x=rx;pc[0].y=ry;
-                  pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-8f:8f);
+                  pc[0].setAxisValue(MotionEvent.AXIS_VSCROLL,dy>0?-4f:4f);
                   MotionEvent ev=MotionEvent.obtain(t,t,MotionEvent.ACTION_SCROLL,1,pp,pc,
                       0,0,1f,1f,0,0,InputDevice.SOURCE_MOUSE,0);
                   webView.dispatchGenericMotionEvent(ev);ev.recycle();
