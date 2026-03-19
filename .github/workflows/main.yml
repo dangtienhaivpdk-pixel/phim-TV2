@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="93" android:versionName="93.0">
+              package="com.allinone.app" android:versionCode="94" android:versionName="94.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -396,7 +396,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited93",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited94",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -843,12 +843,12 @@ jobs:
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
               private static float savedCX=-1,savedCY=-1;
-              private static final float STEP_MIN=12f,STEP_MAX=100f,ACCEL=15f;
+              private static final float STEP_MIN=8f,STEP_MAX=120f,ACCEL=10f;
               private static final int BAR_W=100,BAR_H=70;
               private static final long HIDE_DELAY=4000;
               private boolean barVisible=false,cursorVisible=true;
               // Edge scroll - chậm và mượt
-              private static final int EDGE_MS=60,EDGE_MIN=40,EDGE_MAX=300;
+              private static final int EDGE_MS=50,EDGE_MIN=20,EDGE_MAX=350;
               private int edgeDir=0,edgeTick=0;
               private Runnable edgeRun=new Runnable(){
                   @Override public void run(){
@@ -930,6 +930,12 @@ jobs:
                   ws.setNeedInitialFocus(false);ws.setLoadsImagesAutomatically(true);ws.setBlockNetworkImage(false);
                   ws.setRenderPriority(WebSettings.RenderPriority.HIGH);
                   if(Build.VERSION.SDK_INT>=26)ws.setSafeBrowsingEnabled(false);
+                  // Tối ưu performance
+                  ws.setEnableSmoothTransition(true);
+                  ws.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+                  if(Build.VERSION.SDK_INT>=21){
+                      android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(webView,true);
+                  }
                   ws.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
                   webView.setLayerType(View.LAYER_TYPE_HARDWARE,null);
                   webView.setLongClickable(true);
@@ -979,6 +985,11 @@ jobs:
               private void injectJs(WebView v){
                   v.evaluateJavascript("(function(){"
                       +"document.documentElement.style.scrollBehavior='auto';"
+                      +"document.documentElement.style.willChange='scroll-position';"
+                      +"if(document.body){"
+                      +"  document.body.style.willChange='scroll-position';"
+                      +"  document.body.style.transform='translateZ(0)';"
+                      +"}"
                       +"if(document.body){document.body.style.overscrollBehavior='none';"
                       +"document.body.style.webkitOverflowScrolling='touch';}"
                       +"document.querySelectorAll('a[target=\"_blank\"]').forEach(function(a){a.target='_self';});"
@@ -1076,21 +1087,26 @@ jobs:
                   public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
                       showKbd();}});}
                   private void showKbd(){
+                      // Step 1: focus webview
                       webView.requestFocus();
-                      // Method 1: SHOW_FORCED
+                      webView.setFocusable(true);
+                      webView.setFocusableInTouchMode(true);
+                      // Step 2: showSoftInput với nhiều method
                       imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      // Method 2: toggleSoftInput fallback
+                      imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+                      // Step 3: retry
                       handler.postDelayed(new Runnable(){@Override public void run(){
-                          if(!imm.isActive()){
-                              imm.toggleSoftInput(InputMethodManager.SHOW_FORCED,
-                                  InputMethodManager.HIDE_IMPLICIT_ONLY);
-                          } else {
-                              imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                          }
-                      }},200);
+                          webView.requestFocus();
+                          imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                      }},100);
                       handler.postDelayed(new Runnable(){@Override public void run(){
                           imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      }},500);
+                      }},400);
+                      // Step 4: restore focusable sau khi done
+                      handler.postDelayed(new Runnable(){@Override public void run(){
+                          webView.setFocusable(false);
+                          webView.setFocusableInTouchMode(false);
+                      }},800);
                   }
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
