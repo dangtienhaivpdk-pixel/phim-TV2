@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="95" android:versionName="95.0">
+              package="com.allinone.app" android:versionCode="96" android:versionName="96.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -396,7 +396,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited95",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited96",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -848,13 +848,15 @@ jobs:
               private static final long HIDE_DELAY=4000;
               private boolean barVisible=false,cursorVisible=true;
               // Edge scroll - chậm và mượt
-              private static final int EDGE_MS=80,EDGE_MIN=6,EDGE_MAX=80;
+              private static final int EDGE_MS=100,EDGE_MIN=5,EDGE_MAX=60;
               private int edgeDir=0,edgeTick=0;
               private Runnable edgeRun=new Runnable(){
                   @Override public void run(){
                       if(edgeDir==0)return;
-                      edgeTick=Math.min(edgeTick+1,20);
-                      pgScroll(edgeDir*(EDGE_MIN+(EDGE_MAX-EDGE_MIN)*edgeTick/20));
+                      edgeTick=Math.min(edgeTick+1,30);
+                      // Bắt đầu rất chậm, giữ lâu mới nhanh (30 bước ~2.4s)
+                      int spd=EDGE_MIN+(EDGE_MAX-EDGE_MIN)*edgeTick/30;
+                      webView.scrollBy(0,edgeDir*spd);
                       handler.postDelayed(this,EDGE_MS);}};
               private boolean dragMode=false;
               private boolean okDown=false;
@@ -1015,17 +1017,6 @@ jobs:
                       +"  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'"
                       +"    ||t.contentEditable==='true'||t.isContentEditable))"
                       +"    {t.focus();try{window.AIO.onInputFocus();}catch(ex){}}},true);"
-                      +"if(!window._aioSrch){window._aioSrch=true;"
-                      +"  var _si=function(){"
-                      +"    document.querySelectorAll('input[type=search],input[type=text],input[placeholder*=im],input[placeholder*=earch]').forEach(function(inp){"
-                      +"      if(!inp._aioHooked){inp._aioHooked=true;"
-                      +"        inp.addEventListener('focus',function(){try{window.AIO.onInputFocus();}catch(ex){}});"
-                      +"        inp.addEventListener('click',function(){this.focus();try{window.AIO.onInputFocus();}catch(ex){}});"
-                      +"      }"
-                      +"    });};"
-                      +"  _si();"
-                      +"  new MutationObserver(function(){_si();}).observe(document.body||document.documentElement,{childList:true,subtree:true});"
-                      +"}"
                       +"}"
                       // ── Landscape spoof toàn diện cho vtvgo ──
                       +"try{"
@@ -1087,19 +1078,22 @@ jobs:
                   public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
                       showKbd();}});}
                   private void showKbd(){
-                      // Chỉ dùng showSoftInput, KHÔNG dùng toggleSoftInput
-                      // (toggle gây ra enter giả)
-                      webView.setFocusable(true);
-                      webView.setFocusableInTouchMode(true);
-                      webView.requestFocus();
-                      imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                      // Simulate tap vào vị trí cursor để trigger keyboard tự nhiên
+                      int[]wl=new int[2];webView.getLocationOnScreen(wl);
+                      float rx=cursorView.getCX()-wl[0];
+                      float ry=cursorView.getCY()-wl[1];
+                      long t0=SystemClock.uptimeMillis();
+                      MotionEvent dn=MotionEvent.obtain(t0,t0,MotionEvent.ACTION_DOWN,rx,ry,0);
+                      webView.dispatchTouchEvent(dn);dn.recycle();
+                      final float frx=rx,fry=ry;final long ft0=t0;
                       handler.postDelayed(new Runnable(){@Override public void run(){
-                          imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      }},300);
-                      handler.postDelayed(new Runnable(){@Override public void run(){
-                          webView.setFocusable(false);
-                          webView.setFocusableInTouchMode(false);
-                      }},1000);
+                          MotionEvent up=MotionEvent.obtain(ft0,SystemClock.uptimeMillis(),MotionEvent.ACTION_UP,frx,fry,0);
+                          webView.dispatchTouchEvent(up);up.recycle();
+                          // Sau khi tap xong, show keyboard
+                          handler.postDelayed(new Runnable(){@Override public void run(){
+                              imm.showSoftInput(webView,InputMethodManager.SHOW_FORCED);
+                          }},150);
+                      }},80);
                   }
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
