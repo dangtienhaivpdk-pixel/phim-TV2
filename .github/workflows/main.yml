@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="103" android:versionName="103.0">
+              package="com.allinone.app" android:versionCode="105" android:versionName="105.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -433,7 +433,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited103",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited105",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -1204,36 +1204,23 @@ jobs:
                   }
                   private void submitInputOverlay(){
                       final String raw=inputOverlayEdit.getText().toString();
-                      // Dùng KbdBridge.setValue để inject an toàn
-                      webView.evaluateJavascript(
-                          "(function(){"
-                          +"var el=document.activeElement;"
-                          +"if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){"
-                          +"try{"
-                          +"var nd=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');"
-                          +"if(nd&&nd.set)nd.set.call(el,window._aioVal||el.value);"
-                          +"else el.value=window._aioVal||el.value;"
-                          +"}catch(ex){el.value=window._aioVal||el.value;}"
-                          +"el.dispatchEvent(new Event('input',{bubbles:true}));"
-                          +"el.dispatchEvent(new Event('change',{bubbles:true}));"
-                          +"}})();",null);
-                      // Set value qua JS trước
-                      final String escaped=raw.replace("\\","\\\\").replace("'","\\'");
-                      webView.evaluateJavascript("window._aioVal='"+escaped+"';",
-                          new android.webkit.ValueCallback<String>(){
-                              @Override public void onReceiveValue(String v){
-                                  webView.evaluateJavascript(
-                                      "(function(){"
-                                      +"var el=document.activeElement;"
-                                      +"if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){"
-                                      +"try{var nd=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');"
-                                      +"if(nd&&nd.set)nd.set.call(el,window._aioVal);else el.value=window._aioVal;"
-                                      +"}catch(ex){el.value=window._aioVal;}"
-                                      +"el.dispatchEvent(new Event('input',{bubbles:true}));"
-                                      +"el.dispatchEvent(new Event('change',{bubbles:true}));"
-                                      +"}})();",null);
-              }});
                       closeInputOverlay();
+                      webView.post(new Runnable(){@Override public void run(){
+                          StringBuilder js=new StringBuilder();
+                          js.append("(function(){var el=document.activeElement;");
+                          js.append("if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){");
+                          js.append("try{");
+                          js.append("var d=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');");
+                          js.append("if(d&&d.set)d.set.call(el,unescape('");
+                          js.append(android.net.Uri.encode(raw).replace("+","%20"));
+                          js.append("'));else el.value=unescape('");
+                          js.append(android.net.Uri.encode(raw).replace("+","%20"));
+                          js.append("');}catch(ex){}");
+                          js.append("el.dispatchEvent(new Event('input',{bubbles:true}));");
+                          js.append("el.dispatchEvent(new Event('change',{bubbles:true}));");
+                          js.append("}})();");
+                          webView.evaluateJavascript(js.toString(),null);
+                      }});
                   }
                   private void closeInputOverlay(){
                       inputOverlay.setVisibility(View.GONE);
@@ -1245,6 +1232,21 @@ jobs:
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
                       hideKbd();}});}
+                  @android.webkit.JavascriptInterface
+                  public void injectText(final String val){
+                      handler.post(new Runnable(){@Override public void run(){
+                          webView.evaluateJavascript(
+                              "window._aioV='"+val.replace("\\","\\\\").replace("'","\\'")+"';"
+                              +"(function(){var el=document.activeElement;"
+                              +"if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){"
+                              +"try{var d=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');"
+                              +"if(d&&d.set)d.set.call(el,window._aioV);else el.value=window._aioV;"
+                              +"}catch(e){el.value=window._aioV;}"
+                              +"el.dispatchEvent(new Event('input',{bubbles:true}));"
+                              +"el.dispatchEvent(new Event('change',{bubbles:true}));"
+                              +"}})();",null);
+                      }});
+                  }
               }
               private float[] wc(){
                   int[]l=new int[2];webView.getLocationOnScreen(l);
@@ -1422,6 +1424,7 @@ jobs:
                   handler.removeCallbacksAndMessages(null);
                   if(speechRecognizer!=null)speechRecognizer.destroy();
                   webView.destroy();super.onDestroy();}
+          }
           }
           JEOF
       - name: Build APK
