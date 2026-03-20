@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="105" android:versionName="105.0">
+              package="com.allinone.app" android:versionCode="106" android:versionName="106.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -433,7 +433,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited105",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited106",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -1171,64 +1171,53 @@ jobs:
                       Toast.makeText(MainActivity.this,"JS: input focused",Toast.LENGTH_SHORT).show();
                       showKbd();}});}
                   private void showKbd(){
-                      Toast.makeText(MainActivity.this,"Keyboard triggered",Toast.LENGTH_SHORT).show();
-                      webView.evaluateJavascript(
-                          "(function(){var el=document.activeElement;"
-                          +"var v=el&&el.value?el.value:'';"
-                          +"var p=el&&el.placeholder?el.placeholder:'Nhap tim kiem';"
-                          +"return v+'||SEP||'+p;})()",
+                      Toast.makeText(MainActivity.this,"Keyboard",Toast.LENGTH_SHORT).show();
+                      webView.evaluateJavascript("(function(){var el=document.activeElement;return el?el.value||'':'';})()",
                           new android.webkit.ValueCallback<String>(){
-                              @Override public void onReceiveValue(String res){
-                                  String val="",hint="Nhap tim kiem";
-                                  if(res!=null&&!res.equals("null")){
-                                      res=res.replaceAll("^"|"$","");
-                                      String[]parts=res.split("\\|\\|SEP\\|\\|",2);
-                                      if(parts.length>0)val=parts[0];
-                                      if(parts.length>1&&!parts[1].isEmpty())hint=parts[1];
-                                  }
-                                  openInputOverlay(val,hint);
+                              @Override public void onReceiveValue(String s){
+                                  String cur=s!=null?s.replaceAll("^\"|\"$",""):"";
+                                  openInputOverlay(cur,"Nhap tim kiem");
                               }
                           });
                   }
-                  private void openInputOverlay(final String current,final String hint){
+                  private void openInputOverlay(final String cur,final String hint){
                       handler.post(new Runnable(){@Override public void run(){
                           inputOverlayTitle.setText(hint);
-                          inputOverlayEdit.setText(current);
-                          inputOverlayEdit.setSelection(current.length());
+                          inputOverlayEdit.setText(cur);
+                          inputOverlayEdit.setSelection(cur.length());
                           inputOverlay.setVisibility(View.VISIBLE);
                           inputOverlayEdit.requestFocus();
                           handler.postDelayed(new Runnable(){@Override public void run(){
                               imm.showSoftInput(inputOverlayEdit,InputMethodManager.SHOW_FORCED);
-                          }},100);
+                          }},120);
                       }});
                   }
                   private void submitInputOverlay(){
                       final String raw=inputOverlayEdit.getText().toString();
                       closeInputOverlay();
+                      final String enc=android.util.Base64.encodeToString(
+                          raw.getBytes(java.nio.charset.Charset.forName("UTF-8")),
+                          android.util.Base64.NO_WRAP);
                       webView.post(new Runnable(){@Override public void run(){
-                          StringBuilder js=new StringBuilder();
-                          js.append("(function(){var el=document.activeElement;");
-                          js.append("if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){");
-                          js.append("try{");
-                          js.append("var d=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');");
-                          js.append("if(d&&d.set)d.set.call(el,unescape('");
-                          js.append(android.net.Uri.encode(raw).replace("+","%20"));
-                          js.append("'));else el.value=unescape('");
-                          js.append(android.net.Uri.encode(raw).replace("+","%20"));
-                          js.append("');}catch(ex){}");
-                          js.append("el.dispatchEvent(new Event('input',{bubbles:true}));");
-                          js.append("el.dispatchEvent(new Event('change',{bubbles:true}));");
-                          js.append("}})();");
-                          webView.evaluateJavascript(js.toString(),null);
+                          String js="(function(){"
+                              +"var raw=atob('"+enc+"');"
+                              +"var el=document.activeElement;"
+                              +"if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){"
+                              +"try{"
+                              +"var d=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');"
+                              +"if(d&&d.set)d.set.call(el,raw);else el.value=raw;"
+                              +"}catch(ex){el.value=raw;}"
+                              +"el.dispatchEvent(new Event('input',{bubbles:true}));"
+                              +"el.dispatchEvent(new Event('change',{bubbles:true}));"
+                              +"}})();";
+                          webView.evaluateJavascript(js,null);
                       }});
                   }
                   private void closeInputOverlay(){
                       inputOverlay.setVisibility(View.GONE);
                       imm.hideSoftInputFromWindow(inputOverlayEdit.getWindowToken(),0);
                   }
-                  private void hideKbd(){
-                      closeInputOverlay();
-                  }
+                  private void hideKbd(){closeInputOverlay();}
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
                       hideKbd();}});}
