@@ -79,7 +79,7 @@ jobs:
           cat > AndroidManifest.xml << 'XMLEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.allinone.app" android:versionCode="98" android:versionName="98.0">
+              package="com.allinone.app" android:versionCode="102" android:versionName="102.0">
               <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -102,7 +102,7 @@ jobs:
                   <activity android:name=".MainActivity" android:exported="false"
                       android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize"
+                      android:windowSoftInputMode="stateAlwaysVisible|adjustPan"
                       android:configChanges="orientation|screenSize|keyboardHidden"/>
                   <activity android:name=".SettingsActivity" android:exported="false"
                       android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
@@ -207,6 +207,43 @@ jobs:
               <com.allinone.app.CursorView android:id="@+id/cursor"
                   android:layout_width="match_parent" android:layout_height="match_parent"
                   android:clickable="false" android:focusable="false"/>
+              <FrameLayout android:id="@+id/inputOverlay"
+                  android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:background="#cc000000" android:visibility="gone" android:focusable="false">
+                  <LinearLayout android:layout_width="800dp" android:layout_height="wrap_content"
+                      android:layout_gravity="center" android:orientation="vertical"
+                      android:background="#1e1e30" android:padding="32dp" android:focusable="false">
+                      <TextView android:id="@+id/inputOverlayTitle"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:text="Nhap tim kiem" android:textSize="20sp"
+                          android:textColor="#ffffff" android:textStyle="bold"
+                          android:layout_marginBottom="16dp" android:focusable="false"/>
+                      <EditText android:id="@+id/inputOverlayEdit"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:textSize="18sp" android:textColor="#ffffff"
+                          android:background="#111133" android:padding="16dp"
+                          android:singleLine="true" android:imeOptions="actionSearch"
+                          android:inputType="text" android:focusable="true"
+                          android:focusableInTouchMode="true"
+                          android:layout_marginBottom="20dp"/>
+                      <LinearLayout android:layout_width="match_parent"
+                          android:layout_height="wrap_content" android:orientation="horizontal"
+                          android:gravity="end" android:focusable="false">
+                          <TextView android:id="@+id/inputOverlayCancel"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"
+                              android:text="  HUY  " android:textSize="16sp"
+                              android:textColor="#aaaaaa" android:background="#333344"
+                              android:padding="14dp" android:layout_marginRight="16dp"
+                              android:clickable="true" android:focusable="false"/>
+                          <TextView android:id="@+id/inputOverlayOk"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"
+                              android:text="  OK  " android:textSize="16sp"
+                              android:textColor="#ffffff" android:background="#E50914"
+                              android:padding="14dp" android:clickable="true"
+                              android:focusable="false"/>
+                      </LinearLayout>
+                  </LinearLayout>
+              </FrameLayout>
           </FrameLayout>
           XMLEOF
           cat > res/layout/settings.xml << 'XMLEOF'
@@ -396,7 +433,7 @@ jobs:
           import java.util.List;
           public class HomeActivity extends Activity {
               static final String PREF="aio_prefs",KEY_URL="custom_url",KEY_HIST="url_history",
-                  KEY_INIT="inited98",DEF="https://rophimm.me/",SEP="|||";
+                  KEY_INIT="inited102",DEF="https://rophimm.me/",SEP="|||";
               static final String[]DEFS={
                   "https://rophimm.me/",
                   "https://vtvgo.vn",
@@ -829,6 +866,7 @@ jobs:
           import android.net.http.SslError;
           import android.webkit.SslErrorHandler;
           import android.view.inputmethod.InputMethodManager;
+          import android.widget.Toast;
           import java.util.ArrayList;
           public class MainActivity extends Activity {
               private ScrollWebView webView;
@@ -840,6 +878,9 @@ jobs:
               private SpeechRecognizer speechRecognizer;
               private InputMethodManager imm;
               private static final String PREF="aio_prefs",KEY_URL="custom_url",DEF="https://rophimm.me/";
+              private android.widget.FrameLayout inputOverlay;
+              private android.widget.EditText inputOverlayEdit;
+              private android.widget.TextView inputOverlayTitle;
               private Handler handler=new Handler();
               private float screenW=1920,screenH=1080;
               private static float savedCX=-1,savedCY=-1;
@@ -853,6 +894,7 @@ jobs:
               private Runnable edgeRun=new Runnable(){
                   @Override public void run(){
                       if(edgeDir==0)return;
+                      if(edgeTick==0)Toast.makeText(MainActivity.this,"↕ Edge scroll ON",Toast.LENGTH_SHORT).show();
                       edgeTick=Math.min(edgeTick+1,15);
                       // Bắt đầu chậm, giữ ~1s mới nhanh tối đa
                       int spd=EDGE_MIN+(EDGE_MAX-EDGE_MIN)*edgeTick/15;
@@ -912,6 +954,20 @@ jobs:
                       @Override public void onClick(View v){
                           savedCX=cursorView.getCX();savedCY=cursorView.getCY();
                           startActivity(new Intent(MainActivity.this,SettingsActivity.class));}});
+                  inputOverlay=(android.widget.FrameLayout)findViewById(R.id.inputOverlay);
+                  inputOverlayEdit=(android.widget.EditText)findViewById(R.id.inputOverlayEdit);
+                  inputOverlayTitle=(android.widget.TextView)findViewById(R.id.inputOverlayTitle);
+                  findViewById(R.id.inputOverlayOk).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){submitInputOverlay();}});
+                  findViewById(R.id.inputOverlayCancel).setOnClickListener(new View.OnClickListener(){
+                      @Override public void onClick(View v){closeInputOverlay();}});
+                  inputOverlayEdit.setOnEditorActionListener(new android.widget.TextView.OnEditorActionListener(){
+                      @Override public boolean onEditorAction(android.widget.TextView v,int id,KeyEvent ev){
+                          if(id==android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
+                              ||id==android.view.inputmethod.EditorInfo.IME_ACTION_GO
+                              ||id==android.view.inputmethod.EditorInfo.IME_ACTION_DONE){
+                              submitInputOverlay();return true;}
+                          return false;}});
                   setupSpeech();setupWebView();webView.loadUrl(loadUrl);
               }
               private void wakeC(){
@@ -986,14 +1042,22 @@ jobs:
                       @Override public boolean shouldOverrideUrlLoading(WebView v,String u){
                           if(u==null)return true;
                           if(!isHttp(u))return true;
-                          if(isAdUrl(u)){return true;}
+                          if(isAdUrl(u)){
+                              final String fu=u;
+                              handler.post(new Runnable(){@Override public void run(){
+                                  Toast.makeText(MainActivity.this,"🚫 Blocked: "+fu.substring(0,Math.min(fu.length(),40)),Toast.LENGTH_SHORT).show();}});
+                              return true;}
                           return false;}
                       @Override @TargetApi(Build.VERSION_CODES.N)
                       public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
                           if(r==null||r.getUrl()==null)return true;
                           String u=r.getUrl().toString();
                           if(!isHttp(u))return true;
-                          if(isAdUrl(u)){return true;}
+                          if(isAdUrl(u)){                          if(isAdUrl(u)){
+                              final String fu2=u;
+                              handler.post(new Runnable(){@Override public void run(){
+                                  Toast.makeText(MainActivity.this,"🚫 Blocked: "+fu2.substring(0,Math.min(fu2.length(),40)),Toast.LENGTH_SHORT).show();}});
+                              return true;}
                           return false;}
                       @Override public void onPageStarted(WebView v,String u,Bitmap f){
                           progressBar.setVisibility(View.VISIBLE);}
@@ -1040,6 +1104,8 @@ jobs:
                       +"  var _sh=Math.min(screen.width||1920,screen.height||1080);"
                       +"  Object.defineProperty(window,'innerWidth',{configurable:true,get:function(){return _sw;}});"
                       +"  Object.defineProperty(window,'innerHeight',{configurable:true,get:function(){return _sh;}});"
+                      +"  Object.defineProperty(screen,'width',{configurable:true,get:function(){return _sw;}});"
+                      +"  Object.defineProperty(screen,'height',{configurable:true,get:function(){return _sh;}});"
                       +"}catch(ex){}"
                       +"try{Object.defineProperty(screen,'orientation',{configurable:true,get:function(){"
                       +"  return{type:'landscape-primary',angle:0,"
@@ -1047,6 +1113,16 @@ jobs:
                       +"    unlock:function(){},addEventListener:function(){},removeEventListener:function(){}};"
                       +"}})}catch(ex){}"
                       +"try{Object.defineProperty(window,'orientation',{configurable:true,get:function(){return 0;}})}catch(ex){}"
+                      +"try{if(window.matchMedia){"
+                      +"  var _omm=window.matchMedia.bind(window);"
+                      +"  window.matchMedia=function(q){"
+                      +"    if(q&&(q.indexOf('portrait')>=0)){"
+                      +"      return{matches:false,media:q,onchange:null,"
+                      +"        addListener:function(){},removeListener:function(){},"
+                      +"        addEventListener:function(){},removeEventListener:function(){},"
+                      +"        dispatchEvent:function(){return false;}};"
+                      +"    }return _omm(q);};"
+                      +"}}catch(ex){}"
                       // CSS ẩn tất cả popup xoay màn hình
                       +"if(!document.getElementById('_aioS')){"
                       +"  var _s=document.createElement('style');_s.id='_aioS';"
@@ -1092,24 +1168,61 @@ jobs:
               private class KbdBridge {
                   @android.webkit.JavascriptInterface
                   public void onInputFocus(){handler.post(new Runnable(){@Override public void run(){
+                      Toast.makeText(MainActivity.this,"JS: input focused",Toast.LENGTH_SHORT).show();
                       showKbd();}});}
                   private void showKbd(){
-                      // Enable focusable, lấy focus, show keyboard
-                      webView.setFocusable(true);
-                      webView.setFocusableInTouchMode(true);
-                      webView.requestFocus();
-                      imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      handler.postDelayed(new Runnable(){@Override public void run(){
-                          imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
-                      }},200);
+                      Toast.makeText(MainActivity.this,"Keyboard triggered",Toast.LENGTH_SHORT).show();
+                      webView.evaluateJavascript(
+                          "(function(){var el=document.activeElement;"
+                          +"var v=el&&el.value?el.value:'';"
+                          +"var p=el&&el.placeholder?el.placeholder:'Nhap tim kiem';"
+                          +"return v+'||SEP||'+p;})()",
+                          new android.webkit.ValueCallback<String>(){
+                              @Override public void onReceiveValue(String res){
+                                  String val="",hint="Nhap tim kiem";
+                                  if(res!=null&&!res.equals("null")){
+                                      res=res.replaceAll("^"|"$","");
+                                      String[]parts=res.split("\\|\\|SEP\\|\\|",2);
+                                      if(parts.length>0)val=parts[0];
+                                      if(parts.length>1&&!parts[1].isEmpty())hint=parts[1];
+                                  }
+                                  openInputOverlay(val,hint);
+                              }
+                          });
+                  }
+                  private void openInputOverlay(final String current,final String hint){
+                      handler.post(new Runnable(){@Override public void run(){
+                          inputOverlayTitle.setText(hint);
+                          inputOverlayEdit.setText(current);
+                          inputOverlayEdit.setSelection(current.length());
+                          inputOverlay.setVisibility(View.VISIBLE);
+                          inputOverlayEdit.requestFocus();
+                          handler.postDelayed(new Runnable(){@Override public void run(){
+                              imm.showSoftInput(inputOverlayEdit,InputMethodManager.SHOW_FORCED);
+                          }},100);
+                      }});
+                  }
+                  private void submitInputOverlay(){
+                      String raw=inputOverlayEdit.getText().toString();
+                      // Escape single quotes for JS
+                      final String val=raw.replace("\\","\\\\").replace("'","\\'");
+                      webView.evaluateJavascript(
+                          "(function(){"
+                          +"var el=document.activeElement;"
+                          +"if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){"
+                          +"var nd=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');"
+                          +"if(nd&&nd.set)nd.set.call(el,'"+val+"');else el.value='"+val+"';"
+                          +"el.dispatchEvent(new Event('input',{bubbles:true}));"
+                          +"el.dispatchEvent(new Event('change',{bubbles:true}));"
+                          +"}})();",null);
+                      closeInputOverlay();
+                  }
+                  private void closeInputOverlay(){
+                      inputOverlay.setVisibility(View.GONE);
+                      imm.hideSoftInputFromWindow(inputOverlayEdit.getWindowToken(),0);
                   }
                   private void hideKbd(){
-                      imm.hideSoftInputFromWindow(webView.getWindowToken(),0);
-                      // Disable focusable lại để D-pad hoạt động bình thường
-                      handler.postDelayed(new Runnable(){@Override public void run(){
-                          webView.setFocusable(false);
-                          webView.setFocusableInTouchMode(false);
-                      }},100);
+                      closeInputOverlay();
                   }
                   @android.webkit.JavascriptInterface
                   public void onInputBlur(){handler.post(new Runnable(){@Override public void run(){
@@ -1174,6 +1287,10 @@ jobs:
               private void stopEdge(){edgeDir=0;edgeTick=0;handler.removeCallbacks(edgeRun);}
               @Override public boolean onKeyDown(int key,KeyEvent e){
                   wakeC();
+                  if(inputOverlay.getVisibility()==View.VISIBLE){
+                      if(key==KeyEvent.KEYCODE_BACK){closeInputOverlay();return true;}
+                      if((key==KeyEvent.KEYCODE_DPAD_CENTER||key==KeyEvent.KEYCODE_ENTER)&&e.getRepeatCount()==0){submitInputOverlay();return true;}
+                      return false;}
                   if(voiceOverlay.getVisibility()==View.VISIBLE){
                       if(key==KeyEvent.KEYCODE_BACK){hideVoice();return true;}return true;}
                   int rep=e.getRepeatCount();
