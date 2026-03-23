@@ -59,7 +59,6 @@ jobs:
           base64 -d /tmp/_b64tmp > /tmp/_png.py
           python3 /tmp/_png.py
 
-                    "
 
           printf '%s' 'PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPG1hbmlmZXN0IHhtbG5zOmFuZHJvaWQ9Imh0dHA6Ly9zY2hl' > /tmp/_b64tmp
           printf '%s' 'bWFzLmFuZHJvaWQuY29tL2Fway9yZXMvYW5kcm9pZCIKICAgIHBhY2thZ2U9ImNvbS5hbGxpbm9uZS5hcHAiIGFuZHJvaWQ6dmVy' >> /tmp/_b64tmp
