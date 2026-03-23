@@ -27,55 +27,57 @@ jobs:
       - name: Create project files
         run: |
           mkdir -p src/com/allinone/app res/layout res/values res/drawable
-                    python3 -c "
-                    import struct,zlib
-                    def make_png(w,h,gp):
-                        def chunk(n,d):
-                            c=zlib.crc32(n+d)&0xffffffff
-                            return struct.pack('>I',len(d))+n+d+struct.pack('>I',c)
-                        raw=b''
-                        for y in range(h):
-                            raw+=b'\x00'
-                            for x in range(w):raw+=bytes(gp(x,y))
-                        png=b'\x89PNG\r\n\x1a\n'
-                        ihdr=struct.pack('>II',w,h)+bytes([8,6,0,0,0])
-                        png+=chunk(b'IHDR',ihdr)+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
-                        return png
-                    def ip(x,y):
-                        cx,cy,r=48,48,46;dx,dy=x-cx,y-cy
-                        if dx*dx+dy*dy>r*r:return[0,0,0,0]
-                        if dx*dx+dy*dy>40*40:return[180,150,80,255]
-                        ft=8;fb=88;sh=14;it=(ft<=y<=ft+sh);ib=(fb-sh<=y<=fb)
-                        if it or ib:
-                            sx=(x-4)%16;sy=y-ft-3 if it else y-(fb-sh)-3
-                            if 2<=sx<=10 and 2<=sy<=8:return[220,210,180,255]
-                            return[60,40,20,255]
-                        ry2=y-(ft+sh+1);sc=(fb-sh)-(ft+sh+1)
-                        if sc>0:
-                            t=ry2/sc;n=((x*13+y*7)%20)-10
-                            if t<0.45:br,bg,bb=int(200+n),int(170+n),int(120+n//2)
-                            elif t<0.55:br,bg,bb=int(140+n),int(100+n),int(60+n//2)
-                            else:br,bg,bb=int(120+n),int(85+n),int(45+n//2)
-                            px=48
-                            if 0.30<=t<=0.42 and abs(x-px)<=5:return[30,20,10,255]
-                            if 0.42<=t<=0.65 and abs(x-px)<=3:return[30,20,10,255]
-                            if 0.65<=t<=0.80 and(abs(x-(px-3))<=2 or abs(x-(px+3))<=2):return[30,20,10,255]
-                            return[max(0,min(255,br)),max(0,min(255,bg)),max(0,min(255,bb)),255]
-                        return[20,20,20,255]
-                    with open('res/drawable/ic_launcher.png','wb') as f:f.write(make_png(96,96,ip))
-                    def bp(x,y):
-                        n=((x*13+y*7)%20)-10;t=y/180
-                        if t<0.4:br,bg,bb=int(180+n),int(150+n),int(100+n//2)
-                        elif t<0.55:br,bg,bb=int(120+n),int(90+n),int(50+n//2)
-                        else:br,bg,bb=int(100+n),int(70+n),int(35+n//2)
-                        sh=20;it=y<=sh;ib=y>=180-sh
-                        if it or ib:
-                            sx=(x-4)%24;sy=y-3 if it else y-(180-sh)-3
-                            if 3<=sx<=16 and 3<=sy<=12:return[220,210,180,255]
-                            return[40,25,10,255]
-                        return[max(0,min(255,br)),max(0,min(255,bg)),max(0,min(255,bb)),255]
-                    with open('res/drawable/banner.png','wb') as f:f.write(make_png(320,180,bp))
-                    print('ok')
+          python3 -c "
+          import struct,zlib
+          def make_png(w,h,gp):
+              def chunk(n,d):
+                  c=zlib.crc32(n+d)&0xffffffff
+                  return struct.pack('>I',len(d))+n+d+struct.pack('>I',c)
+              raw=b''
+              for y in range(h):
+                  raw+=b'\x00'
+                  for x in range(w):raw+=bytes(gp(x,y))
+              png=b'\x89PNG\r\n\x1a\n'
+              ihdr=struct.pack('>II',w,h)+bytes([8,6,0,0,0])
+              png+=chunk(b'IHDR',ihdr)+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
+              return png
+          def ip(x,y):
+              cx,cy,r=48,48,46;dx,dy=x-cx,y-cy
+              if dx*dx+dy*dy>r*r:return[0,0,0,0]
+              if dx*dx+dy*dy>40*40:return[180,150,80,255]
+              ft=8;fb=88;sh=14;it=(ft<=y<=ft+sh);ib=(fb-sh<=y<=fb)
+              if it or ib:
+                  sx=(x-4)%16;sy=y-ft-3 if it else y-(fb-sh)-3
+                  if 2<=sx<=10 and 2<=sy<=8:return[220,210,180,255]
+                  return[60,40,20,255]
+              ry2=y-(ft+sh+1);sc=(fb-sh)-(ft+sh+1)
+              if sc>0:
+                  t=ry2/sc;n=((x*13+y*7)%20)-10
+                  if t<0.45:br,bg,bb=int(200+n),int(170+n),int(120+n//2)
+                  elif t<0.55:br,bg,bb=int(140+n),int(100+n),int(60+n//2)
+                  else:br,bg,bb=int(120+n),int(85+n),int(45+n//2)
+                  px=48
+                  if 0.30<=t<=0.42 and abs(x-px)<=5:return[30,20,10,255]
+                  if 0.42<=t<=0.65 and abs(x-px)<=3:return[30,20,10,255]
+                  if 0.65<=t<=0.80 and(abs(x-(px-3))<=2 or abs(x-(px+3))<=2):return[30,20,10,255]
+                  return[max(0,min(255,br)),max(0,min(255,bg)),max(0,min(255,bb)),255]
+              return[20,20,20,255]
+          with open('res/drawable/ic_launcher.png','wb') as f:f.write(make_png(96,96,ip))
+          def bp(x,y):
+              n=((x*13+y*7)%20)-10;t=y/180
+              if t<0.4:br,bg,bb=int(180+n),int(150+n),int(100+n//2)
+              elif t<0.55:br,bg,bb=int(120+n),int(90+n),int(50+n//2)
+              else:br,bg,bb=int(100+n),int(70+n),int(35+n//2)
+              sh=20;it=y<=sh;ib=y>=180-sh
+              if it or ib:
+                  sx=(x-4)%24;sy=y-3 if it else y-(180-sh)-3
+                  if 3<=sx<=16 and 3<=sy<=12:return[220,210,180,255]
+                  return[40,25,10,255]
+              return[max(0,min(255,br)),max(0,min(255,bg)),max(0,min(255,bb)),255]
+          with open('res/drawable/banner.png','wb') as f:f.write(make_png(320,180,bp))
+          print('ok')
+          "
+
                     "
 
           printf '%s' 'PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPG1hbmlmZXN0IHhtbG5zOmFuZHJvaWQ9Imh0dHA6Ly9zY2hl' > /tmp/_b64tmp
