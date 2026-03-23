@@ -27,56 +27,37 @@ jobs:
       - name: Create project files
         run: |
           mkdir -p src/com/allinone/app res/layout res/values res/drawable
-          python3 -c "
-          import struct,zlib
-          def make_png(w,h,gp):
-              def chunk(n,d):
-                  c=zlib.crc32(n+d)&0xffffffff
-                  return struct.pack('>I',len(d))+n+d+struct.pack('>I',c)
-              raw=b''
-              for y in range(h):
-                  raw+=b'\x00'
-                  for x in range(w):raw+=bytes(gp(x,y))
-              png=b'\x89PNG\r\n\x1a\n'
-              ihdr=struct.pack('>II',w,h)+bytes([8,6,0,0,0])
-              png+=chunk(b'IHDR',ihdr)+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
-              return png
-          def ip(x,y):
-              cx,cy,r=48,48,46;dx,dy=x-cx,y-cy
-              if dx*dx+dy*dy>r*r:return[0,0,0,0]
-              if dx*dx+dy*dy>40*40:return[180,150,80,255]
-              ft=8;fb=88;sh=14;it=(ft<=y<=ft+sh);ib=(fb-sh<=y<=fb)
-              if it or ib:
-                  sx=(x-4)%16;sy=y-ft-3 if it else y-(fb-sh)-3
-                  if 2<=sx<=10 and 2<=sy<=8:return[220,210,180,255]
-                  return[60,40,20,255]
-              ry2=y-(ft+sh+1);sc=(fb-sh)-(ft+sh+1)
-              if sc>0:
-                  t=ry2/sc;n=((x*13+y*7)%20)-10
-                  if t<0.45:br,bg,bb=int(200+n),int(170+n),int(120+n//2)
-                  elif t<0.55:br,bg,bb=int(140+n),int(100+n),int(60+n//2)
-                  else:br,bg,bb=int(120+n),int(85+n),int(45+n//2)
-                  px=48
-                  if 0.30<=t<=0.42 and abs(x-px)<=5:return[30,20,10,255]
-                  if 0.42<=t<=0.65 and abs(x-px)<=3:return[30,20,10,255]
-                  if 0.65<=t<=0.80 and(abs(x-(px-3))<=2 or abs(x-(px+3))<=2):return[30,20,10,255]
-                  return[max(0,min(255,br)),max(0,min(255,bg)),max(0,min(255,bb)),255]
-              return[20,20,20,255]
-          with open('res/drawable/ic_launcher.png','wb') as f:f.write(make_png(96,96,ip))
-          def bp(x,y):
-              n=((x*13+y*7)%20)-10;t=y/180
-              if t<0.4:br,bg,bb=int(180+n),int(150+n),int(100+n//2)
-              elif t<0.55:br,bg,bb=int(120+n),int(90+n),int(50+n//2)
-              else:br,bg,bb=int(100+n),int(70+n),int(35+n//2)
-              sh=20;it=y<=sh;ib=y>=180-sh
-              if it or ib:
-                  sx=(x-4)%24;sy=y-3 if it else y-(180-sh)-3
-                  if 3<=sx<=16 and 3<=sy<=12:return[220,210,180,255]
-                  return[40,25,10,255]
-              return[max(0,min(255,br)),max(0,min(255,bg)),max(0,min(255,bb)),255]
-          with open('res/drawable/banner.png','wb') as f:f.write(make_png(320,180,bp))
-          print('ok')
-          "
+          mkdir -p /tmp
+          printf '%s' 'aW1wb3J0IHN0cnVjdCx6bGliCmRlZiBtYWtlX3BuZyh3LGgsZ3ApOgogICAgZGVmIGNodW5rKG4sZCk6CiAgICAgICAgYz16bGli' > /tmp/_b64tmp
+          printf '%s' 'LmNyYzMyKG4rZCkmMHhmZmZmZmZmZgogICAgICAgIHJldHVybiBzdHJ1Y3QucGFjaygiPkkiLGxlbihkKSkrbitkK3N0cnVjdC5w' >> /tmp/_b64tmp
+          printf '%s' 'YWNrKCI+SSIsYykKICAgIHJhdz1iIiIKICAgIGZvciB5IGluIHJhbmdlKGgpOgogICAgICAgIHJhdys9YiJceDAwIgogICAgICAg' >> /tmp/_b64tmp
+          printf '%s' 'IGZvciB4IGluIHJhbmdlKHcpOnJhdys9Ynl0ZXMoZ3AoeCx5KSkKICAgIHBuZz1iIlx4ODlQTkdcclxuXHgxYVxuIgogICAgaWhk' >> /tmp/_b64tmp
+          printf '%s' 'cj1zdHJ1Y3QucGFjaygiPklJIix3LGgpK2J5dGVzKFs4LDYsMCwwLDBdKQogICAgcG5nKz1jaHVuayhiIklIRFIiLGloZHIpK2No' >> /tmp/_b64tmp
+          printf '%s' 'dW5rKGIiSURBVCIsemxpYi5jb21wcmVzcyhyYXcsOSkpK2NodW5rKGIiSUVORCIsYiIiKQogICAgcmV0dXJuIHBuZwpkZWYgaXAo' >> /tmp/_b64tmp
+          printf '%s' 'eCx5KToKICAgIGN4LGN5LHI9NDgsNDgsNDY7ZHgsZHk9eC1jeCx5LWN5CiAgICBpZiBkeCpkeCtkeSpkeT5yKnI6cmV0dXJuWzAs' >> /tmp/_b64tmp
+          printf '%s' 'MCwwLDBdCiAgICBpZiBkeCpkeCtkeSpkeT40MCo0MDpyZXR1cm5bMTgwLDE1MCw4MCwyNTVdCiAgICBmdD04O2ZiPTg4O3NoPTE0' >> /tmp/_b64tmp
+          printf '%s' 'O2l0PShmdDw9eTw9ZnQrc2gpO2liPShmYi1zaDw9eTw9ZmIpCiAgICBpZiBpdCBvciBpYjoKICAgICAgICBzeD0oeC00KSUxNjtz' >> /tmp/_b64tmp
+          printf '%s' 'eT15LWZ0LTMgaWYgaXQgZWxzZSB5LShmYi1zaCktMwogICAgICAgIGlmIDI8PXN4PD0xMCBhbmQgMjw9c3k8PTg6cmV0dXJuWzIy' >> /tmp/_b64tmp
+          printf '%s' 'MCwyMTAsMTgwLDI1NV0KICAgICAgICByZXR1cm5bNjAsNDAsMjAsMjU1XQogICAgcnkyPXktKGZ0K3NoKzEpO3NjPShmYi1zaCkt' >> /tmp/_b64tmp
+          printf '%s' 'KGZ0K3NoKzEpCiAgICBpZiBzYz4wOgogICAgICAgIHQ9cnkyL3NjO249KCh4KjEzK3kqNyklMjApLTEwCiAgICAgICAgaWYgdDww' >> /tmp/_b64tmp
+          printf '%s' 'LjQ1OmJyLGJnLGJiPWludCgyMDArbiksaW50KDE3MCtuKSxpbnQoMTIwK24vLzIpCiAgICAgICAgZWxpZiB0PDAuNTU6YnIsYmcs' >> /tmp/_b64tmp
+          printf '%s' 'YmI9aW50KDE0MCtuKSxpbnQoMTAwK24pLGludCg2MCtuLy8yKQogICAgICAgIGVsc2U6YnIsYmcsYmI9aW50KDEyMCtuKSxpbnQo' >> /tmp/_b64tmp
+          printf '%s' 'ODUrbiksaW50KDQ1K24vLzIpCiAgICAgICAgcHg9NDgKICAgICAgICBpZiAwLjMwPD10PD0wLjQyIGFuZCBhYnMoeC1weCk8PTU6' >> /tmp/_b64tmp
+          printf '%s' 'cmV0dXJuWzMwLDIwLDEwLDI1NV0KICAgICAgICBpZiAwLjQyPD10PD0wLjY1IGFuZCBhYnMoeC1weCk8PTM6cmV0dXJuWzMwLDIw' >> /tmp/_b64tmp
+          printf '%s' 'LDEwLDI1NV0KICAgICAgICBpZiAwLjY1PD10PD0wLjgwIGFuZChhYnMoeC0ocHgtMykpPD0yIG9yIGFicyh4LShweCszKSk8PTIp' >> /tmp/_b64tmp
+          printf '%s' 'OnJldHVyblszMCwyMCwxMCwyNTVdCiAgICAgICAgcmV0dXJuW21heCgwLG1pbigyNTUsYnIpKSxtYXgoMCxtaW4oMjU1LGJnKSks' >> /tmp/_b64tmp
+          printf '%s' 'bWF4KDAsbWluKDI1NSxiYikpLDI1NV0KICAgIHJldHVyblsyMCwyMCwyMCwyNTVdCndpdGggb3BlbigicmVzL2RyYXdhYmxlL2lj' >> /tmp/_b64tmp
+          printf '%s' 'X2xhdW5jaGVyLnBuZyIsIndiIikgYXMgZjpmLndyaXRlKG1ha2VfcG5nKDk2LDk2LGlwKSkKZGVmIGJwKHgseSk6CiAgICBuPSgo' >> /tmp/_b64tmp
+          printf '%s' 'eCoxMyt5KjcpJTIwKS0xMDt0PXkvMTgwCiAgICBpZiB0PDAuNDpicixiZyxiYj1pbnQoMTgwK24pLGludCgxNTArbiksaW50KDEw' >> /tmp/_b64tmp
+          printf '%s' 'MCtuLy8yKQogICAgZWxpZiB0PDAuNTU6YnIsYmcsYmI9aW50KDEyMCtuKSxpbnQoOTArbiksaW50KDUwK24vLzIpCiAgICBlbHNl' >> /tmp/_b64tmp
+          printf '%s' 'OmJyLGJnLGJiPWludCgxMDArbiksaW50KDcwK24pLGludCgzNStuLy8yKQogICAgc2g9MjA7aXQ9eTw9c2g7aWI9eT49MTgwLXNo' >> /tmp/_b64tmp
+          printf '%s' 'CiAgICBpZiBpdCBvciBpYjoKICAgICAgICBzeD0oeC00KSUyNDtzeT15LTMgaWYgaXQgZWxzZSB5LSgxODAtc2gpLTMKICAgICAg' >> /tmp/_b64tmp
+          printf '%s' 'ICBpZiAzPD1zeDw9MTYgYW5kIDM8PXN5PD0xMjpyZXR1cm5bMjIwLDIxMCwxODAsMjU1XQogICAgICAgIHJldHVybls0MCwyNSwx' >> /tmp/_b64tmp
+          printf '%s' 'MCwyNTVdCiAgICByZXR1cm5bbWF4KDAsbWluKDI1NSxicikpLG1heCgwLG1pbigyNTUsYmcpKSxtYXgoMCxtaW4oMjU1LGJiKSks' >> /tmp/_b64tmp
+          printf '%s' 'MjU1XQp3aXRoIG9wZW4oInJlcy9kcmF3YWJsZS9iYW5uZXIucG5nIiwid2IiKSBhcyBmOmYud3JpdGUobWFrZV9wbmcoMzIwLDE4' >> /tmp/_b64tmp
+          printf '%s' 'MCxicCkpCnByaW50KCJvayIpCg==' >> /tmp/_b64tmp
+          base64 -d /tmp/_b64tmp > /tmp/_png.py
+          python3 /tmp/_png.py
 
                     "
 
